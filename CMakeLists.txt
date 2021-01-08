@@ -20,9 +20,18 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/glm)
 include_directories(${PROJECT_SOURCE_DIR}/thirdparty/imgui)
 add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/imgui)
 
-add_executable(Prototype_Action_RPG main.cpp)
+# spdlog
+add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/spdlog)
+
+### SOURCE CODE
+# Code
+add_subdirectory(source/core)
+
+add_executable(Prototype_Action_RPG source/main.cpp)
 target_link_libraries(${PROJECT_NAME}
         ${VULKAN}
         glfw
         glm
-        imgui)
+        imgui
+        prototype_core
+        spdlog)

@@ -1,0 +1,11 @@
+#ifndef PROTOTYPE_ACTION_RPG_RENDERER_HPP
+#define PROTOTYPE_ACTION_RPG_RENDERER_HPP
+
+
+class Renderer {
+public:
+private:
+};
+
+
+#endif //PROTOTYPE_ACTION_RPG_RENDERER_HPP
