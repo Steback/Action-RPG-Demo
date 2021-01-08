@@ -7,16 +7,26 @@
 #include "GLFW/glfw3.h"
 
 
-class Window {
-public:
-    Window(const std::string& name, int mWidth, int mHeight);
+namespace core {
 
-    virtual ~Window();
+    class Window {
+    public:
+        Window();
 
-private:
-    GLFWwindow* mWindow;
-    int mWidth, mHeight;
-};
+        ~Window();
+
+        void init(const std::string& name, int width, int height);
+
+        bool isOpen();
+
+        void clean();
+
+    private:
+        GLFWwindow* mWindow{};
+        int mWidth, mHeight;
+    };
+
+} // End namespace core
 
 
 #endif //PROTOTYPE_ACTION_RPG_WINDOW_HPP

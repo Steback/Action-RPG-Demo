@@ -31,4 +31,18 @@ namespace core {
         }
     }
 
+    void Logger::sendLog(LogType type, const std::string &message) {
+        switch (type) {
+            case INFO:
+                mLogger->info(message);
+                break;
+            case WARNING:
+                mLogger->warn(message);
+                break;
+            case ERROR:
+                mLogger->error(message);
+                break;
+        }
+    }
+
 } // End namespace core

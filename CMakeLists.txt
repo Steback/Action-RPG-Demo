@@ -24,14 +24,24 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/imgui)
 add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/spdlog)
 
 ### SOURCE CODE
-# Code
-add_subdirectory(source/core)
+# Source code
+file(GLOB_RECURSE RENDERER_HEADER_FILES source/core/renderer/*.hpp)
+file(GLOB_RECURSE RENDERER_SOURCE_FILES source/core/renderer/*.cpp)
 
-add_executable(Prototype_Action_RPG source/main.cpp)
+file(GLOB_RECURSE WINDOW_HEADER_FILES source/core/window/*.hpp)
+file(GLOB_RECURSE WINDOW_SOURCE_FILES source/core/window/*.cpp)
+
+file(GLOB_RECURSE LOGGER_HEADER_FILES source/core/logger/*.hpp)
+file(GLOB_RECURSE LOGGER_SOURCE_FILES source/core/logger/*.cpp)
+
+add_executable(Prototype_Action_RPG source/main.cpp
+        ${RENDERER_SOURCE_FILES} ${RENDERER_SOURCE_FILES}
+        ${WINDOW_SOURCE_FILES} ${WINDOW_HEADER_FILES}
+        ${LOGGER_SOURCE_FILES} ${LOGGER_HEADER_FILES})
+
 target_link_libraries(${PROJECT_NAME}
         ${VULKAN}
         glfw
         glm
         imgui
-        prototype_core
         spdlog)

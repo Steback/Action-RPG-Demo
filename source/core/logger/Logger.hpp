@@ -18,8 +18,12 @@ namespace core {
     class Logger {
     public:
         Logger();
+
         ~Logger();
+
         void init(const std::string& loggerName, const std::string& fileName);
+
+        void sendLog(LogType type, const std::string& message);
 
     private:
         std::shared_ptr<spdlog::logger> mLogger;
