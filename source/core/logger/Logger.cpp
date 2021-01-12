@@ -18,7 +18,7 @@ namespace core {
             std::filesystem::create_directory(mDirLogs);
         }
 
-        auto fileName_ = mDirLogs + "/" + fileName;
+        auto fileName_ = mDirLogs + '/' + fileName;
 
         if (std::filesystem::exists(fileName_)) {
             std::filesystem::remove(fileName_);

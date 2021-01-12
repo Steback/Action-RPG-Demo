@@ -1,7 +1,10 @@
+#include <memory>
+
 #include "GLFW/glfw3.h"
 
 #include "core/logger/Logger.hpp"
 #include "core/window/Window.hpp"
+#include "core/renderer/Renderer.hpp"
 
 
 class App {
@@ -17,21 +20,24 @@ public:
     }
 
     void init() {
-        mWindow.init("Prototype Action RPG", 1200, 700);
+        mWindow = std::make_unique<core::Window>("Prototype Action RPG", 1200, 700);
+        mRender = std::make_unique<core::Renderer>();
     }
 
     void loop() {
-        while (mWindow.isOpen()) {
+        while (mWindow->isOpen()) {
             glfwPollEvents();
         }
     }
 
     void clean() {
-        mWindow.clean();
+        mRender->clean();
+        mWindow->clean();
     }
 
 private:
-    core::Window mWindow;
+    std::unique_ptr<core::Window> mWindow;
+    std::unique_ptr<core::Renderer> mRender;
 };
 
 

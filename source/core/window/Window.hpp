@@ -11,11 +11,9 @@ namespace core {
 
     class Window {
     public:
-        Window();
+        Window(const std::string& name, int width, int height);
 
         ~Window();
-
-        void init(const std::string& name, int width, int height);
 
         bool isOpen();
 

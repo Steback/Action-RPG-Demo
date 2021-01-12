@@ -5,15 +5,9 @@
 
 namespace core {
 
-    Window::Window() : mWidth(0), mHeight(0) {
-
-    }
-
-    Window::~Window() = default;
-
-    void Window::init(const std::string &name, int width, int height) {
+    Window::Window(const std::string& name, int width, int height) : mWidth(0), mHeight(0) {
         if (!glfwInit()) {
-            throw spdlog::spdlog_ex("[GLFW] Failed to init.");
+            spdlog::throw_spdlog_ex("[GLFW] Failed to init.");
         }
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -21,6 +15,8 @@ namespace core {
 
         mWindow = glfwCreateWindow(width, height, name.c_str(), nullptr, nullptr);
     }
+
+    Window::~Window() = default;
 
     bool Window::isOpen() {
         return !glfwWindowShouldClose(mWindow);

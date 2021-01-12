@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 20)
 # Vulkan Hpp
 include_directories($ENV{VULKAN_SDK}/include)
 file(GLOB_RECURSE VULKAN $ENV{LD_LIBRARY_PATH}/libvulkan.so)
+file(GLOB_RECURSE VALIDATION_LAYERS $ENV{LD_LIBRARY_PATH}/libVkLayer_*.so)
 
 # GLFW
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
