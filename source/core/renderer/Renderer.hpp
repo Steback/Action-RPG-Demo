@@ -2,11 +2,7 @@
 #define PROTOTYPE_ACTION_RPG_RENDERER_HPP
 
 
-#define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
-#define VULKAN_HPP_NO_NODISCARD_WARNINGS
-#include "vulkan/vulkan.hpp"
-
-#include "Debug.hpp"
+#include "Instance.hpp"
 
 
 namespace core {
@@ -22,8 +18,7 @@ namespace core {
         void clean();
 
     private:
-        vk::Instance mInstance{};
-        Debug mValidationLayers;
+        vk::Instance mInstance;
     };
 
 } // End namespace core

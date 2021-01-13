@@ -2,47 +2,26 @@
 
 #include "GLFW/glfw3.h"
 
-#include "Utils.hpp"
-
 
 namespace core {
 
     Renderer::Renderer() {
-        vk::ApplicationInfo applicationInfo{
-                .pApplicationName = "Prototype Action RPG",
-                .applicationVersion = 1,
-                .pEngineName = "Custom Engine",
-                .engineVersion = 1,
-                .apiVersion = VK_API_VERSION_1_2 };
+        VkApplicationInfo appInfo{
+            .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+            .pApplicationName = "Prototype Action RPG",
+            .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
+            .pEngineName = "Custom Engine",
+            .engineVersion = VK_MAKE_VERSION(1, 0, 0),
+            .apiVersion = VK_API_VERSION_1_2
+        };
 
-        std::vector<const char*> glfwExtensions = core::getRequiredExtensions();
+        std::vector<const char*> glfwExtensions = vk::getRequiredExtensions();
 
-        vk::DebugUtilsMessengerCreateInfoEXT debugCreateInfo;
+        VkInstanceCreateInfo instanceCreateInfo{
+            .pApplicationInfo = &appInfo,
+        };
 
-        if (enableValidationLayers) {
-            mValidationLayers = Debug({"VK_LAYER_KHRONOS_validation" } );
-
-            if (!mValidationLayers.checkValidationLayerSupport()) {
-                spdlog::throw_spdlog_ex("[Renderer] Validation layers requested, but not available!");
-            }
-
-            mValidationLayers.populateDebugMessengerCreateInfo(debugCreateInfo);
-        }
-
-        vk::InstanceCreateInfo instanceCreateInfo{
-//                .pNext = enableValidationLayers ? &debugCreateInfo : nullptr,
-                .pApplicationInfo = &applicationInfo,
-                .enabledLayerCount = enableValidationLayers ? mValidationLayers.getValidationLayersCount() : 0,
-                .ppEnabledLayerNames = enableValidationLayers ? mValidationLayers.getValidationLayers() : nullptr,
-                .enabledExtensionCount = static_cast<uint32_t>(glfwExtensions.size()),
-                .ppEnabledExtensionNames = glfwExtensions.data() };
-
-        core::resultValidation(vk::createInstance(&instanceCreateInfo, nullptr, &mInstance),
-                               "Failed to create instance");
-
-        if (enableValidationLayers) {
-            mValidationLayers.init(mInstance);
-        }
+        mInstance.init(instanceCreateInfo);
     }
 
     Renderer::~Renderer() = default;
@@ -52,8 +31,7 @@ namespace core {
     }
 
     void Renderer::clean() {
-        mValidationLayers.clean(mInstance);
-        mInstance.destroy(nullptr);
+
     }
 
 } // End namespace core
