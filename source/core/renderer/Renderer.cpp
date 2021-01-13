@@ -1,7 +1,5 @@
 #include "Renderer.hpp"
 
-#include "GLFW/glfw3.h"
-
 
 namespace core {
 
@@ -15,13 +13,7 @@ namespace core {
             .apiVersion = VK_API_VERSION_1_2
         };
 
-        std::vector<const char*> glfwExtensions = vk::getRequiredExtensions();
-
-        VkInstanceCreateInfo instanceCreateInfo{
-            .pApplicationInfo = &appInfo,
-        };
-
-        mInstance.init(instanceCreateInfo);
+        mInstance.init(appInfo);
     }
 
     Renderer::~Renderer() = default;
@@ -31,7 +23,7 @@ namespace core {
     }
 
     void Renderer::clean() {
-
+        mInstance.destroy();
     }
 
 } // End namespace core

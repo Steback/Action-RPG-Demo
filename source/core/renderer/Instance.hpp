@@ -4,6 +4,7 @@
 
 #include "vulkan/vulkan.h"
 #include "Utils.hpp"
+#include "Debug.hpp"
 
 
 namespace vk {
@@ -11,12 +12,19 @@ namespace vk {
     class Instance {
     public:
         Instance();
+
         ~Instance();
-        void init(VkInstanceCreateInfo& createInfo);
+
+        void init(VkApplicationInfo& appInfo);
+
         void destroy();
 
     private:
+        void setupDebugMessenger();
+
+    private:
         VkInstance mInstance{};
+        VkDebugUtilsMessengerEXT mDebugMessenger{};
     };
 
 } // End namespace vk
