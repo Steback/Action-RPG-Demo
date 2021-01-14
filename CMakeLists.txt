@@ -36,7 +36,7 @@ file(GLOB_RECURSE LOGGER_HEADER_FILES source/core/logger/*.hpp)
 file(GLOB_RECURSE LOGGER_SOURCE_FILES source/core/logger/*.cpp)
 
 add_executable(Prototype_Action_RPG source/main.cpp
-        ${RENDERER_SOURCE_FILES} ${RENDERER_SOURCE_FILES}
+        ${RENDERER_SOURCE_FILES} ${RENDERER_HEADER_FILES}
         ${WINDOW_SOURCE_FILES} ${WINDOW_HEADER_FILES}
         ${LOGGER_SOURCE_FILES} ${LOGGER_HEADER_FILES})
 

@@ -14,6 +14,8 @@ namespace core {
         };
 
         mInstance.init(appInfo);
+
+        mInstance.pickPhysicalDevice(mPhysicalDevice);
     }
 
     Renderer::~Renderer() = default;

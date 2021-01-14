@@ -13,13 +13,8 @@ namespace vk {
                 "VK_LAYER_KHRONOS_validation"
         };
 
-        VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
-
-        if (enableValidationLayers) populateDebugMessengerCreateInfo(debugCreateInfo);
-
         VkInstanceCreateInfo createInfo{
                 .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-                .pNext = enableValidationLayers ? &debugCreateInfo : nullptr,
                 .pApplicationInfo = &appInfo,
                 .enabledLayerCount = enableValidationLayers ? static_cast<uint32_t>(validationLayers.size()) : 0,
                 .ppEnabledLayerNames = enableValidationLayers ? validationLayers.data() : nullptr,
@@ -27,7 +22,7 @@ namespace vk {
                 .ppEnabledExtensionNames = extensions.data(),
         };
 
-        vk::resultValidation(vkCreateInstance(&createInfo, nullptr, &mInstance),
+        resultValidation(vkCreateInstance(&createInfo, nullptr, &mInstance),
                              "Failed to create instance");
 
         if (enableValidationLayers) {
@@ -44,6 +39,30 @@ namespace vk {
         }
 
         vkDestroyInstance(mInstance, nullptr);
+    }
+
+    VkInstance &Instance::operator*() {
+        return mInstance;
+    }
+
+    void Instance::pickPhysicalDevice(PhysicalDevice &physicalDevice) {
+        uint32_t deviceCount = 0;
+        vkEnumeratePhysicalDevices(mInstance, &deviceCount, nullptr);
+
+        if (deviceCount == 0) spdlog::throw_spdlog_ex("Failed to find GPUs with Vulkan support");
+
+        std::vector<VkPhysicalDevice> devices(deviceCount);
+        vkEnumeratePhysicalDevices(mInstance, &deviceCount, devices.data());
+
+        for (const auto& device : devices) {
+            if (isDeviceSuitable(device)) {
+                physicalDevice.device = device;
+                physicalDevice.properties = getPhysicalDeviceProperties(device);
+                break;
+            }
+        }
+
+        if (physicalDevice.device == VK_NULL_HANDLE) spdlog::throw_spdlog_ex("Failed to find a suitable GPU!");
     }
 
     void Instance::setupDebugMessenger() {

@@ -5,6 +5,7 @@
 #include "vulkan/vulkan.h"
 #include "Utils.hpp"
 #include "Debug.hpp"
+#include "PhysicalDevice.hpp"
 
 
 namespace vk {
@@ -18,6 +19,10 @@ namespace vk {
         void init(VkApplicationInfo& appInfo);
 
         void destroy();
+
+        VkInstance& operator*();
+
+        void pickPhysicalDevice(PhysicalDevice& physicalDevice);
 
     private:
         void setupDebugMessenger();

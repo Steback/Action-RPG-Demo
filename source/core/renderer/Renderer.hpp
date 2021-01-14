@@ -3,6 +3,7 @@
 
 
 #include "Instance.hpp"
+#include "PhysicalDevice.hpp"
 
 
 namespace core {
@@ -19,6 +20,7 @@ namespace core {
 
     private:
         vk::Instance mInstance;
+        vk::PhysicalDevice mPhysicalDevice;
     };
 
 } // End namespace core
