@@ -16,6 +16,8 @@ namespace core {
         mInstance.init(appInfo);
 
         mInstance.pickPhysicalDevice(mPhysicalDevice);
+
+        mDevice.init(mPhysicalDevice);
     }
 
     Renderer::~Renderer() = default;
@@ -25,6 +27,7 @@ namespace core {
     }
 
     void Renderer::clean() {
+        mDevice.destroy();
         mInstance.destroy();
     }
 

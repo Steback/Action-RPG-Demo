@@ -9,9 +9,6 @@ namespace vk {
 
     void Instance::init(VkApplicationInfo& appInfo) {
         std::vector<const char*> extensions = vk::getRequiredExtensions();
-        std::vector<const char*> validationLayers = {
-                "VK_LAYER_KHRONOS_validation"
-        };
 
         VkInstanceCreateInfo createInfo{
                 .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
@@ -21,6 +18,13 @@ namespace vk {
                 .enabledExtensionCount = static_cast<uint32_t>(extensions.size()),
                 .ppEnabledExtensionNames = extensions.data(),
         };
+
+        if (enableValidationLayers) {
+            VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+            populateDebugMessengerCreateInfo(debugCreateInfo);
+
+            createInfo.pNext = &debugCreateInfo;
+        }
 
         resultValidation(vkCreateInstance(&createInfo, nullptr, &mInstance),
                              "Failed to create instance");

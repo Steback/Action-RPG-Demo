@@ -3,6 +3,7 @@
 
 
 #include <vector>
+#include <exception>
 
 #include "vulkan/vulkan.h"
 #include "spdlog/spdlog.h"
@@ -15,6 +16,10 @@ namespace vk {
 #else
     const bool enableValidationLayers = true;
 #endif
+
+    const std::vector<const char*> validationLayers = {
+            "VK_LAYER_KHRONOS_validation"
+    };
 
     static bool checkValidationLayerSupport(const std::vector<const char*>& validationLayers) {
         uint32_t layerCount;
