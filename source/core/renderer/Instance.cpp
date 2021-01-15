@@ -49,7 +49,7 @@ namespace vk {
         return mInstance;
     }
 
-    void Instance::pickPhysicalDevice(PhysicalDevice &physicalDevice) {
+    void Instance::pickPhysicalDevice(PhysicalDevice &physicalDevice, VkSurfaceKHR& surface) {
         uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(mInstance, &deviceCount, nullptr);
 
@@ -59,14 +59,23 @@ namespace vk {
         vkEnumeratePhysicalDevices(mInstance, &deviceCount, devices.data());
 
         for (const auto& device : devices) {
-            if (isDeviceSuitable(device)) {
+            if (isDeviceSuitable(device, surface)) {
                 physicalDevice.device = device;
-                physicalDevice.properties = getPhysicalDeviceProperties(device);
+                physicalDevice.deiceName = getPhysicalDeviceProperties(device).deviceName;
                 break;
             }
         }
 
         if (physicalDevice.device == VK_NULL_HANDLE) spdlog::throw_spdlog_ex("Failed to find a suitable GPU!");
+    }
+
+    void Instance::createSurface(GLFWwindow* window, VkSurfaceKHR& surface) {
+        resultValidation(glfwCreateWindowSurface(mInstance, window, nullptr, &surface),
+                         "Failed to create window surface");
+    }
+
+    void Instance::destroySurface(VkSurfaceKHR &surface) {
+        vkDestroySurfaceKHR(mInstance, surface, nullptr);
     }
 
     void Instance::setupDebugMessenger() {

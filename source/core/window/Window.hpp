@@ -10,6 +10,8 @@
 namespace core {
 
     class Window {
+        friend class Renderer;
+
     public:
         Window(const std::string& name, int width, int height);
 

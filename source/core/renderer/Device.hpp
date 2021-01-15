@@ -14,13 +14,15 @@ namespace vk {
 
         ~Device();
 
-        void init(const PhysicalDevice& physicalDevice);
+        void init(const PhysicalDevice& physicalDevice, VkSurfaceKHR& surface);
 
         void destroy();
 
     private:
         VkDevice mDevice{};
-        VkQueue graphicsQueue{};
+        VkQueue mPresentQueue{};
+        VkQueue mGraphicsQueue{};
+        PhysicalDevice mPhysicalDevice;
     };
 
 } // End namespace vk

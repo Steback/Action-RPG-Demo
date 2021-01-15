@@ -21,7 +21,7 @@ public:
 
     void init() {
         mWindow = std::make_unique<core::Window>("Prototype Action RPG", 1200, 700);
-        mRender = std::make_unique<core::Renderer>();
+        mRender = std::make_unique<core::Renderer>(mWindow);
     }
 
     void loop() {

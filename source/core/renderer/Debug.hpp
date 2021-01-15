@@ -52,7 +52,7 @@ namespace vk {
             const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
             void* pUserData) {
         if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-            spdlog::error("Validation layer: {}", pCallbackData->pMessage);
+            spdlog::error("[Validation layer] {}", pCallbackData->pMessage);
         }
 
         return VK_FALSE;

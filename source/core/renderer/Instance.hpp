@@ -3,6 +3,8 @@
 
 
 #include "vulkan/vulkan.h"
+#include "GLFW/glfw3.h"
+
 #include "Utils.hpp"
 #include "Debug.hpp"
 #include "PhysicalDevice.hpp"
@@ -22,7 +24,11 @@ namespace vk {
 
         VkInstance& operator*();
 
-        void pickPhysicalDevice(PhysicalDevice& physicalDevice);
+        void pickPhysicalDevice(PhysicalDevice& physicalDevice, VkSurfaceKHR& surface);
+
+        void createSurface(GLFWwindow* window, VkSurfaceKHR& surface);
+
+        void destroySurface(VkSurfaceKHR& surface);
 
     private:
         void setupDebugMessenger();

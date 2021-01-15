@@ -3,7 +3,7 @@
 
 namespace core {
 
-    Renderer::Renderer() {
+    Renderer::Renderer(std::unique_ptr<Window>& window) {
         VkApplicationInfo appInfo{
             .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
             .pApplicationName = "Prototype Action RPG",
@@ -14,10 +14,9 @@ namespace core {
         };
 
         mInstance.init(appInfo);
-
-        mInstance.pickPhysicalDevice(mPhysicalDevice);
-
-        mDevice.init(mPhysicalDevice);
+        mInstance.createSurface(window->mWindow, mSurface);
+        mInstance.pickPhysicalDevice(mPhysicalDevice, mSurface);
+        mDevice.init(mPhysicalDevice, mSurface);
     }
 
     Renderer::~Renderer() = default;
@@ -28,6 +27,7 @@ namespace core {
 
     void Renderer::clean() {
         mDevice.destroy();
+        mInstance.destroySurface(mSurface);
         mInstance.destroy();
     }
 

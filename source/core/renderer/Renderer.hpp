@@ -5,13 +5,14 @@
 #include "Instance.hpp"
 #include "PhysicalDevice.hpp"
 #include "Device.hpp"
+#include "../window/Window.hpp"
 
 
 namespace core {
 
     class Renderer {
     public:
-        Renderer();
+        explicit Renderer(std::unique_ptr<Window>& window);
 
         ~Renderer();
 
@@ -23,6 +24,7 @@ namespace core {
         vk::Instance mInstance;
         vk::PhysicalDevice mPhysicalDevice;
         vk::Device mDevice;
+        VkSurfaceKHR mSurface{};
     };
 
 } // End namespace core
