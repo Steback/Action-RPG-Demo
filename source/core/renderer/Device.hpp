@@ -25,6 +25,10 @@ namespace vk {
 
         void destroySwapChain(SwapChain& swapChain);
 
+        void createImageViews(SwapChain& swapChain);
+
+        void destroyImageViews(SwapChain& swapChain);
+
     private:
         VkDevice mDevice{};
         VkQueue mPresentQueue{};

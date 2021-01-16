@@ -12,6 +12,7 @@ namespace vk {
     struct SwapChain {
         VkSwapchainKHR mSwapChain{};
         std::vector<VkImage> mImages;
+        std::vector<VkImageView> mImageViews;
         VkFormat mImageFormat{};
         VkExtent2D mExtent{};
     };

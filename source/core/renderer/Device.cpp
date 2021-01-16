@@ -111,4 +111,39 @@ namespace vk {
         vkDestroySwapchainKHR(mDevice, swapChain.mSwapChain, nullptr);
     }
 
+    void Device::createImageViews(SwapChain &swapChain) {
+        swapChain.mImageViews.resize(swapChain.mImages.size());
+
+        for (size_t i = 0; i < swapChain.mImages.size(); ++i) {
+            VkImageViewCreateInfo createInfo{
+                .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                .image = swapChain.mImages[i],
+                .viewType = VK_IMAGE_VIEW_TYPE_2D,
+                .format = swapChain.mImageFormat,
+                .components = {
+                        .r = VK_COMPONENT_SWIZZLE_IDENTITY,
+                        .g = VK_COMPONENT_SWIZZLE_IDENTITY,
+                        .b = VK_COMPONENT_SWIZZLE_IDENTITY,
+                        .a = VK_COMPONENT_SWIZZLE_IDENTITY
+                },
+                .subresourceRange = {
+                        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                        .baseMipLevel = 0,
+                        .levelCount = 1,
+                        .baseArrayLayer = 0,
+                        .layerCount = 1
+                }
+            };
+
+            resultValidation(vkCreateImageView(mDevice, &createInfo, nullptr, &swapChain.mImageViews[i]),
+                             "Failed to create image views");
+        }
+    }
+
+    void Device::destroyImageViews(SwapChain &swapChain) {
+        for (auto& imageView : swapChain.mImageViews) {
+            vkDestroyImageView(mDevice, imageView, nullptr);
+        }
+    }
+
 } // End namespace vk
