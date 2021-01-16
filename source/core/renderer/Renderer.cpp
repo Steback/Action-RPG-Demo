@@ -17,6 +17,7 @@ namespace core {
         mInstance.createSurface(window->mWindow, mSurface);
         mInstance.pickPhysicalDevice(mPhysicalDevice, mSurface);
         mDevice.init(mPhysicalDevice, mSurface);
+        mDevice.createSwapChain(mSwapChain, window->mWindow, mSurface);
     }
 
     Renderer::~Renderer() = default;
@@ -26,6 +27,7 @@ namespace core {
     }
 
     void Renderer::clean() {
+        mDevice.destroySwapChain(mSwapChain);
         mDevice.destroy();
         mInstance.destroySurface(mSurface);
         mInstance.destroy();

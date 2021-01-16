@@ -4,11 +4,16 @@
 
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "vulkan/vulkan.h"
 
 
 namespace vk {
+
+    const std::vector<const char*> deviceExtensions = {
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    };
 
     struct PhysicalDevice {
         VkPhysicalDevice device = VK_NULL_HANDLE;
@@ -29,6 +34,8 @@ namespace vk {
     VkPhysicalDeviceFeatures getPhysicalDeviceFeatures(const VkPhysicalDevice& device);
 
     QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice& device, const VkSurfaceKHR& surface);
+
+    bool checkDeviceExtensionSupport(const VkPhysicalDevice& device, const std::vector<const char *>& deviceExtensions);
 
 } // End namespace vk
 

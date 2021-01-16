@@ -3,7 +3,10 @@
 
 
 #include "vulkan/vulkan.h"
+#include "GLFW/glfw3.h"
+
 #include "PhysicalDevice.hpp"
+#include "SwapChain.hpp"
 
 
 namespace vk {
@@ -17,6 +20,10 @@ namespace vk {
         void init(const PhysicalDevice& physicalDevice, VkSurfaceKHR& surface);
 
         void destroy();
+
+        void createSwapChain(SwapChain& swapChain, GLFWwindow* window, VkSurfaceKHR surface);
+
+        void destroySwapChain(SwapChain& swapChain);
 
     private:
         VkDevice mDevice{};

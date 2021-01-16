@@ -6,6 +6,7 @@
 #include "PhysicalDevice.hpp"
 #include "Device.hpp"
 #include "../window/Window.hpp"
+#include "SwapChain.hpp"
 
 
 namespace core {
@@ -25,6 +26,7 @@ namespace core {
         vk::PhysicalDevice mPhysicalDevice;
         vk::Device mDevice;
         VkSurfaceKHR mSurface{};
+        vk::SwapChain mSwapChain{};
     };
 
 } // End namespace core
