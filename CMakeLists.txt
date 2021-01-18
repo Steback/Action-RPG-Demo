@@ -46,3 +46,17 @@ target_link_libraries(${PROJECT_NAME}
         glm
         imgui
         spdlog)
+
+### COMPILE SHADERS ###
+file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/shaders)
+
+set(GLSL_VALIDATOR $ENV{VULKAN_SDK}/bin/glslc)
+file(GLOB_RECURSE shaders_source assets/shaders/*.vert assets/shaders/*.frag)
+
+foreach(shader ${shaders_source})
+    get_filename_component(fileName ${shader} NAME_WE)
+    get_filename_component(fileExt ${shader} EXT)
+    message("Compiling shader: ${fileName}${fileExt}.spv")
+    execute_process(COMMAND ${GLSL_VALIDATOR} ${shader} -o ${fileName}${fileExt}.spv
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/shaders)
+endforeach()

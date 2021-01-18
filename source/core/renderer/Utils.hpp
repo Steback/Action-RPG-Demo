@@ -1,3 +1,5 @@
+#include <fstream>
+
 #include "vulkan/vulkan.h"
 #include "GLFW/glfw3.h"
 #include "spdlog/spdlog.h"
@@ -26,6 +28,22 @@ namespace vk {
         }
 
         return extensions;
+    }
+
+    static std::vector<char> readFile(const std::string& fileName) {
+        std::ifstream file(fileName, std::ios::ate | std::ios::binary);
+
+        if (!file.is_open()) spdlog::throw_spdlog_ex("Failed to open file: " + fileName);
+
+        size_t fileSize = static_cast<size_t>(file.tellg());
+        std::vector<char> buffer(fileSize);
+
+        file.seekg(0);
+        file.read(buffer.data(), fileSize);
+
+        file.close();
+
+        return buffer;
     }
 
 } // End namespace core

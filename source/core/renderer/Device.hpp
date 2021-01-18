@@ -29,6 +29,12 @@ namespace vk {
 
         void destroyImageViews(SwapChain& swapChain);
 
+        void createGraphicsPipeline();
+
+        VkShaderModule createShaderModule(const std::vector<char>& code);
+
+        void destroyShaderModule(VkShaderModule& shader);
+
     private:
         VkDevice mDevice{};
         VkQueue mPresentQueue{};
