@@ -19,6 +19,7 @@ namespace core {
         mDevice.init(mPhysicalDevice, mSurface);
         mDevice.createSwapChain(mSwapChain, window->mWindow, mSurface);
         mDevice.createImageViews(mSwapChain);
+        mDevice.createGraphicsPipeline(mPipelineLayout, mSwapChain.mExtent);
     }
 
     Renderer::~Renderer() = default;
@@ -28,6 +29,7 @@ namespace core {
     }
 
     void Renderer::clean() {
+        mDevice.destroyGraphicsPipeline(mPipelineLayout);
         mDevice.destroyImageViews(mSwapChain);
         mDevice.destroySwapChain(mSwapChain);
         mDevice.destroy();

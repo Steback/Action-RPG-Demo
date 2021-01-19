@@ -5,3 +5,4 @@
 * [GLFW](https://www.glfw.org) v3.3.2
 * [GLM](https://github.com/g-truc/glm) v0.9.9.8
 * [Dear ImGui](https://github.com/ocornut/imgui) v1.79
+* [spdlog](https://github.com/gabime/spdlog) v1.8.2

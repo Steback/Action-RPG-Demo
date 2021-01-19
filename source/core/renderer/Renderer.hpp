@@ -27,6 +27,7 @@ namespace core {
         vk::Device mDevice;
         VkSurfaceKHR mSurface{};
         vk::SwapChain mSwapChain{};
+        VkPipelineLayout mPipelineLayout;
     };
 
 } // End namespace core
