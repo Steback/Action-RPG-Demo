@@ -146,7 +146,8 @@ namespace vk {
         }
     }
 
-    void Device::createGraphicsPipeline(VkPipelineLayout& pipelineLayout, const VkExtent2D& swapChainExtend) {
+    void Device::createGraphicsPipeline(VkPipeline& graphicsPipeline, VkPipelineLayout& pipelineLayout,
+                                        const VkExtent2D& swapChainExtend, const VkRenderPass& renderPass) {
         auto vertexShaderCode = readFile("shaders/shader.vert.spv");
         auto fragmentShaderCode = readFile("shaders/shader.frag.spv");
 
@@ -164,7 +165,7 @@ namespace vk {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
             .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
             .module = fragmentShaderModule,
-            .pName = "manin"
+            .pName = "main"
         };
 
         std::vector<VkPipelineShaderStageCreateInfo> shaderStages = {
@@ -264,11 +265,34 @@ namespace vk {
         resultValidation(vkCreatePipelineLayout(mDevice, &pipelineLayoutInfo, nullptr, &pipelineLayout),
                          "Failed to create pipeline layout");
 
+        VkGraphicsPipelineCreateInfo pipelineInfo{
+            .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+            .stageCount = static_cast<uint32_t>(shaderStages.size()),
+            .pStages = shaderStages.data(),
+            .pVertexInputState = &vertexInputInfo,
+            .pInputAssemblyState = &inputAssembly,
+            .pViewportState = &viewportState,
+            .pRasterizationState = &rasterizer,
+            .pMultisampleState = &multisampling,
+            .pDepthStencilState = nullptr,
+            .pColorBlendState = &colorBlending,
+            .pDynamicState = nullptr,
+            .layout = pipelineLayout,
+            .renderPass = renderPass,
+            .subpass = 0,
+            .basePipelineHandle = VK_NULL_HANDLE,
+            .basePipelineIndex = -1
+        };
+
+        resultValidation(vkCreateGraphicsPipelines(mDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline),
+                         "Failed to create graphics pipeline");
+
         destroyShaderModule(vertexShaderModule);
         destroyShaderModule(fragmentShaderModule);
     }
 
-    void Device::destroyGraphicsPipeline(VkPipelineLayout &pipelineLayout) {
+    void Device::destroyGraphicsPipeline(VkPipeline& graphicsPipeline, VkPipelineLayout &pipelineLayout) {
+        vkDestroyPipeline(mDevice, graphicsPipeline, nullptr);
         vkDestroyPipelineLayout(mDevice, pipelineLayout, nullptr);
     }
 
@@ -289,6 +313,45 @@ namespace vk {
 
     void Device::destroyShaderModule(VkShaderModule &shader) {
         vkDestroyShaderModule(mDevice, shader, nullptr);
+    }
+
+    void Device::createRenderPass(VkRenderPass& renderPass, const VkFormat& swapChainFormat) {
+        VkAttachmentDescription colorAttachment{
+            .format = swapChainFormat,
+            .samples = VK_SAMPLE_COUNT_1_BIT,
+            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+            .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            .stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE,
+            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+        };
+
+        VkAttachmentReference colorAttachmentRef{
+            .attachment = 0,
+            .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+        };
+
+        VkSubpassDescription subpass{
+            .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+            .colorAttachmentCount = 1,
+            .pColorAttachments = &colorAttachmentRef
+        };
+
+        VkRenderPassCreateInfo renderPassInfo{
+            .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+            .attachmentCount = 1,
+            .pAttachments = &colorAttachment,
+            .subpassCount = 1,
+            .pSubpasses = &subpass
+        };
+
+        resultValidation(vkCreateRenderPass(mDevice, &renderPassInfo, nullptr, &renderPass),
+                         "Failed to create render pass");
+    }
+
+    void Device::destroyRenderPass(VkRenderPass &renderPass) {
+        vkDestroyRenderPass(mDevice, renderPass, nullptr);
     }
 
 } // End namespace vk

@@ -29,9 +29,14 @@ namespace vk {
 
         void destroyImageViews(SwapChain& swapChain);
 
-        void createGraphicsPipeline(VkPipelineLayout& pipelineLayout, const VkExtent2D& swapChainExtend);
+        void createGraphicsPipeline(VkPipeline& graphicsPipeline, VkPipelineLayout& pipelineLayout,
+                                    const VkExtent2D& swapChainExtend, const VkRenderPass& renderPass);
 
-        void destroyGraphicsPipeline(VkPipelineLayout& pipelineLayout);
+        void destroyGraphicsPipeline(VkPipeline& graphicsPipeline, VkPipelineLayout& pipelineLayout);
+
+        void createRenderPass(VkRenderPass& renderPass, const VkFormat& swapChainFormat);
+
+        void destroyRenderPass(VkRenderPass& renderPass);
 
         VkShaderModule createShaderModule(const std::vector<char>& code);
 

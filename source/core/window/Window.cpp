@@ -14,6 +14,8 @@ namespace core {
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
         mWindow = glfwCreateWindow(width, height, name.c_str(), nullptr, nullptr);
+
+        spdlog::info("[Window] Initialized");
     }
 
     Window::~Window() = default;
@@ -25,6 +27,8 @@ namespace core {
     void Window::clean() {
         glfwDestroyWindow(mWindow);
         glfwTerminate();
+
+        spdlog::info("[Window] Cleaned");
     }
 
 } // End namespace core

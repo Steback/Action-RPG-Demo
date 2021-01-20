@@ -22,6 +22,8 @@ public:
     void init() {
         mWindow = std::make_unique<core::Window>("Prototype Action RPG", 1200, 700);
         mRender = std::make_unique<core::Renderer>(mWindow);
+
+        spdlog::info("[App] Initialized");
     }
 
     void loop() {
@@ -33,6 +35,8 @@ public:
     void clean() {
         mRender->clean();
         mWindow->clean();
+
+        spdlog::info("[App] Cleaned");
     }
 
 private:

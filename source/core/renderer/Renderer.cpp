@@ -19,7 +19,10 @@ namespace core {
         mDevice.init(mPhysicalDevice, mSurface);
         mDevice.createSwapChain(mSwapChain, window->mWindow, mSurface);
         mDevice.createImageViews(mSwapChain);
-        mDevice.createGraphicsPipeline(mPipelineLayout, mSwapChain.mExtent);
+        mDevice.createRenderPass(mRenderPass, mSwapChain.mImageFormat);
+        mDevice.createGraphicsPipeline(mGraphicsPipeline, mPipelineLayout, mSwapChain.mExtent, mRenderPass);
+
+        spdlog::info("[Renderer] Initialized");
     }
 
     Renderer::~Renderer() = default;
@@ -29,12 +32,15 @@ namespace core {
     }
 
     void Renderer::clean() {
-        mDevice.destroyGraphicsPipeline(mPipelineLayout);
+        mDevice.destroyGraphicsPipeline(mGraphicsPipeline, mPipelineLayout);
+        mDevice.destroyRenderPass(mRenderPass);
         mDevice.destroyImageViews(mSwapChain);
         mDevice.destroySwapChain(mSwapChain);
         mDevice.destroy();
         mInstance.destroySurface(mSurface);
         mInstance.destroy();
+
+        spdlog::info("[Renderer] Cleaned");
     }
 
 } // End namespace core
