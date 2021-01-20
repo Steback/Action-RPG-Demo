@@ -34,13 +34,18 @@ namespace vk {
 
         void destroyGraphicsPipeline(VkPipeline& graphicsPipeline, VkPipelineLayout& pipelineLayout);
 
+        VkShaderModule createShaderModule(const std::vector<char>& code);
+
+        void destroyShaderModule(VkShaderModule& shader);
+
         void createRenderPass(VkRenderPass& renderPass, const VkFormat& swapChainFormat);
 
         void destroyRenderPass(VkRenderPass& renderPass);
 
-        VkShaderModule createShaderModule(const std::vector<char>& code);
+        void createFramebuffers(std::vector<VkFramebuffer>& swapChainFramebuffers, const SwapChain& swapChain,
+                                const VkRenderPass& renderPass);
 
-        void destroyShaderModule(VkShaderModule& shader);
+        void destroyFramebuffers(std::vector<VkFramebuffer>& swapChainFramebuffers);
 
     private:
         VkDevice mDevice{};

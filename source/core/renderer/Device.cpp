@@ -1,6 +1,7 @@
 #include "Device.hpp"
 
 #include <set>
+#include <array>
 
 #include "Debug.hpp"
 #include "Utils.hpp"
@@ -352,6 +353,36 @@ namespace vk {
 
     void Device::destroyRenderPass(VkRenderPass &renderPass) {
         vkDestroyRenderPass(mDevice, renderPass, nullptr);
+    }
+
+    void Device::createFramebuffers(std::vector<VkFramebuffer>& swapChainFramebuffers, const SwapChain& swapChain,
+                                    const VkRenderPass& renderPass) {
+        swapChainFramebuffers.resize(swapChain.mImageViews.size());
+
+        for (size_t i = 0; i < swapChain.mImageViews.size(); ++i) {
+            std::array<VkImageView, 1> attachments = {
+                swapChain.mImageViews[i]
+            };
+
+            VkFramebufferCreateInfo framebufferInfo{
+                .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+                .renderPass = renderPass,
+                .attachmentCount = attachments.size(),
+                .pAttachments = attachments.data(),
+                .width = swapChain.mExtent.width,
+                .height = swapChain.mExtent.height,
+                .layers = 1
+            };
+
+            resultValidation(vkCreateFramebuffer(mDevice, &framebufferInfo, nullptr, &swapChainFramebuffers[i]),
+                             "Failed to create framebuffer");
+        }
+    }
+
+    void Device::destroyFramebuffers(std::vector<VkFramebuffer>& swapChainFramebuffers) {
+        for (auto & framebuffer : swapChainFramebuffers) {
+            vkDestroyFramebuffer(mDevice, framebuffer, nullptr);
+        }
     }
 
 } // End namespace vk

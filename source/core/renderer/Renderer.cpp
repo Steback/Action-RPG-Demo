@@ -21,6 +21,7 @@ namespace core {
         mDevice.createImageViews(mSwapChain);
         mDevice.createRenderPass(mRenderPass, mSwapChain.mImageFormat);
         mDevice.createGraphicsPipeline(mGraphicsPipeline, mPipelineLayout, mSwapChain.mExtent, mRenderPass);
+        mDevice.createFramebuffers(mSwapChainFramebuffers, mSwapChain, mRenderPass);
 
         spdlog::info("[Renderer] Initialized");
     }
@@ -32,6 +33,7 @@ namespace core {
     }
 
     void Renderer::clean() {
+        mDevice.destroyFramebuffers(mSwapChainFramebuffers);
         mDevice.destroyGraphicsPipeline(mGraphicsPipeline, mPipelineLayout);
         mDevice.destroyRenderPass(mRenderPass);
         mDevice.destroyImageViews(mSwapChain);

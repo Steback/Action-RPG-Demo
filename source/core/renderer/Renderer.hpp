@@ -29,7 +29,8 @@ namespace core {
         vk::SwapChain mSwapChain{};
         VkPipelineLayout mPipelineLayout{};
         VkRenderPass mRenderPass{};
-        VkPipeline mGraphicsPipeline;
+        VkPipeline mGraphicsPipeline{};
+        std::vector<VkFramebuffer> mSwapChainFramebuffers;
     };
 
 } // End namespace core

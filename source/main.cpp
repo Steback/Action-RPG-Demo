@@ -20,6 +20,8 @@ public:
     }
 
     void init() {
+        spdlog::info("[App] Start");
+
         mWindow = std::make_unique<core::Window>("Prototype Action RPG", 1200, 700);
         mRender = std::make_unique<core::Renderer>(mWindow);
 
