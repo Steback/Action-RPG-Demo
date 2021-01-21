@@ -355,9 +355,8 @@ namespace vk {
         vkDestroyRenderPass(mDevice, renderPass, nullptr);
     }
 
-    void Device::createFramebuffers(std::vector<VkFramebuffer>& swapChainFramebuffers, const SwapChain& swapChain,
-                                    const VkRenderPass& renderPass) {
-        swapChainFramebuffers.resize(swapChain.mImageViews.size());
+    void Device::createFramebuffers(SwapChain& swapChain, const VkRenderPass& renderPass) {
+        swapChain.mFramebuffers.resize(swapChain.mImageViews.size());
 
         for (size_t i = 0; i < swapChain.mImageViews.size(); ++i) {
             std::array<VkImageView, 1> attachments = {
@@ -374,7 +373,7 @@ namespace vk {
                 .layers = 1
             };
 
-            resultValidation(vkCreateFramebuffer(mDevice, &framebufferInfo, nullptr, &swapChainFramebuffers[i]),
+            resultValidation(vkCreateFramebuffer(mDevice, &framebufferInfo, nullptr, &swapChain.mFramebuffers[i]),
                              "Failed to create framebuffer");
         }
     }
@@ -383,6 +382,39 @@ namespace vk {
         for (auto & framebuffer : swapChainFramebuffers) {
             vkDestroyFramebuffer(mDevice, framebuffer, nullptr);
         }
+    }
+
+    void Device::createCommandPool(VkCommandPool &commandPool, VkPhysicalDevice const &physicalDevice,
+                                   VkSurfaceKHR const &surface) {
+        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice, surface);
+
+        VkCommandPoolCreateInfo poolInfo{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+            .flags = 0,
+            .queueFamilyIndex = queueFamilyIndices.graphicsFamily.value()
+        };
+
+        resultValidation(vkCreateCommandPool(mDevice, &poolInfo, nullptr, &commandPool),
+                         "Failed to create command pool");
+    }
+
+    void Device::destroyCommandPool(VkCommandPool &commandPool) {
+        vkDestroyCommandPool(mDevice, commandPool, nullptr);
+    }
+
+    void Device::createCommandBuffers(std::vector<VkCommandBuffer> &commandBuffers, const VkCommandPool& commandPool,
+                                      const std::vector<VkFramebuffer>& swapChainFramebuffers) {
+        commandBuffers.resize(swapChainFramebuffers.size());
+
+        VkCommandBufferAllocateInfo allocInfo{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+            .commandPool = commandPool,
+            .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+            .commandBufferCount = static_cast<uint32_t>(commandBuffers.size())
+        };
+
+        resultValidation(vkAllocateCommandBuffers(mDevice, &allocInfo, commandBuffers.data()),
+                         "Failed to allocate command buffers");
     }
 
 } // End namespace vk

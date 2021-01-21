@@ -4,6 +4,7 @@
 
 #include "vulkan/vulkan.h"
 #include "GLFW/glfw3.h"
+#include "glm/glm.hpp"
 
 #include "PhysicalDevice.hpp"
 #include "SwapChain.hpp"
@@ -42,10 +43,17 @@ namespace vk {
 
         void destroyRenderPass(VkRenderPass& renderPass);
 
-        void createFramebuffers(std::vector<VkFramebuffer>& swapChainFramebuffers, const SwapChain& swapChain,
-                                const VkRenderPass& renderPass);
+        void createFramebuffers(SwapChain& swapChain, const VkRenderPass& renderPass);
 
         void destroyFramebuffers(std::vector<VkFramebuffer>& swapChainFramebuffers);
+
+        void createCommandPool(VkCommandPool& commandPool, const VkPhysicalDevice& physicalDevice,
+                               const VkSurfaceKHR& surface);
+
+        void destroyCommandPool(VkCommandPool& commandPool);
+
+        void createCommandBuffers(std::vector<VkCommandBuffer>& commandBuffers, const VkCommandPool& commandPool,
+                                  const std::vector<VkFramebuffer>& swapChainFramebuffers);
 
     private:
         VkDevice mDevice{};

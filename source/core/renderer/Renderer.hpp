@@ -21,6 +21,8 @@ namespace core {
 
         void clean();
 
+        void recordCommands(const glm::vec4& clearColor);
+
     private:
         vk::Instance mInstance;
         vk::PhysicalDevice mPhysicalDevice;
@@ -30,7 +32,8 @@ namespace core {
         VkPipelineLayout mPipelineLayout{};
         VkRenderPass mRenderPass{};
         VkPipeline mGraphicsPipeline{};
-        std::vector<VkFramebuffer> mSwapChainFramebuffers;
+        VkCommandPool mCommandPool{};
+        std::vector<VkCommandBuffer> mCommandBuffers;
     };
 
 } // End namespace core
