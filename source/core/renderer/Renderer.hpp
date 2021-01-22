@@ -27,6 +27,8 @@ namespace core {
         vk::Instance mInstance;
         vk::PhysicalDevice mPhysicalDevice;
         vk::Device mDevice;
+        VkQueue mPresentQueue{};
+        VkQueue mGraphicsQueue{};
         VkSurfaceKHR mSurface{};
         vk::SwapChain mSwapChain{};
         VkPipelineLayout mPipelineLayout{};
@@ -34,6 +36,11 @@ namespace core {
         VkPipeline mGraphicsPipeline{};
         VkCommandPool mCommandPool{};
         std::vector<VkCommandBuffer> mCommandBuffers;
+        std::vector<VkSemaphore> mImageAvailableSemaphores{};
+        std::vector<VkSemaphore> mRenderFinishedSemaphores{};
+        std::vector<VkFence> mFences;
+        std::vector<VkFence> mImageFences;
+        size_t currentFrame = 0;
     };
 
 } // End namespace core

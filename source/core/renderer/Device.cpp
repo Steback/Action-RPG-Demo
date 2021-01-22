@@ -13,7 +13,8 @@ namespace vk {
 
     Device::~Device() = default;
 
-    void Device::init(const PhysicalDevice& physicalDevice, VkSurfaceKHR& surface) {
+    void Device::init(const PhysicalDevice& physicalDevice, VkSurfaceKHR& surface, VkQueue& graphicsQueue,
+                      VkQueue& presentQueue) {
         mPhysicalDevice = physicalDevice;
         QueueFamilyIndices indices = findQueueFamilies(mPhysicalDevice.device, surface);
         VkPhysicalDeviceFeatures physicalDeviceFeatures{};
@@ -47,12 +48,16 @@ namespace vk {
         resultValidation(vkCreateDevice(mPhysicalDevice.device, &deviceCreateInfo, nullptr, &mDevice),
                          "Failed to create logical device");
 
-        vkGetDeviceQueue(mDevice, indices.graphicsFamily.value(), 0, &mGraphicsQueue);
-        vkGetDeviceQueue(mDevice, indices.presentFamily.value(), 0, &mPresentQueue);
+        vkGetDeviceQueue(mDevice, indices.graphicsFamily.value(), 0, &graphicsQueue);
+        vkGetDeviceQueue(mDevice, indices.presentFamily.value(), 0, &presentQueue);
     }
 
     void Device::destroy() {
         vkDestroyDevice(mDevice, nullptr);
+    }
+
+    void Device::waitIdle() {
+        vkDeviceWaitIdle(mDevice);
     }
 
     void Device::createSwapChain(SwapChain &swapChain, GLFWwindow *window, VkSurfaceKHR surface) {
@@ -339,12 +344,23 @@ namespace vk {
             .pColorAttachments = &colorAttachmentRef
         };
 
+        VkSubpassDependency dependency{
+                .srcSubpass = VK_SUBPASS_EXTERNAL,
+                .dstSubpass = 0,
+                .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                .srcAccessMask = 0,
+                .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+        };
+
         VkRenderPassCreateInfo renderPassInfo{
             .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
             .attachmentCount = 1,
             .pAttachments = &colorAttachment,
             .subpassCount = 1,
-            .pSubpasses = &subpass
+            .pSubpasses = &subpass,
+            .dependencyCount = 1,
+            .pDependencies = &dependency
         };
 
         resultValidation(vkCreateRenderPass(mDevice, &renderPassInfo, nullptr, &renderPass),
@@ -415,6 +431,47 @@ namespace vk {
 
         resultValidation(vkAllocateCommandBuffers(mDevice, &allocInfo, commandBuffers.data()),
                          "Failed to allocate command buffers");
+    }
+
+    void Device::createSemaphore(VkSemaphore& semaphore) {
+        VkSemaphoreCreateInfo semaphoreInfo{
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
+        };
+
+        resultValidation(vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &semaphore),
+                         "Failed to create semaphores");
+    }
+
+    void Device::destroySemaphore(VkSemaphore& semaphore) {
+        vkDestroySemaphore(mDevice, semaphore, nullptr);
+    }
+
+    void Device::acquireNextImage(uint32_t& imageIndex, const VkSwapchainKHR& swapchain,
+                                  const VkSemaphore& imageAvailableSemaphore) {
+        vkAcquireNextImageKHR(mDevice, swapchain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphore,
+                              VK_NULL_HANDLE, &imageIndex);
+    }
+
+    void Device::createFence(VkFence& fence) {
+        VkFenceCreateInfo fenceInfo{
+            .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+            .flags = VK_FENCE_CREATE_SIGNALED_BIT
+        };
+
+        resultValidation(vkCreateFence(mDevice, &fenceInfo, nullptr, &fence),
+                         "Failed to create a fence");
+    }
+
+    void Device::destroyFence(VkFence &fence) {
+        vkDestroyFence(mDevice, fence, nullptr);
+    }
+
+    void Device::waitForFence(const VkFence& fence) {
+        vkWaitForFences(mDevice, 1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
+    }
+
+    void Device::resetFence(VkFence const &fence) {
+        vkResetFences(mDevice, 1, &fence);
     }
 
 } // End namespace vk

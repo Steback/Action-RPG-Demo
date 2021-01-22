@@ -31,6 +31,7 @@ public:
     void loop() {
         while (mWindow->isOpen()) {
             glfwPollEvents();
+            mRender->draw();
         }
     }
 

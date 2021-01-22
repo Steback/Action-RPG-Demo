@@ -1,5 +1,7 @@
 #include "Renderer.hpp"
 
+#include "Constants.hpp"
+
 
 namespace core {
 
@@ -16,7 +18,7 @@ namespace core {
         mInstance.init(appInfo);
         mInstance.createSurface(window->mWindow, mSurface);
         mInstance.pickPhysicalDevice(mPhysicalDevice, mSurface);
-        mDevice.init(mPhysicalDevice, mSurface);
+        mDevice.init(mPhysicalDevice, mSurface, mGraphicsQueue, mPresentQueue);
         mDevice.createSwapChain(mSwapChain, window->mWindow, mSurface);
         mDevice.createImageViews(mSwapChain);
         mDevice.createRenderPass(mRenderPass, mSwapChain.mImageFormat);
@@ -26,16 +28,82 @@ namespace core {
         mDevice.createCommandBuffers(mCommandBuffers, mCommandPool, mSwapChain.mFramebuffers);
         recordCommands({0.0f, 0.0f, 0.0f, 1.0f});
 
+        mImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+        mRenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+        mFences.resize(MAX_FRAMES_IN_FLIGHT);
+        mImageFences.resize(mSwapChain.mImageViews.size(), VK_NULL_HANDLE);
+
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+            mDevice.createSemaphore(mImageAvailableSemaphores[i]);
+            mDevice.createSemaphore(mRenderFinishedSemaphores[i]);
+            mDevice.createFence(mFences[i]);
+        }
+
         spdlog::info("[Renderer] Initialized");
     }
 
     Renderer::~Renderer() = default;
 
     void Renderer::draw() {
+        mDevice.waitForFence(mFences[currentFrame]);
 
+        uint32_t indexImage;
+
+        mDevice.acquireNextImage(indexImage, mSwapChain.mSwapChain, mImageAvailableSemaphores[currentFrame]);
+
+        if (mImageFences[indexImage] != VK_NULL_HANDLE) {
+            mDevice.waitForFence(mImageFences[indexImage]);
+        }
+
+        mImageFences[indexImage] = mFences[currentFrame];
+
+        std::array<VkSemaphore, 1> waitSemaphores = { mImageAvailableSemaphores[currentFrame] };
+        std::array<VkPipelineStageFlags, 1> waitStages = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+        std::array<VkSemaphore, 1> signalSemaphores = { mRenderFinishedSemaphores[currentFrame] };
+
+        VkSubmitInfo submitInfo{
+                .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+                .waitSemaphoreCount = static_cast<uint32_t>(waitSemaphores.size()),
+                .pWaitSemaphores = waitSemaphores.data(),
+                .pWaitDstStageMask = waitStages.data(),
+                .commandBufferCount = 1,
+                .pCommandBuffers = &mCommandBuffers[indexImage],
+                .signalSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size()),
+                .pSignalSemaphores = signalSemaphores.data()
+        };
+
+        mDevice.resetFence(mFences[currentFrame]);
+
+        vk::resultValidation(vkQueueSubmit(mGraphicsQueue, 1, &submitInfo, mFences[currentFrame]),
+                             "Failed to submit draw command buffer");
+
+        std::array<VkSwapchainKHR, 1> swapChains = { mSwapChain.mSwapChain };
+
+        VkPresentInfoKHR presentInfo{
+            .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+            .waitSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size()),
+            .pWaitSemaphores = signalSemaphores.data(),
+            .swapchainCount = static_cast<uint32_t>(swapChains.size()),
+            .pSwapchains = swapChains.data(),
+            .pImageIndices = &indexImage,
+            .pResults = nullptr
+        };
+
+        vkQueuePresentKHR(mPresentQueue, &presentInfo);
+        vkQueueWaitIdle(mPresentQueue);
+
+        currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 
     void Renderer::clean() {
+        mDevice.waitIdle();
+
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+            mDevice.destroySemaphore(mImageAvailableSemaphores[i]);
+            mDevice.destroySemaphore(mRenderFinishedSemaphores[i]);
+            mDevice.destroyFence(mFences[i]);
+        }
+
         mDevice.destroyCommandPool(mCommandPool);
         mDevice.destroyFramebuffers(mSwapChain.mFramebuffers);
         mDevice.destroyGraphicsPipeline(mGraphicsPipeline, mPipelineLayout);
@@ -57,7 +125,6 @@ namespace core {
         for (size_t i = 0; i < mCommandBuffers.size(); ++i) {
             VkCommandBufferBeginInfo beginInfo{
                     .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-                    .flags = 0,
                     .pInheritanceInfo = nullptr
             };
 

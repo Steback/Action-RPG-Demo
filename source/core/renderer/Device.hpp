@@ -18,9 +18,12 @@ namespace vk {
 
         ~Device();
 
-        void init(const PhysicalDevice& physicalDevice, VkSurfaceKHR& surface);
+        void init(const PhysicalDevice& physicalDevice, VkSurfaceKHR& surface, VkQueue& graphicsQueue,
+                  VkQueue& presentQueue);
 
         void destroy();
+
+        void waitIdle();
 
         void createSwapChain(SwapChain& swapChain, GLFWwindow* window, VkSurfaceKHR surface);
 
@@ -55,10 +58,23 @@ namespace vk {
         void createCommandBuffers(std::vector<VkCommandBuffer>& commandBuffers, const VkCommandPool& commandPool,
                                   const std::vector<VkFramebuffer>& swapChainFramebuffers);
 
+        void createSemaphore(VkSemaphore& semaphore);
+
+        void destroySemaphore(VkSemaphore& semaphore);
+
+        void acquireNextImage(uint32_t& imageIndex, const VkSwapchainKHR& swapchain,
+                              const VkSemaphore& imageAvailableSemaphore);
+
+        void createFence(VkFence& fence);
+
+        void destroyFence(VkFence& fence);
+
+        void waitForFence(const VkFence& fence);
+
+        void resetFence(const VkFence& fence);
+
     private:
         VkDevice mDevice{};
-        VkQueue mPresentQueue{};
-        VkQueue mGraphicsQueue{};
         PhysicalDevice mPhysicalDevice;
     };
 
