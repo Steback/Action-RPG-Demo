@@ -31,11 +31,11 @@ namespace core {
         mDevice.createRenderPass(mRenderPass, mSwapChain.mImageFormat);
         mDevice.createGraphicsPipeline(mGraphicsPipeline, mPipelineLayout, mSwapChain.mExtent, mRenderPass);
         mDevice.createFramebuffers(mSwapChain, mRenderPass);
-        mDevice.createCommandPool(mCommandPool, mPhysicalDevice.device, mSurface);
+        mDevice.createCommandPool(mCommandPool.mPool, mSurface);
         mDevice.createBuffer(mVertexBuffer, sizeof(Vertex) * vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
         mDevice.mapMemory(mVertexBuffer, sizeof(Vertex) * vertices.size(), vertices.data());
-        mDevice.createCommandBuffers(mCommandBuffers, mCommandPool, mSwapChain.mFramebuffers);
+        mDevice.createCommandBuffers(mCommandPool, mSwapChain.mFramebuffers);
         recordCommands({0.0f, 0.0f, 0.0f, 1.0f});
 
         mImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
@@ -85,7 +85,7 @@ namespace core {
                 .pWaitSemaphores = waitSemaphores.data(),
                 .pWaitDstStageMask = waitStages.data(),
                 .commandBufferCount = 1,
-                .pCommandBuffers = &mCommandBuffers[indexImage],
+                .pCommandBuffers = &mCommandPool.mBuffers[indexImage],
                 .signalSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size()),
                 .pSignalSemaphores = signalSemaphores.data()
         };
@@ -134,7 +134,7 @@ namespace core {
             mDevice.destroyFence(mFences[i]);
         }
 
-        mDevice.destroyCommandPool(mCommandPool);
+        mDevice.destroyCommandPool(mCommandPool.mPool);
         mDevice.destroy();
         mInstance.destroySurface(mSurface);
         mInstance.destroy();
@@ -147,13 +147,13 @@ namespace core {
                 { clearColor.x, clearColor.y, clearColor.z, clearColor.w }
         };
 
-        for (size_t i = 0; i < mCommandBuffers.size(); ++i) {
+        for (size_t i = 0; i < mCommandPool.mBuffers.size(); ++i) {
             VkCommandBufferBeginInfo beginInfo{
                     .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
                     .pInheritanceInfo = nullptr
             };
 
-            vk::resultValidation(vkBeginCommandBuffer(mCommandBuffers[i], &beginInfo),
+            vk::resultValidation(vkBeginCommandBuffer(mCommandPool.mBuffers[i], &beginInfo),
                              "Failed to begin recording command buffer");
 
             VkRenderPassBeginInfo renderPassInfo{
@@ -168,19 +168,19 @@ namespace core {
                     .pClearValues = clearColors.data()
             };
 
-                vkCmdBeginRenderPass(mCommandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+                vkCmdBeginRenderPass(mCommandPool.mBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-                    vkCmdBindPipeline(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
+                    vkCmdBindPipeline(mCommandPool.mBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
 
                     std::array<VkBuffer, 1> vertexBuffer = { mVertexBuffer.mBuffer };
                     std::array<VkDeviceSize, 1> offsets = { 0 };
-                    vkCmdBindVertexBuffers(mCommandBuffers[i], 0, 1, vertexBuffer.data(), offsets.data());
+                    vkCmdBindVertexBuffers(mCommandPool.mBuffers[i], 0, 1, vertexBuffer.data(), offsets.data());
 
-                    vkCmdDraw(mCommandBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+                    vkCmdDraw(mCommandPool.mBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 
-                vkCmdEndRenderPass(mCommandBuffers[i]);
+                vkCmdEndRenderPass(mCommandPool.mBuffers[i]);
 
-            vk::resultValidation(vkEndCommandBuffer(mCommandBuffers[i]),
+            vk::resultValidation(vkEndCommandBuffer(mCommandPool.mBuffers[i]),
                                  "Failed to record command buffer");
         }
     }
@@ -200,13 +200,13 @@ namespace core {
         mDevice.createRenderPass(mRenderPass, mSwapChain.mImageFormat);
         mDevice.createGraphicsPipeline(mGraphicsPipeline, mPipelineLayout, mSwapChain.mExtent, mRenderPass);
         mDevice.createFramebuffers(mSwapChain, mRenderPass);
-        mDevice.createCommandBuffers(mCommandBuffers, mCommandPool, mSwapChain.mFramebuffers);
+        mDevice.createCommandBuffers(mCommandPool, mSwapChain.mFramebuffers);
         recordCommands({0.0f, 0.0f, 0.0f, 1.0f});
     }
 
     void Renderer::cleanSwapChain() {
         mDevice.destroyFramebuffers(mSwapChain.mFramebuffers);
-        mDevice.freeCommandBuffers(mCommandBuffers, mCommandPool);
+        mDevice.freeCommandBuffers(mCommandPool);
         mDevice.destroyGraphicsPipeline(mGraphicsPipeline, mPipelineLayout);
         mDevice.destroyRenderPass(mRenderPass);
         mDevice.destroyImageViews(mSwapChain);

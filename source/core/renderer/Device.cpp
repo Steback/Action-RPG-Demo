@@ -404,9 +404,8 @@ namespace vk {
         }
     }
 
-    void Device::createCommandPool(VkCommandPool &commandPool, VkPhysicalDevice const &physicalDevice,
-                                   VkSurfaceKHR const &surface) {
-        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice, surface);
+    void Device::createCommandPool(VkCommandPool &commandPool, VkSurfaceKHR const &surface) {
+        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(mPhysicalDevice.device, surface);
 
         VkCommandPoolCreateInfo poolInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
@@ -422,23 +421,23 @@ namespace vk {
         vkDestroyCommandPool(mDevice, commandPool, nullptr);
     }
 
-    void Device::createCommandBuffers(std::vector<VkCommandBuffer> &commandBuffers, const VkCommandPool& commandPool,
-                                      const std::vector<VkFramebuffer>& swapChainFramebuffers) {
-        commandBuffers.resize(swapChainFramebuffers.size());
+    void Device::createCommandBuffers(CommandPool& commandPool, const std::vector<VkFramebuffer>& swapChainFramebuffers) {
+        commandPool.mBuffers.resize(swapChainFramebuffers.size());
 
         VkCommandBufferAllocateInfo allocInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-            .commandPool = commandPool,
+            .commandPool = commandPool.mPool,
             .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-            .commandBufferCount = static_cast<uint32_t>(commandBuffers.size())
+            .commandBufferCount = static_cast<uint32_t>(commandPool.mBuffers.size())
         };
 
-        resultValidation(vkAllocateCommandBuffers(mDevice, &allocInfo, commandBuffers.data()),
+        resultValidation(vkAllocateCommandBuffers(mDevice, &allocInfo, commandPool.mBuffers.data()),
                          "Failed to allocate command buffers");
     }
 
-    void Device::freeCommandBuffers(std::vector<VkCommandBuffer>& commandBuffers, const VkCommandPool& commandPool) {
-        vkFreeCommandBuffers(mDevice, commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
+    void Device::freeCommandBuffers(CommandPool& commandPool) {
+        vkFreeCommandBuffers(mDevice, commandPool.mPool, static_cast<uint32_t>(commandPool.mBuffers.size()),
+                             commandPool.mBuffers.data());
     }
 
     void Device::createSemaphore(VkSemaphore& semaphore) {

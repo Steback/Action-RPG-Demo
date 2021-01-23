@@ -15,6 +15,12 @@
 
 namespace vk {
 
+    // TODO: Check optimized file struct the Command Pools and his buffers
+    struct CommandPool {
+        VkCommandPool mPool{};
+        std::vector<VkCommandBuffer> mBuffers;
+    };
+
     class Device {
     public:
         Device();
@@ -53,15 +59,13 @@ namespace vk {
 
         void destroyFramebuffers(std::vector<VkFramebuffer>& swapChainFramebuffers);
 
-        void createCommandPool(VkCommandPool& commandPool, const VkPhysicalDevice& physicalDevice,
-                               const VkSurfaceKHR& surface);
+        void createCommandPool(VkCommandPool& commandPool, const VkSurfaceKHR& surface);
 
         void destroyCommandPool(VkCommandPool& commandPool);
 
-        void createCommandBuffers(std::vector<VkCommandBuffer>& commandBuffers, const VkCommandPool& commandPool,
-                                  const std::vector<VkFramebuffer>& swapChainFramebuffers);
+        void createCommandBuffers(CommandPool& commandPool, const std::vector<VkFramebuffer>& swapChainFramebuffers);
 
-        void freeCommandBuffers(std::vector<VkCommandBuffer>& commandBuffers, const VkCommandPool& commandPool);
+        void freeCommandBuffers(CommandPool& commandPool);
 
         void createSemaphore(VkSemaphore& semaphore);
 

@@ -40,8 +40,7 @@ namespace core {
         VkPipelineLayout mPipelineLayout{};
         VkRenderPass mRenderPass{};
         VkPipeline mGraphicsPipeline{};
-        VkCommandPool mCommandPool{};
-        std::vector<VkCommandBuffer> mCommandBuffers;
+        vk::CommandPool mCommandPool;
         std::vector<VkSemaphore> mImageAvailableSemaphores{};
         std::vector<VkSemaphore> mRenderFinishedSemaphores{};
         std::vector<VkFence> mFences;
