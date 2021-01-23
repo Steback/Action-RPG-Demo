@@ -35,7 +35,11 @@ file(GLOB_RECURSE WINDOW_SOURCE_FILES source/core/window/*.cpp)
 file(GLOB_RECURSE LOGGER_HEADER_FILES source/core/logger/*.hpp)
 file(GLOB_RECURSE LOGGER_SOURCE_FILES source/core/logger/*.cpp)
 
+file(GLOB_RECURSE MESH_HEADER_FILES source/core/mesh/*.hpp)
+file(GLOB_RECURSE MESH_SOURCE_FILES source/core/mesh/*.cpp)
+
 add_executable(Prototype_Action_RPG source/main.cpp
+        ${MESH_SOURCE_FILES} ${MESH_HEADER_FILES}
         ${RENDERER_SOURCE_FILES} ${RENDERER_HEADER_FILES}
         ${WINDOW_SOURCE_FILES} ${WINDOW_HEADER_FILES}
         ${LOGGER_SOURCE_FILES} ${LOGGER_HEADER_FILES})

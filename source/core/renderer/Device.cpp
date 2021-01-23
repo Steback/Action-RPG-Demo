@@ -179,12 +179,16 @@ namespace vk {
                 fragShaderStageInfo
         };
 
+        auto bindingDescription = Vertex::getBindingDescription();
+        auto attributeDescriptions = Vertex::getAttributeDescriptions();
+
+
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-            .vertexBindingDescriptionCount = 0,
-            .pVertexBindingDescriptions = nullptr,
-            .vertexAttributeDescriptionCount = 0,
-            .pVertexAttributeDescriptions = nullptr,
+            .vertexBindingDescriptionCount = 1,
+            .pVertexBindingDescriptions = &bindingDescription,
+            .vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size()),
+            .pVertexAttributeDescriptions = attributeDescriptions.data(),
         };
 
         VkPipelineInputAssemblyStateCreateInfo inputAssembly{
@@ -476,6 +480,38 @@ namespace vk {
 
     void Device::resetFence(VkFence const &fence) {
         vkResetFences(mDevice, 1, &fence);
+    }
+
+    void Device::createBuffer(Buffer& buffer, const VkDeviceSize& size, const VkBufferUsageFlags& flags,
+                              const VkMemoryPropertyFlags& properties, const VkSharingMode& sharingMode) {
+        VkBufferCreateInfo bufferInfo{
+            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+            .size = size,
+            .usage = flags,
+            .sharingMode = sharingMode
+        };
+
+        resultValidation(vkCreateBuffer(mDevice, &bufferInfo, nullptr, &buffer.mBuffer),
+                         "Failed to create vertex buffer");
+
+        VkMemoryRequirements memRequirements;
+        vkGetBufferMemoryRequirements(mDevice, buffer.mBuffer, &memRequirements);
+
+        VkMemoryAllocateInfo allocInfo{
+            .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+            .allocationSize = memRequirements.size,
+            .memoryTypeIndex = findMemoryType(mPhysicalDevice.device, memRequirements.memoryTypeBits, properties)
+        };
+
+        resultValidation(vkAllocateMemory(mDevice, &allocInfo, nullptr, &buffer.mDeviceMemory),
+                         "Failed to allocate vertex buffer memory");
+
+        vkBindBufferMemory(mDevice, buffer.mBuffer, buffer.mDeviceMemory, 0);
+    }
+
+    void Device::destroyBuffer(Buffer& buffer) {
+        vkDestroyBuffer(mDevice, buffer.mBuffer, nullptr);
+        vkFreeMemory(mDevice, buffer.mDeviceMemory, nullptr);
     }
 
 } // End namespace vk

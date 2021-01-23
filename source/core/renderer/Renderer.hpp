@@ -5,8 +5,9 @@
 #include "Instance.hpp"
 #include "PhysicalDevice.hpp"
 #include "Device.hpp"
-#include "../window/Window.hpp"
 #include "SwapChain.hpp"
+#include "Buffer.hpp"
+#include "../window/Window.hpp"
 
 
 namespace core {
@@ -46,6 +47,7 @@ namespace core {
         std::vector<VkFence> mFences;
         std::vector<VkFence> mImageFences;
         size_t currentFrame = 0;
+        vk::Buffer mVertexBuffer;
     };
 
 } // End namespace core

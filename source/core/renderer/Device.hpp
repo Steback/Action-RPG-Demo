@@ -8,6 +8,8 @@
 
 #include "PhysicalDevice.hpp"
 #include "SwapChain.hpp"
+#include "Buffer.hpp"
+#include "../mesh/Mesh.hpp"
 #include "../window/Window.hpp"
 
 
@@ -75,6 +77,21 @@ namespace vk {
         void waitForFence(const VkFence& fence);
 
         void resetFence(const VkFence& fence);
+
+        void createBuffer(Buffer& buffer, const VkDeviceSize& size, const VkBufferUsageFlags& flags,
+                          const VkMemoryPropertyFlags& properties, const VkSharingMode& sharingMode = VK_SHARING_MODE_EXCLUSIVE);
+
+        void destroyBuffer(Buffer& buffer);
+
+        // TODO: Optimize data copy to memory copy
+        template<typename T>
+        void mapMemory(const Buffer& buffer, const VkDeviceSize& size, const T* pData) {
+            void* data;
+
+            vkMapMemory(mDevice, buffer.mDeviceMemory, 0, size, 0, &data);
+                memcpy(data, pData, static_cast<size_t>(size));
+            vkUnmapMemory(mDevice, buffer.mDeviceMemory);
+        }
 
     private:
         VkDevice mDevice{};

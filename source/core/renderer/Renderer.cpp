@@ -1,9 +1,16 @@
 #include "Renderer.hpp"
 
 #include "Constants.hpp"
+#include "../mesh/Mesh.hpp"
 
 
 namespace core {
+
+    const std::vector<Vertex> vertices = {
+            { {0.0f, -0.5f}, {1.0f, 0.0f, 0.0f} },
+            { {0.5f, 0.5f}, {0.0f, 1.0f, 0.0f} },
+            { {-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f} }
+    };
 
     Renderer::Renderer(std::unique_ptr<Window>& window) : mWindow(window) {
         VkApplicationInfo appInfo{
@@ -25,6 +32,9 @@ namespace core {
         mDevice.createGraphicsPipeline(mGraphicsPipeline, mPipelineLayout, mSwapChain.mExtent, mRenderPass);
         mDevice.createFramebuffers(mSwapChain, mRenderPass);
         mDevice.createCommandPool(mCommandPool, mPhysicalDevice.device, mSurface);
+        mDevice.createBuffer(mVertexBuffer, sizeof(Vertex) * vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        mDevice.mapMemory(mVertexBuffer, sizeof(Vertex) * vertices.size(), vertices.data());
         mDevice.createCommandBuffers(mCommandBuffers, mCommandPool, mSwapChain.mFramebuffers);
         recordCommands({0.0f, 0.0f, 0.0f, 1.0f});
 
@@ -116,6 +126,8 @@ namespace core {
 
         cleanSwapChain();
 
+        mDevice.destroyBuffer(mVertexBuffer);
+
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
             mDevice.destroySemaphore(mImageAvailableSemaphores[i]);
             mDevice.destroySemaphore(mRenderFinishedSemaphores[i]);
@@ -159,7 +171,12 @@ namespace core {
                 vkCmdBeginRenderPass(mCommandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
                     vkCmdBindPipeline(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
-                    vkCmdDraw(mCommandBuffers[i], 3, 1, 0, 0);
+
+                    std::array<VkBuffer, 1> vertexBuffer = { mVertexBuffer.mBuffer };
+                    std::array<VkDeviceSize, 1> offsets = { 0 };
+                    vkCmdBindVertexBuffers(mCommandBuffers[i], 0, 1, vertexBuffer.data(), offsets.data());
+
+                    vkCmdDraw(mCommandBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 
                 vkCmdEndRenderPass(mCommandBuffers[i]);
 
@@ -169,6 +186,7 @@ namespace core {
     }
 
     void Renderer::recreateSwapchain() {
+        // TODO: Optimize window resize
         while (mWindow->mSize.mWidth == 0 || mWindow->mSize.mHeight == 0)  {
             glfwWaitEvents();
         }
