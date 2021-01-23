@@ -8,6 +8,7 @@
 
 #include "PhysicalDevice.hpp"
 #include "SwapChain.hpp"
+#include "../window/Window.hpp"
 
 
 namespace vk {
@@ -25,7 +26,7 @@ namespace vk {
 
         void waitIdle();
 
-        void createSwapChain(SwapChain& swapChain, GLFWwindow* window, VkSurfaceKHR surface);
+        void createSwapChain(SwapChain& swapChain, const core::WindowSize& windowSize, VkSurfaceKHR surface, bool recreate = false);
 
         void destroySwapChain(SwapChain& swapChain);
 
@@ -58,11 +59,13 @@ namespace vk {
         void createCommandBuffers(std::vector<VkCommandBuffer>& commandBuffers, const VkCommandPool& commandPool,
                                   const std::vector<VkFramebuffer>& swapChainFramebuffers);
 
+        void freeCommandBuffers(std::vector<VkCommandBuffer>& commandBuffers, const VkCommandPool& commandPool);
+
         void createSemaphore(VkSemaphore& semaphore);
 
         void destroySemaphore(VkSemaphore& semaphore);
 
-        void acquireNextImage(uint32_t& imageIndex, const VkSwapchainKHR& swapchain,
+        VkResult acquireNextImage(uint32_t& imageIndex, const VkSwapchainKHR& swapchain,
                               const VkSemaphore& imageAvailableSemaphore);
 
         void createFence(VkFence& fence);

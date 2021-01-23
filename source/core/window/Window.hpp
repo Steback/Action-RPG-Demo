@@ -8,6 +8,10 @@
 
 
 namespace core {
+    struct WindowSize {
+        uint32_t mWidth{}, mHeight{};
+    };
+
 
     class Window {
         friend class Renderer;
@@ -21,9 +25,15 @@ namespace core {
 
         void clean();
 
+        WindowSize getSize();
+
+    private:
+        static void framebufferResizeCallback(GLFWwindow* tWindow, int width, int height);
+
     private:
         GLFWwindow* mWindow{};
-        int mWidth, mHeight;
+        WindowSize mSize;
+        bool mResize = false;
     };
 
 } // End namespace core

@@ -5,21 +5,21 @@
 
 namespace core {
 
-    Renderer::Renderer(std::unique_ptr<Window>& window) {
+    Renderer::Renderer(std::unique_ptr<Window>& window) : mWindow(window) {
         VkApplicationInfo appInfo{
             .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
             .pApplicationName = "Prototype Action RPG",
-            .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
+            .applicationVersion = VK_MAKE_VERSION(0, 1, 0),
             .pEngineName = "Custom Engine",
-            .engineVersion = VK_MAKE_VERSION(1, 0, 0),
+            .engineVersion = VK_MAKE_VERSION(0, 1, 0),
             .apiVersion = VK_API_VERSION_1_2
         };
 
         mInstance.init(appInfo);
-        mInstance.createSurface(window->mWindow, mSurface);
+        mInstance.createSurface(mWindow->mWindow, mSurface);
         mInstance.pickPhysicalDevice(mPhysicalDevice, mSurface);
         mDevice.init(mPhysicalDevice, mSurface, mGraphicsQueue, mPresentQueue);
-        mDevice.createSwapChain(mSwapChain, window->mWindow, mSurface);
+        mDevice.createSwapChain(mSwapChain, mWindow->getSize(), mSurface);
         mDevice.createImageViews(mSwapChain);
         mDevice.createRenderPass(mRenderPass, mSwapChain.mImageFormat);
         mDevice.createGraphicsPipeline(mGraphicsPipeline, mPipelineLayout, mSwapChain.mExtent, mRenderPass);
@@ -49,7 +49,15 @@ namespace core {
 
         uint32_t indexImage;
 
-        mDevice.acquireNextImage(indexImage, mSwapChain.mSwapChain, mImageAvailableSemaphores[currentFrame]);
+        VkResult result = mDevice.acquireNextImage(indexImage, mSwapChain.mSwapChain,
+                                                   mImageAvailableSemaphores[currentFrame]);
+
+        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+            recreateSwapchain();
+            return;
+        } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+            spdlog::throw_spdlog_ex("Failed to acquire swap chain image");
+        }
 
         if (mImageFences[indexImage] != VK_NULL_HANDLE) {
             mDevice.waitForFence(mImageFences[indexImage]);
@@ -89,14 +97,24 @@ namespace core {
             .pResults = nullptr
         };
 
-        vkQueuePresentKHR(mPresentQueue, &presentInfo);
-        vkQueueWaitIdle(mPresentQueue);
+        result = vkQueuePresentKHR(mPresentQueue, &presentInfo);
+
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || mWindow->mResize) {
+            mWindow->mResize = false;
+            recreateSwapchain();
+        } else if (result != VK_SUCCESS) {
+            spdlog::throw_spdlog_ex("Failed to present swap chain image");
+        }
 
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+
+        vkQueueWaitIdle(mPresentQueue);
     }
 
     void Renderer::clean() {
         mDevice.waitIdle();
+
+        cleanSwapChain();
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
             mDevice.destroySemaphore(mImageAvailableSemaphores[i]);
@@ -105,11 +123,6 @@ namespace core {
         }
 
         mDevice.destroyCommandPool(mCommandPool);
-        mDevice.destroyFramebuffers(mSwapChain.mFramebuffers);
-        mDevice.destroyGraphicsPipeline(mGraphicsPipeline, mPipelineLayout);
-        mDevice.destroyRenderPass(mRenderPass);
-        mDevice.destroyImageViews(mSwapChain);
-        mDevice.destroySwapChain(mSwapChain);
         mDevice.destroy();
         mInstance.destroySurface(mSurface);
         mInstance.destroy();
@@ -153,6 +166,33 @@ namespace core {
             vk::resultValidation(vkEndCommandBuffer(mCommandBuffers[i]),
                                  "Failed to record command buffer");
         }
+    }
+
+    void Renderer::recreateSwapchain() {
+        while (mWindow->mSize.mWidth == 0 || mWindow->mSize.mHeight == 0)  {
+            glfwWaitEvents();
+        }
+
+        mDevice.waitIdle();
+
+        cleanSwapChain();
+
+        mDevice.createSwapChain(mSwapChain, mWindow->getSize(), mSurface, true);
+        mDevice.createImageViews(mSwapChain);
+        mDevice.createRenderPass(mRenderPass, mSwapChain.mImageFormat);
+        mDevice.createGraphicsPipeline(mGraphicsPipeline, mPipelineLayout, mSwapChain.mExtent, mRenderPass);
+        mDevice.createFramebuffers(mSwapChain, mRenderPass);
+        mDevice.createCommandBuffers(mCommandBuffers, mCommandPool, mSwapChain.mFramebuffers);
+        recordCommands({0.0f, 0.0f, 0.0f, 1.0f});
+    }
+
+    void Renderer::cleanSwapChain() {
+        mDevice.destroyFramebuffers(mSwapChain.mFramebuffers);
+        mDevice.freeCommandBuffers(mCommandBuffers, mCommandPool);
+        mDevice.destroyGraphicsPipeline(mGraphicsPipeline, mPipelineLayout);
+        mDevice.destroyRenderPass(mRenderPass);
+        mDevice.destroyImageViews(mSwapChain);
+        mDevice.destroySwapChain(mSwapChain);
     }
 
 } // End namespace core

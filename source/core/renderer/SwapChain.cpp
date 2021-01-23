@@ -50,16 +50,14 @@ namespace vk {
         return VK_PRESENT_MODE_FIFO_KHR;
     }
 
-    VkExtent2D chooseSwapExtend(GLFWwindow *window, const VkSurfaceCapabilitiesKHR& capabilities) {
+    VkExtent2D chooseSwapExtend(const core::WindowSize& windowSize, const VkSurfaceCapabilitiesKHR& capabilities) {
         if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
             return capabilities.currentExtent;
         } else {
-            int width, height;
-            glfwGetFramebufferSize(window, &width, &height);
 
             VkExtent2D actualExtent = {
-                    static_cast<uint32_t>(width),
-                    static_cast<uint32_t>(height)
+                windowSize.mWidth,
+                windowSize.mHeight
             };
 
             actualExtent.width = std::max(capabilities.minImageExtent.width,

@@ -60,12 +60,12 @@ namespace vk {
         vkDeviceWaitIdle(mDevice);
     }
 
-    void Device::createSwapChain(SwapChain &swapChain, GLFWwindow *window, VkSurfaceKHR surface) {
+    void Device::createSwapChain(SwapChain &swapChain, const core::WindowSize& windowSize, VkSurfaceKHR surface, bool recreate) {
         SwapChainSupportDetails swapChainSupport = querySwapChainSupport(mPhysicalDevice.device, surface);
 
         VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
         VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
-        VkExtent2D extent = chooseSwapExtend(window, swapChainSupport.capabilities);
+        VkExtent2D extent = chooseSwapExtend(windowSize, swapChainSupport.capabilities);
 
         uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
 
@@ -86,7 +86,7 @@ namespace vk {
             .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
             .presentMode = presentMode,
             .clipped = VK_TRUE,
-            .oldSwapchain = VK_NULL_HANDLE
+            .oldSwapchain = nullptr
         };
 
         QueueFamilyIndices indices = findQueueFamilies(mPhysicalDevice.device, surface);
@@ -433,6 +433,10 @@ namespace vk {
                          "Failed to allocate command buffers");
     }
 
+    void Device::freeCommandBuffers(std::vector<VkCommandBuffer>& commandBuffers, const VkCommandPool& commandPool) {
+        vkFreeCommandBuffers(mDevice, commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
+    }
+
     void Device::createSemaphore(VkSemaphore& semaphore) {
         VkSemaphoreCreateInfo semaphoreInfo{
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
@@ -446,9 +450,9 @@ namespace vk {
         vkDestroySemaphore(mDevice, semaphore, nullptr);
     }
 
-    void Device::acquireNextImage(uint32_t& imageIndex, const VkSwapchainKHR& swapchain,
+    VkResult Device::acquireNextImage(uint32_t& imageIndex, const VkSwapchainKHR& swapchain,
                                   const VkSemaphore& imageAvailableSemaphore) {
-        vkAcquireNextImageKHR(mDevice, swapchain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphore,
+        return vkAcquireNextImageKHR(mDevice, swapchain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphore,
                               VK_NULL_HANDLE, &imageIndex);
     }
 

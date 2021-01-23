@@ -23,7 +23,12 @@ namespace core {
 
         void recordCommands(const glm::vec4& clearColor);
 
+        void recreateSwapchain();
+
+        void cleanSwapChain();
+
     private:
+        std::unique_ptr<Window>& mWindow;
         vk::Instance mInstance;
         vk::PhysicalDevice mPhysicalDevice;
         vk::Device mDevice;

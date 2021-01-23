@@ -7,6 +7,8 @@
 #include "vulkan/vulkan.h"
 #include "GLFW/glfw3.h"
 
+#include "../window/Window.hpp"
+
 
 namespace vk {
     struct SwapChain {
@@ -31,7 +33,7 @@ namespace vk {
 
     VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 
-    VkExtent2D chooseSwapExtend(GLFWwindow *window, const VkSurfaceCapabilitiesKHR& capabilities);
+    VkExtent2D chooseSwapExtend(const core::WindowSize& windowSize, const VkSurfaceCapabilitiesKHR& capabilities);
 
 } // End namespace vk
 
