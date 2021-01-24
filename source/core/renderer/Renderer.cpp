@@ -7,9 +7,14 @@
 namespace core {
 
     const std::vector<Vertex> vertices = {
-            { {0.0f, -0.5f}, {1.0f, 0.0f, 0.0f} },
-            { {0.5f, 0.5f}, {0.0f, 1.0f, 0.0f} },
-            { {-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f} }
+            { {-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f} },
+            { {0.5f, -0.5f}, {0.0f, 1.0f, 0.0f} },
+            { {0.5f, 0.5f}, {0.0f, 0.0f, 1.0f} },
+            { {-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f} }
+    };
+
+    const std::vector<uint16_t> indices = {
+            0, 1, 2, 2, 3, 0
     };
 
     Renderer::Renderer(std::unique_ptr<Window>& window) : mWindow(window) {
@@ -125,6 +130,7 @@ namespace core {
 
         cleanSwapChain();
 
+        mDevice.destroyBuffer(mIndexBuffer);
         mDevice.destroyBuffer(mVertexBuffer);
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
@@ -175,8 +181,10 @@ namespace core {
                     std::array<VkBuffer, 1> vertexBuffer = { mVertexBuffer.mBuffer };
                     std::array<VkDeviceSize, 1> offsets = { 0 };
                     vkCmdBindVertexBuffers(mCommandPool.mBuffers[i], 0, 1, vertexBuffer.data(), offsets.data());
+                    vkCmdBindIndexBuffer(mCommandPool.mBuffers[i], mIndexBuffer.mBuffer, 0, VK_INDEX_TYPE_UINT16);
 
-                    vkCmdDraw(mCommandPool.mBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+                    vkCmdDrawIndexed(mCommandPool.mBuffers[i], static_cast<uint32_t>(indices.size()),
+                                     1, 0, 0, 0);
 
                 vkCmdEndRenderPass(mCommandPool.mBuffers[i]);
 
@@ -214,21 +222,15 @@ namespace core {
     }
 
     void Renderer::createBuffers() {
-        VkDeviceSize size = sizeof(Vertex) * vertices.size();
+        mDevice.createBuffer(mVertexBuffer,
+                             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                             vertices.data(), sizeof(Vertex) * vertices.size(),
+                             mTransferCommandPool, mGraphicsQueue);
 
-        vk::Buffer stagingBuffer;
-
-        mDevice.createBuffer(stagingBuffer, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, size);
-
-        mDevice.mapMemory(stagingBuffer, vertices.data(), size);
-
-        mDevice.createBuffer(mVertexBuffer, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, size);
-
-        mDevice.copyBuffer(stagingBuffer.mBuffer, mVertexBuffer.mBuffer, mTransferCommandPool, mGraphicsQueue, size);
-
-        mDevice.destroyBuffer(stagingBuffer);
+        mDevice.createBuffer(mIndexBuffer,
+                             VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                             indices.data(), sizeof(uint16_t) * indices.size(),
+                             mTransferCommandPool, mGraphicsQueue);
     }
 
 } // End namespace core

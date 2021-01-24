@@ -50,6 +50,7 @@ namespace core {
         std::vector<VkFence> mImageFences;
         size_t currentFrame = 0;
         vk::Buffer mVertexBuffer;
+        vk::Buffer mIndexBuffer;
     };
 
 } // End namespace core
