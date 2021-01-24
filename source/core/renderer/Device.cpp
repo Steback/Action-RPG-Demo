@@ -19,8 +19,8 @@ namespace vk {
         QueueFamilyIndices indices = findQueueFamilies(mPhysicalDevice.device, surface);
         VkPhysicalDeviceFeatures physicalDeviceFeatures{};
         std::set<uint32_t> uniqueQueueFamilies = {
-                indices.graphicsFamily.value(),
-                indices.presentFamily.value() };
+                indices.graphics.value(),
+                indices.present.value() };
 
         float queuePriority = 1.0f;
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -48,8 +48,8 @@ namespace vk {
         resultValidation(vkCreateDevice(mPhysicalDevice.device, &deviceCreateInfo, nullptr, &mDevice),
                          "Failed to create logical device");
 
-        vkGetDeviceQueue(mDevice, indices.graphicsFamily.value(), 0, &graphicsQueue);
-        vkGetDeviceQueue(mDevice, indices.presentFamily.value(), 0, &presentQueue);
+        vkGetDeviceQueue(mDevice, indices.graphics.value(), 0, &graphicsQueue);
+        vkGetDeviceQueue(mDevice, indices.present.value(), 0, &presentQueue);
     }
 
     void Device::destroy() {
@@ -90,9 +90,9 @@ namespace vk {
         };
 
         QueueFamilyIndices indices = findQueueFamilies(mPhysicalDevice.device, surface);
-        std::vector<uint32_t> queueFamilyIndices = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+        std::vector<uint32_t> queueFamilyIndices = {indices.graphics.value(), indices.present.value() };
 
-        if (indices.graphicsFamily != indices.presentFamily) {
+        if (indices.graphics != indices.present) {
             createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT,
             createInfo.queueFamilyIndexCount = static_cast<uint32_t>(queueFamilyIndices.size());
             createInfo.pQueueFamilyIndices = queueFamilyIndices.data();
@@ -411,7 +411,7 @@ namespace vk {
         VkCommandPoolCreateInfo poolInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
             .flags = flags,
-            .queueFamilyIndex = queueFamilyIndices.graphicsFamily.value()
+            .queueFamilyIndex = queueFamilyIndices.graphics.value()
         };
 
         resultValidation(vkCreateCommandPool(mDevice, &poolInfo, nullptr, &commandPool),

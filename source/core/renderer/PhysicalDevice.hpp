@@ -21,8 +21,8 @@ namespace vk {
     };
 
     struct QueueFamilyIndices {
-        std::optional<uint32_t> graphicsFamily;
-        std::optional<uint32_t> presentFamily;
+        std::optional<uint32_t> graphics;
+        std::optional<uint32_t> present;
 
         [[nodiscard]] bool isComplete() const;
     };

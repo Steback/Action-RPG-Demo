@@ -38,7 +38,8 @@ namespace core {
         mDevice.createFramebuffers(mSwapChain, mRenderPass);
         mDevice.createCommandPool(mCommandPool.mPool, mSurface);
         mDevice.createCommandPool(mTransferCommandPool, mSurface, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
-        createBuffers();
+        createVertexBuffer();
+        createIndexBuffer();
         mDevice.createCommandBuffers(mCommandPool, mSwapChain.mFramebuffers);
         recordCommands({0.0f, 0.0f, 0.0f, 1.0f});
 
@@ -221,16 +222,40 @@ namespace core {
         mDevice.destroySwapChain(mSwapChain);
     }
 
-    void Renderer::createBuffers() {
-        mDevice.createBuffer(mVertexBuffer,
-                             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                             vertices.data(), sizeof(Vertex) * vertices.size(),
-                             mTransferCommandPool, mGraphicsQueue);
+    void Renderer::createVertexBuffer() {
+        VkDeviceSize size = sizeof(Vertex) * vertices.size();
+        vk::Buffer stagingBuffer;
 
-        mDevice.createBuffer(mIndexBuffer,
-                             VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                             indices.data(), sizeof(uint16_t) * indices.size(),
-                             mTransferCommandPool, mGraphicsQueue);
+        mDevice.createBuffer(stagingBuffer, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, size);
+
+        mDevice.copyData(stagingBuffer, vertices.data(), size);
+
+        mDevice.createBuffer(mVertexBuffer, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, size);
+
+        mDevice.copyBuffer(stagingBuffer.mBuffer, mVertexBuffer.mBuffer, mTransferCommandPool,
+                           mGraphicsQueue, size);
+
+        mDevice.destroyBuffer(stagingBuffer);
+    }
+
+    void Renderer::createIndexBuffer() {
+        VkDeviceSize size = sizeof(uint16_t) * indices.size();
+        vk::Buffer stagingBuffer;
+
+        mDevice.createBuffer(stagingBuffer, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, size);
+
+        mDevice.copyData(stagingBuffer, indices.data(), size);
+
+        mDevice.createBuffer(mIndexBuffer, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, size);
+
+        mDevice.copyBuffer(stagingBuffer.mBuffer, mIndexBuffer.mBuffer, mTransferCommandPool,
+                           mGraphicsQueue, size);
+
+        mDevice.destroyBuffer(stagingBuffer);
     }
 
 } // End namespace core

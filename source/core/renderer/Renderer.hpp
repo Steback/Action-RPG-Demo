@@ -28,7 +28,9 @@ namespace core {
 
         void cleanSwapChain();
 
-        void createBuffers();
+        void createVertexBuffer();
+
+        void createIndexBuffer();
 
     private:
         std::unique_ptr<Window>& mWindow;

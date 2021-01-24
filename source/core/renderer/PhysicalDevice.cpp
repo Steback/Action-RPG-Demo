@@ -8,7 +8,7 @@
 namespace vk {
 
     bool QueueFamilyIndices::isComplete() const {
-        return graphicsFamily.has_value() && presentFamily.has_value();
+        return graphics.has_value() && present.has_value();
     }
 
     bool isDeviceSuitable(const VkPhysicalDevice& device, const VkSurfaceKHR& surface) {
@@ -52,13 +52,13 @@ namespace vk {
 
         for (const auto& queueFamily : queueFamilies) {
             if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-                indices.graphicsFamily = i;
+                indices.graphics = i;
             }
 
             VkBool32 presentSupport = false;
             vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
 
-            if (presentSupport) indices.presentFamily = i;
+            if (presentSupport) indices.present = i;
 
             if (indices.isComplete()) break;
 

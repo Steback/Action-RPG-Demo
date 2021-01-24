@@ -93,12 +93,13 @@ namespace vk {
 
         // TODO: Optimize data copy to memory
         template<typename T>
-        void copyData(const Buffer& buffer, const T* pData, const VkDeviceSize& size);
+        void copyData(const Buffer& buffer, const T* pData, const VkDeviceSize& size) {
+            void* data;
 
-        template <typename T>
-        void createBuffer(Buffer& buffer, const VkBufferUsageFlags& flags,
-                          const VkMemoryPropertyFlags& properties, const T* data, const VkDeviceSize& size,
-                          VkCommandPool& commandPool, VkQueue queue);
+            vkMapMemory(mDevice, buffer.mDeviceMemory, 0, size, 0, &data);
+            memcpy(data, pData, static_cast<size_t>(size));
+            vkUnmapMemory(mDevice, buffer.mDeviceMemory);
+        }
 
     private:
         VkDevice mDevice{};
@@ -106,8 +107,6 @@ namespace vk {
     };
 
 } // End namespace vk
-
-#include "Device.inl"
 
 
 #endif //PROTOTYPE_ACTION_RPG_DEVICE_HPP
