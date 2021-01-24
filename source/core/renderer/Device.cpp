@@ -404,12 +404,13 @@ namespace vk {
         }
     }
 
-    void Device::createCommandPool(VkCommandPool &commandPool, VkSurfaceKHR const &surface) {
+    void Device::createCommandPool(VkCommandPool &commandPool, VkSurfaceKHR const &surface,
+                                   const VkCommandPoolCreateFlags& flags) {
         QueueFamilyIndices queueFamilyIndices = findQueueFamilies(mPhysicalDevice.device, surface);
 
         VkCommandPoolCreateInfo poolInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-            .flags = 0,
+            .flags = flags,
             .queueFamilyIndex = queueFamilyIndices.graphicsFamily.value()
         };
 
@@ -481,8 +482,8 @@ namespace vk {
         vkResetFences(mDevice, 1, &fence);
     }
 
-    void Device::createBuffer(Buffer& buffer, const VkDeviceSize& size, const VkBufferUsageFlags& flags,
-                              const VkMemoryPropertyFlags& properties, const VkSharingMode& sharingMode) {
+    void Device::createBuffer(Buffer& buffer, const VkBufferUsageFlags& flags, const VkMemoryPropertyFlags& properties,
+                              const VkDeviceSize& size, const VkSharingMode& sharingMode) {
         VkBufferCreateInfo bufferInfo{
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
             .size = size,
@@ -511,6 +512,47 @@ namespace vk {
     void Device::destroyBuffer(Buffer& buffer) {
         vkDestroyBuffer(mDevice, buffer.mBuffer, nullptr);
         vkFreeMemory(mDevice, buffer.mDeviceMemory, nullptr);
+    }
+
+    void Device::copyBuffer(VkBuffer &srcBuffer, VkBuffer &dstBuffer, VkCommandPool &commandPool, VkQueue& queue,
+                            const VkDeviceSize& size) {
+        VkCommandBufferAllocateInfo allocInfo{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+            .commandPool = commandPool,
+            .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+            .commandBufferCount = 1,
+        };
+
+        VkCommandBuffer commandBuffer;
+        vkAllocateCommandBuffers(mDevice, &allocInfo, &commandBuffer);
+
+        VkCommandBufferBeginInfo beginInfo{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+            .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+        };
+
+        vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+            VkBufferCopy copyRegion{
+                .srcOffset = 0,
+                .dstOffset = 0,
+                .size = size
+            };
+
+            vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+        vkEndCommandBuffer(commandBuffer);
+
+        VkSubmitInfo submitInfo{
+            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+            .commandBufferCount = 1,
+            .pCommandBuffers = &commandBuffer
+        };
+
+        vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
+        vkQueueWaitIdle(queue);
+
+        vkFreeCommandBuffers(mDevice, commandPool, 1, &commandBuffer);
     }
 
 } // End namespace vk

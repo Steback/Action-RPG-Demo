@@ -59,7 +59,8 @@ namespace vk {
 
         void destroyFramebuffers(std::vector<VkFramebuffer>& swapChainFramebuffers);
 
-        void createCommandPool(VkCommandPool& commandPool, const VkSurfaceKHR& surface);
+        void createCommandPool(VkCommandPool& commandPool, const VkSurfaceKHR& surface,
+                               const VkCommandPoolCreateFlags& flags = 0);
 
         void destroyCommandPool(VkCommandPool& commandPool);
 
@@ -82,14 +83,17 @@ namespace vk {
 
         void resetFence(const VkFence& fence);
 
-        void createBuffer(Buffer& buffer, const VkDeviceSize& size, const VkBufferUsageFlags& flags,
-                          const VkMemoryPropertyFlags& properties, const VkSharingMode& sharingMode = VK_SHARING_MODE_EXCLUSIVE);
+        void createBuffer(Buffer& buffer, const VkBufferUsageFlags& flags, const VkMemoryPropertyFlags& properties,
+                          const VkDeviceSize& size, const VkSharingMode& sharingMode = VK_SHARING_MODE_EXCLUSIVE);
 
         void destroyBuffer(Buffer& buffer);
 
+        void copyBuffer(VkBuffer& srcBuffer, VkBuffer& dstBuffer, VkCommandPool& commandPool, VkQueue& queue,
+                        const VkDeviceSize& size);
+
         // TODO: Optimize data copy to memory copy
         template<typename T>
-        void mapMemory(const Buffer& buffer, const VkDeviceSize& size, const T* pData) {
+        void mapMemory(const Buffer& buffer, const T* pData, const VkDeviceSize& size) {
             void* data;
 
             vkMapMemory(mDevice, buffer.mDeviceMemory, 0, size, 0, &data);

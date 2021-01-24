@@ -28,6 +28,8 @@ namespace core {
 
         void cleanSwapChain();
 
+        void createBuffers();
+
     private:
         std::unique_ptr<Window>& mWindow;
         vk::Instance mInstance;
@@ -41,6 +43,7 @@ namespace core {
         VkRenderPass mRenderPass{};
         VkPipeline mGraphicsPipeline{};
         vk::CommandPool mCommandPool;
+        VkCommandPool mTransferCommandPool{};
         std::vector<VkSemaphore> mImageAvailableSemaphores{};
         std::vector<VkSemaphore> mRenderFinishedSemaphores{};
         std::vector<VkFence> mFences;

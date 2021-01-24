@@ -32,9 +32,8 @@ namespace core {
         mDevice.createGraphicsPipeline(mGraphicsPipeline, mPipelineLayout, mSwapChain.mExtent, mRenderPass);
         mDevice.createFramebuffers(mSwapChain, mRenderPass);
         mDevice.createCommandPool(mCommandPool.mPool, mSurface);
-        mDevice.createBuffer(mVertexBuffer, sizeof(Vertex) * vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-        mDevice.mapMemory(mVertexBuffer, sizeof(Vertex) * vertices.size(), vertices.data());
+        mDevice.createCommandPool(mTransferCommandPool, mSurface, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+        createBuffers();
         mDevice.createCommandBuffers(mCommandPool, mSwapChain.mFramebuffers);
         recordCommands({0.0f, 0.0f, 0.0f, 1.0f});
 
@@ -135,6 +134,7 @@ namespace core {
         }
 
         mDevice.destroyCommandPool(mCommandPool.mPool);
+        mDevice.destroyCommandPool(mTransferCommandPool);
         mDevice.destroy();
         mInstance.destroySurface(mSurface);
         mInstance.destroy();
@@ -211,6 +211,24 @@ namespace core {
         mDevice.destroyRenderPass(mRenderPass);
         mDevice.destroyImageViews(mSwapChain);
         mDevice.destroySwapChain(mSwapChain);
+    }
+
+    void Renderer::createBuffers() {
+        VkDeviceSize size = sizeof(Vertex) * vertices.size();
+
+        vk::Buffer stagingBuffer;
+
+        mDevice.createBuffer(stagingBuffer, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, size);
+
+        mDevice.mapMemory(stagingBuffer, vertices.data(), size);
+
+        mDevice.createBuffer(mVertexBuffer, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, size);
+
+        mDevice.copyBuffer(stagingBuffer.mBuffer, mVertexBuffer.mBuffer, mTransferCommandPool, mGraphicsQueue, size);
+
+        mDevice.destroyBuffer(stagingBuffer);
     }
 
 } // End namespace core
