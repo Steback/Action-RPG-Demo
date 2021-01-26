@@ -11,15 +11,15 @@
 
 
 namespace vk {
-    struct SwapChain {
-        VkSwapchainKHR mSwapChain{};
-        std::vector<VkImage> mImages;
-        std::vector<VkImageView> mImageViews;
-        std::vector<VkFramebuffer> mFramebuffers;
-        VkFormat mImageFormat{};
-        VkExtent2D mExtent{};
-    };
 
+    struct SwapChain {
+        VkSwapchainKHR swapchain{};
+        std::vector<VkImage> images;
+        std::vector<VkImageView> imageViews;
+        std::vector<VkFramebuffer> framebuffers;
+        VkFormat format{};
+        VkExtent2D extent{};
+    };
 
     struct SwapChainSupportDetails {
         VkSurfaceCapabilitiesKHR capabilities;

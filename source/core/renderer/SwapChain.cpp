@@ -1,7 +1,5 @@
 #include "SwapChain.hpp"
 
-#include <utility>
-
 
 namespace vk {
 
@@ -56,8 +54,8 @@ namespace vk {
         } else {
 
             VkExtent2D actualExtent = {
-                windowSize.mWidth,
-                windowSize.mHeight
+                windowSize.width,
+                windowSize.height
             };
 
             actualExtent.width = std::max(capabilities.minImageExtent.width,

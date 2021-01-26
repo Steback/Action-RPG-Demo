@@ -8,8 +8,8 @@
 namespace vk {
 
     struct Buffer {
-        VkBuffer mBuffer{};
-        VkDeviceMemory mDeviceMemory{};
+        VkBuffer buffer{};
+        VkDeviceMemory deviceMemory{};
     };
 
     uint32_t findMemoryType(const VkPhysicalDevice& device, uint32_t typeFilter, VkMemoryPropertyFlags properties);

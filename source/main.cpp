@@ -22,35 +22,35 @@ public:
     void init() {
         spdlog::info("[App] Start");
 
-        mWindow = std::make_unique<core::Window>("Prototype Action RPG", 1200, 700);
-        mRender = std::make_unique<core::Renderer>(mWindow);
+        m_window = std::make_unique<core::Window>("Prototype Action RPG", 1200, 700);
+        m_renderer = std::make_unique<core::Renderer>(m_window);
 
         spdlog::info("[App] Initialized");
     }
 
     void loop() {
-        while (mWindow->isOpen()) {
+        while (m_window->isOpen()) {
             glfwPollEvents();
-            mRender->draw();
+            m_renderer->draw();
         }
     }
 
     void clean() {
-        mRender->clean();
-        mWindow->clean();
+        m_renderer->clean();
+        m_window->clean();
 
         spdlog::info("[App] Cleaned");
     }
 
 private:
-    std::unique_ptr<core::Window> mWindow;
-    std::unique_ptr<core::Renderer> mRender;
+    std::unique_ptr<core::Window> m_window;
+    std::unique_ptr<core::Renderer> m_renderer;
 };
 
 
 int main() {
     core::Logger logger;
-    logger.init("logger", "error.log");
+    logger.init("App", "error.log");
 
     App app;
 

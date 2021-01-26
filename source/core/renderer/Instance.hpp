@@ -34,8 +34,8 @@ namespace vk {
         void setupDebugMessenger();
 
     private:
-        VkInstance mInstance{};
-        VkDebugUtilsMessengerEXT mDebugMessenger{};
+        VkInstance m_instance{};
+        VkDebugUtilsMessengerEXT debugMessenger{};
     };
 
 } // End namespace vk

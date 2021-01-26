@@ -7,25 +7,25 @@
 
 namespace core {
 
-    Logger::Logger() : mDirLogs("../logs") {
+    Logger::Logger() : dirLogs("../logs") {
 
     }
 
     Logger::~Logger() = default;
 
     void Logger::init(const std::string& loggerName, const std::string& fileName) {
-        if (!std::filesystem::exists(mDirLogs)) {
-            std::filesystem::create_directory(mDirLogs);
+        if (!std::filesystem::exists(dirLogs)) {
+            std::filesystem::create_directory(dirLogs);
         }
 
-        auto fileName_ = mDirLogs + '/' + fileName;
+        auto fileName_ = dirLogs + '/' + fileName;
 
         if (std::filesystem::exists(fileName_)) {
             std::filesystem::remove(fileName_);
         }
 
         try {
-            mLogger = spdlog::basic_logger_mt(loggerName, fileName_);
+            m_logger = spdlog::basic_logger_mt(loggerName, fileName_);
         } catch (const spdlog::spdlog_ex& ex) {
             fmt::print(stderr, "{}\n", ex.what());
         }
@@ -34,13 +34,13 @@ namespace core {
     void Logger::sendLog(LogType type, const std::string &message) {
         switch (type) {
             case INFO:
-                mLogger->info(message);
+                m_logger->info(message);
                 break;
             case WARNING:
-                mLogger->warn(message);
+                m_logger->warn(message);
                 break;
             case ERROR:
-                mLogger->error(message);
+                m_logger->error(message);
                 break;
         }
     }

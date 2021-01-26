@@ -96,14 +96,14 @@ namespace vk {
         void copyData(const Buffer& buffer, const T* pData, const VkDeviceSize& size) {
             void* data;
 
-            vkMapMemory(mDevice, buffer.mDeviceMemory, 0, size, 0, &data);
+            vkMapMemory(m_device, buffer.deviceMemory, 0, size, 0, &data);
             memcpy(data, pData, static_cast<size_t>(size));
-            vkUnmapMemory(mDevice, buffer.mDeviceMemory);
+            vkUnmapMemory(m_device, buffer.deviceMemory);
         }
 
     private:
-        VkDevice mDevice{};
-        PhysicalDevice mPhysicalDevice;
+        VkDevice m_device{};
+        PhysicalDevice m_physicalDevice;
     };
 
 } // End namespace vk

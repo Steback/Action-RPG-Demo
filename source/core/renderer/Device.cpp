@@ -15,8 +15,8 @@ namespace vk {
 
     void Device::init(const PhysicalDevice& physicalDevice, VkSurfaceKHR& surface, VkQueue& graphicsQueue,
                       VkQueue& presentQueue) {
-        mPhysicalDevice = physicalDevice;
-        QueueFamilyIndices indices = findQueueFamilies(mPhysicalDevice.device, surface);
+        m_physicalDevice = physicalDevice;
+        QueueFamilyIndices indices = findQueueFamilies(m_physicalDevice.device, surface);
         VkPhysicalDeviceFeatures physicalDeviceFeatures{};
         std::set<uint32_t> uniqueQueueFamilies = {
                 indices.graphics.value(),
@@ -45,23 +45,23 @@ namespace vk {
                 .pEnabledFeatures = &physicalDeviceFeatures,
         };
 
-        resultValidation(vkCreateDevice(mPhysicalDevice.device, &deviceCreateInfo, nullptr, &mDevice),
+        resultValidation(vkCreateDevice(m_physicalDevice.device, &deviceCreateInfo, nullptr, &m_device),
                          "Failed to create logical device");
 
-        vkGetDeviceQueue(mDevice, indices.graphics.value(), 0, &graphicsQueue);
-        vkGetDeviceQueue(mDevice, indices.present.value(), 0, &presentQueue);
+        vkGetDeviceQueue(m_device, indices.graphics.value(), 0, &graphicsQueue);
+        vkGetDeviceQueue(m_device, indices.present.value(), 0, &presentQueue);
     }
 
     void Device::destroy() {
-        vkDestroyDevice(mDevice, nullptr);
+        vkDestroyDevice(m_device, nullptr);
     }
 
     void Device::waitIdle() {
-        vkDeviceWaitIdle(mDevice);
+        vkDeviceWaitIdle(m_device);
     }
 
     void Device::createSwapChain(SwapChain &swapChain, const core::WindowSize& windowSize, VkSurfaceKHR surface, bool recreate) {
-        SwapChainSupportDetails swapChainSupport = querySwapChainSupport(mPhysicalDevice.device, surface);
+        SwapChainSupportDetails swapChainSupport = querySwapChainSupport(m_physicalDevice.device, surface);
 
         VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
         VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
@@ -89,7 +89,7 @@ namespace vk {
             .oldSwapchain = nullptr
         };
 
-        QueueFamilyIndices indices = findQueueFamilies(mPhysicalDevice.device, surface);
+        QueueFamilyIndices indices = findQueueFamilies(m_physicalDevice.device, surface);
         std::vector<uint32_t> queueFamilyIndices = {indices.graphics.value(), indices.present.value() };
 
         if (indices.graphics != indices.present) {
@@ -102,30 +102,30 @@ namespace vk {
             createInfo.pQueueFamilyIndices = nullptr;
         }
 
-        resultValidation(vkCreateSwapchainKHR(mDevice, &createInfo, nullptr, &swapChain.mSwapChain),
+        resultValidation(vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &swapChain.swapchain),
                          "Failed to create swap chain");
 
-        vkGetSwapchainImagesKHR(mDevice, swapChain.mSwapChain, &imageCount, nullptr);
-        swapChain.mImages.resize(imageCount);
-        vkGetSwapchainImagesKHR(mDevice, swapChain.mSwapChain, &imageCount, swapChain.mImages.data());
+        vkGetSwapchainImagesKHR(m_device, swapChain.swapchain, &imageCount, nullptr);
+        swapChain.images.resize(imageCount);
+        vkGetSwapchainImagesKHR(m_device, swapChain.swapchain, &imageCount, swapChain.images.data());
 
-        swapChain.mExtent = extent;
-        swapChain.mImageFormat = surfaceFormat.format;
+        swapChain.extent = extent;
+        swapChain.format = surfaceFormat.format;
     }
 
     void Device::destroySwapChain(SwapChain& swapChain) {
-        vkDestroySwapchainKHR(mDevice, swapChain.mSwapChain, nullptr);
+        vkDestroySwapchainKHR(m_device, swapChain.swapchain, nullptr);
     }
 
     void Device::createImageViews(SwapChain &swapChain) {
-        swapChain.mImageViews.resize(swapChain.mImages.size());
+        swapChain.imageViews.resize(swapChain.images.size());
 
-        for (size_t i = 0; i < swapChain.mImages.size(); ++i) {
+        for (size_t i = 0; i < swapChain.images.size(); ++i) {
             VkImageViewCreateInfo createInfo{
                 .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-                .image = swapChain.mImages[i],
+                .image = swapChain.images[i],
                 .viewType = VK_IMAGE_VIEW_TYPE_2D,
-                .format = swapChain.mImageFormat,
+                .format = swapChain.format,
                 .components = {
                         .r = VK_COMPONENT_SWIZZLE_IDENTITY,
                         .g = VK_COMPONENT_SWIZZLE_IDENTITY,
@@ -141,14 +141,14 @@ namespace vk {
                 }
             };
 
-            resultValidation(vkCreateImageView(mDevice, &createInfo, nullptr, &swapChain.mImageViews[i]),
+            resultValidation(vkCreateImageView(m_device, &createInfo, nullptr, &swapChain.imageViews[i]),
                              "Failed to create image views");
         }
     }
 
     void Device::destroyImageViews(SwapChain &swapChain) {
-        for (auto& imageView : swapChain.mImageViews) {
-            vkDestroyImageView(mDevice, imageView, nullptr);
+        for (auto& imageView : swapChain.imageViews) {
+            vkDestroyImageView(m_device, imageView, nullptr);
         }
     }
 
@@ -272,7 +272,7 @@ namespace vk {
             .pPushConstantRanges = nullptr,
         };
 
-        resultValidation(vkCreatePipelineLayout(mDevice, &pipelineLayoutInfo, nullptr, &pipelineLayout),
+        resultValidation(vkCreatePipelineLayout(m_device, &pipelineLayoutInfo, nullptr, &pipelineLayout),
                          "Failed to create pipeline layout");
 
         VkGraphicsPipelineCreateInfo pipelineInfo{
@@ -294,7 +294,7 @@ namespace vk {
             .basePipelineIndex = -1
         };
 
-        resultValidation(vkCreateGraphicsPipelines(mDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline),
+        resultValidation(vkCreateGraphicsPipelines(m_device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline),
                          "Failed to create graphics pipeline");
 
         destroyShaderModule(vertexShaderModule);
@@ -302,8 +302,8 @@ namespace vk {
     }
 
     void Device::destroyGraphicsPipeline(VkPipeline& graphicsPipeline, VkPipelineLayout &pipelineLayout) {
-        vkDestroyPipeline(mDevice, graphicsPipeline, nullptr);
-        vkDestroyPipelineLayout(mDevice, pipelineLayout, nullptr);
+        vkDestroyPipeline(m_device, graphicsPipeline, nullptr);
+        vkDestroyPipelineLayout(m_device, pipelineLayout, nullptr);
     }
 
     VkShaderModule Device::createShaderModule(const std::vector<char> &code) {
@@ -315,14 +315,14 @@ namespace vk {
 
         VkShaderModule shaderModule;
 
-        resultValidation(vkCreateShaderModule(mDevice, &createInfo, nullptr, &shaderModule),
+        resultValidation(vkCreateShaderModule(m_device, &createInfo, nullptr, &shaderModule),
                          "Failed to create shader module");
 
         return shaderModule;
     }
 
     void Device::destroyShaderModule(VkShaderModule &shader) {
-        vkDestroyShaderModule(mDevice, shader, nullptr);
+        vkDestroyShaderModule(m_device, shader, nullptr);
     }
 
     void Device::createRenderPass(VkRenderPass& renderPass, const VkFormat& swapChainFormat) {
@@ -367,20 +367,20 @@ namespace vk {
             .pDependencies = &dependency
         };
 
-        resultValidation(vkCreateRenderPass(mDevice, &renderPassInfo, nullptr, &renderPass),
+        resultValidation(vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &renderPass),
                          "Failed to create render pass");
     }
 
     void Device::destroyRenderPass(VkRenderPass &renderPass) {
-        vkDestroyRenderPass(mDevice, renderPass, nullptr);
+        vkDestroyRenderPass(m_device, renderPass, nullptr);
     }
 
     void Device::createFramebuffers(SwapChain& swapChain, const VkRenderPass& renderPass) {
-        swapChain.mFramebuffers.resize(swapChain.mImageViews.size());
+        swapChain.framebuffers.resize(swapChain.imageViews.size());
 
-        for (size_t i = 0; i < swapChain.mImageViews.size(); ++i) {
+        for (size_t i = 0; i < swapChain.imageViews.size(); ++i) {
             std::array<VkImageView, 1> attachments = {
-                swapChain.mImageViews[i]
+                swapChain.imageViews[i]
             };
 
             VkFramebufferCreateInfo framebufferInfo{
@@ -388,25 +388,25 @@ namespace vk {
                 .renderPass = renderPass,
                 .attachmentCount = attachments.size(),
                 .pAttachments = attachments.data(),
-                .width = swapChain.mExtent.width,
-                .height = swapChain.mExtent.height,
+                .width = swapChain.extent.width,
+                .height = swapChain.extent.height,
                 .layers = 1
             };
 
-            resultValidation(vkCreateFramebuffer(mDevice, &framebufferInfo, nullptr, &swapChain.mFramebuffers[i]),
+            resultValidation(vkCreateFramebuffer(m_device, &framebufferInfo, nullptr, &swapChain.framebuffers[i]),
                              "Failed to create framebuffer");
         }
     }
 
     void Device::destroyFramebuffers(std::vector<VkFramebuffer>& swapChainFramebuffers) {
         for (auto & framebuffer : swapChainFramebuffers) {
-            vkDestroyFramebuffer(mDevice, framebuffer, nullptr);
+            vkDestroyFramebuffer(m_device, framebuffer, nullptr);
         }
     }
 
     void Device::createCommandPool(VkCommandPool &commandPool, VkSurfaceKHR const &surface,
                                    const VkCommandPoolCreateFlags& flags) {
-        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(mPhysicalDevice.device, surface);
+        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(m_physicalDevice.device, surface);
 
         VkCommandPoolCreateInfo poolInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
@@ -414,12 +414,12 @@ namespace vk {
             .queueFamilyIndex = queueFamilyIndices.graphics.value()
         };
 
-        resultValidation(vkCreateCommandPool(mDevice, &poolInfo, nullptr, &commandPool),
+        resultValidation(vkCreateCommandPool(m_device, &poolInfo, nullptr, &commandPool),
                          "Failed to create command pool");
     }
 
     void Device::destroyCommandPool(VkCommandPool &commandPool) {
-        vkDestroyCommandPool(mDevice, commandPool, nullptr);
+        vkDestroyCommandPool(m_device, commandPool, nullptr);
     }
 
     void Device::createCommandBuffers(CommandPool& commandPool, const std::vector<VkFramebuffer>& swapChainFramebuffers) {
@@ -432,12 +432,12 @@ namespace vk {
             .commandBufferCount = static_cast<uint32_t>(commandPool.mBuffers.size())
         };
 
-        resultValidation(vkAllocateCommandBuffers(mDevice, &allocInfo, commandPool.mBuffers.data()),
+        resultValidation(vkAllocateCommandBuffers(m_device, &allocInfo, commandPool.mBuffers.data()),
                          "Failed to allocate command buffers");
     }
 
     void Device::freeCommandBuffers(CommandPool& commandPool) {
-        vkFreeCommandBuffers(mDevice, commandPool.mPool, static_cast<uint32_t>(commandPool.mBuffers.size()),
+        vkFreeCommandBuffers(m_device, commandPool.mPool, static_cast<uint32_t>(commandPool.mBuffers.size()),
                              commandPool.mBuffers.data());
     }
 
@@ -446,18 +446,18 @@ namespace vk {
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
         };
 
-        resultValidation(vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &semaphore),
+        resultValidation(vkCreateSemaphore(m_device, &semaphoreInfo, nullptr, &semaphore),
                          "Failed to create semaphores");
     }
 
     void Device::destroySemaphore(VkSemaphore& semaphore) {
-        vkDestroySemaphore(mDevice, semaphore, nullptr);
+        vkDestroySemaphore(m_device, semaphore, nullptr);
     }
 
     VkResult Device::acquireNextImage(uint32_t& imageIndex, const VkSwapchainKHR& swapchain,
                                   const VkSemaphore& imageAvailableSemaphore) {
-        return vkAcquireNextImageKHR(mDevice, swapchain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphore,
-                              VK_NULL_HANDLE, &imageIndex);
+        return vkAcquireNextImageKHR(m_device, swapchain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphore,
+                                     VK_NULL_HANDLE, &imageIndex);
     }
 
     void Device::createFence(VkFence& fence) {
@@ -466,20 +466,20 @@ namespace vk {
             .flags = VK_FENCE_CREATE_SIGNALED_BIT
         };
 
-        resultValidation(vkCreateFence(mDevice, &fenceInfo, nullptr, &fence),
+        resultValidation(vkCreateFence(m_device, &fenceInfo, nullptr, &fence),
                          "Failed to create a fence");
     }
 
     void Device::destroyFence(VkFence &fence) {
-        vkDestroyFence(mDevice, fence, nullptr);
+        vkDestroyFence(m_device, fence, nullptr);
     }
 
     void Device::waitForFence(const VkFence& fence) {
-        vkWaitForFences(mDevice, 1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
+        vkWaitForFences(m_device, 1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
     }
 
     void Device::resetFence(VkFence const &fence) {
-        vkResetFences(mDevice, 1, &fence);
+        vkResetFences(m_device, 1, &fence);
     }
 
     void Device::createBuffer(Buffer& buffer, const VkBufferUsageFlags& flags, const VkMemoryPropertyFlags& properties,
@@ -491,27 +491,27 @@ namespace vk {
             .sharingMode = sharingMode
         };
 
-        resultValidation(vkCreateBuffer(mDevice, &bufferInfo, nullptr, &buffer.mBuffer),
+        resultValidation(vkCreateBuffer(m_device, &bufferInfo, nullptr, &buffer.buffer),
                          "Failed to create vertex buffer");
 
         VkMemoryRequirements memRequirements;
-        vkGetBufferMemoryRequirements(mDevice, buffer.mBuffer, &memRequirements);
+        vkGetBufferMemoryRequirements(m_device, buffer.buffer, &memRequirements);
 
         VkMemoryAllocateInfo allocInfo{
             .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
             .allocationSize = memRequirements.size,
-            .memoryTypeIndex = findMemoryType(mPhysicalDevice.device, memRequirements.memoryTypeBits, properties)
+            .memoryTypeIndex = findMemoryType(m_physicalDevice.device, memRequirements.memoryTypeBits, properties)
         };
 
-        resultValidation(vkAllocateMemory(mDevice, &allocInfo, nullptr, &buffer.mDeviceMemory),
+        resultValidation(vkAllocateMemory(m_device, &allocInfo, nullptr, &buffer.deviceMemory),
                          "Failed to allocate vertex buffer memory");
 
-        vkBindBufferMemory(mDevice, buffer.mBuffer, buffer.mDeviceMemory, 0);
+        vkBindBufferMemory(m_device, buffer.buffer, buffer.deviceMemory, 0);
     }
 
     void Device::destroyBuffer(Buffer& buffer) {
-        vkDestroyBuffer(mDevice, buffer.mBuffer, nullptr);
-        vkFreeMemory(mDevice, buffer.mDeviceMemory, nullptr);
+        vkDestroyBuffer(m_device, buffer.buffer, nullptr);
+        vkFreeMemory(m_device, buffer.deviceMemory, nullptr);
     }
 
     void Device::copyBuffer(VkBuffer &srcBuffer, VkBuffer &dstBuffer, VkCommandPool &commandPool, VkQueue& queue,
@@ -524,7 +524,7 @@ namespace vk {
         };
 
         VkCommandBuffer commandBuffer;
-        vkAllocateCommandBuffers(mDevice, &allocInfo, &commandBuffer);
+        vkAllocateCommandBuffers(m_device, &allocInfo, &commandBuffer);
 
         VkCommandBufferBeginInfo beginInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -552,7 +552,7 @@ namespace vk {
         vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
         vkQueueWaitIdle(queue);
 
-        vkFreeCommandBuffers(mDevice, commandPool, 1, &commandBuffer);
+        vkFreeCommandBuffers(m_device, commandPool, 1, &commandBuffer);
     }
 
 } // End namespace vk

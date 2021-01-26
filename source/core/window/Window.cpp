@@ -10,17 +10,17 @@ namespace core {
             spdlog::throw_spdlog_ex("[GLFW] Failed to init.");
         }
 
-        mSize = {
-            .mWidth = static_cast<uint32_t>(width),
-            .mHeight = static_cast<uint32_t>(height)
+        m_size = {
+            .width = static_cast<uint32_t>(width),
+            .height = static_cast<uint32_t>(height)
         };
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-        mWindow = glfwCreateWindow(width, height, name.c_str(), nullptr, nullptr);
+        m_window = glfwCreateWindow(width, height, name.c_str(), nullptr, nullptr);
 
-        glfwSetWindowUserPointer(mWindow, this);
-        glfwSetFramebufferSizeCallback(mWindow, framebufferResizeCallback);
+        glfwSetWindowUserPointer(m_window, this);
+        glfwSetFramebufferSizeCallback(m_window, framebufferResizeCallback);
 
         spdlog::info("[Window] Initialized");
     }
@@ -28,11 +28,11 @@ namespace core {
     Window::~Window() = default;
 
     bool Window::isOpen() {
-        return !glfwWindowShouldClose(mWindow);
+        return !glfwWindowShouldClose(m_window);
     }
 
     void Window::clean() {
-        glfwDestroyWindow(mWindow);
+        glfwDestroyWindow(m_window);
         glfwTerminate();
 
         spdlog::info("[Window] Cleaned");
@@ -40,17 +40,17 @@ namespace core {
 
     WindowSize Window::getSize() {
         int width, height;
-        glfwGetFramebufferSize(mWindow, &width, &height);
+        glfwGetFramebufferSize(m_window, &width, &height);
 
-        mSize.mWidth = static_cast<uint32_t>(width);
-        mSize.mHeight = static_cast<uint32_t>(height);
+        m_size.width = static_cast<uint32_t>(width);
+        m_size.height = static_cast<uint32_t>(height);
 
-        return mSize;
+        return m_size;
     }
 
     void Window::framebufferResizeCallback(GLFWwindow *tWindow, int width, int height) {
         auto window = reinterpret_cast<Window*>(glfwGetWindowUserPointer(tWindow));
-        window->mResize = true;
+        window->m_resize = true;
     }
 
 } // End namespace core

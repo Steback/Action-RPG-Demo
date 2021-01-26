@@ -26,8 +26,8 @@ namespace core {
         void sendLog(LogType type, const std::string& message);
 
     private:
-        std::shared_ptr<spdlog::logger> mLogger;
-        std::string mDirLogs;
+        std::shared_ptr<spdlog::logger> m_logger;
+        std::string dirLogs;
     };
 
 } // End namespace Core

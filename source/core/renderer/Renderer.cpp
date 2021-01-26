@@ -17,7 +17,7 @@ namespace core {
             0, 1, 2, 2, 3, 0
     };
 
-    Renderer::Renderer(std::unique_ptr<Window>& window) : mWindow(window) {
+    Renderer::Renderer(std::unique_ptr<Window>& window) : m_window(window) {
         VkApplicationInfo appInfo{
             .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
             .pApplicationName = "Prototype Action RPG",
@@ -27,31 +27,31 @@ namespace core {
             .apiVersion = VK_API_VERSION_1_2
         };
 
-        mInstance.init(appInfo);
-        mInstance.createSurface(mWindow->mWindow, mSurface);
-        mInstance.pickPhysicalDevice(mPhysicalDevice, mSurface);
-        mDevice.init(mPhysicalDevice, mSurface, mGraphicsQueue, mPresentQueue);
-        mDevice.createSwapChain(mSwapChain, mWindow->getSize(), mSurface);
-        mDevice.createImageViews(mSwapChain);
-        mDevice.createRenderPass(mRenderPass, mSwapChain.mImageFormat);
-        mDevice.createGraphicsPipeline(mGraphicsPipeline, mPipelineLayout, mSwapChain.mExtent, mRenderPass);
-        mDevice.createFramebuffers(mSwapChain, mRenderPass);
-        mDevice.createCommandPool(mCommandPool.mPool, mSurface);
-        mDevice.createCommandPool(mTransferCommandPool, mSurface, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+        m_instance.init(appInfo);
+        m_instance.createSurface(m_window->m_window, m_surface);
+        m_instance.pickPhysicalDevice(m_physicialDevice, m_surface);
+        m_device.init(m_physicialDevice, m_surface, m_graphicsQueue, m_presentQueue);
+        m_device.createSwapChain(m_swapchain, m_window->getSize(), m_surface);
+        m_device.createImageViews(m_swapchain);
+        m_device.createRenderPass(m_renderPass, m_swapchain.format);
+        m_device.createGraphicsPipeline(m_graphicsPipeline, m_pipelineLayout, m_swapchain.extent, m_renderPass);
+        m_device.createFramebuffers(m_swapchain, m_renderPass);
+        m_device.createCommandPool(m_commandPool.mPool, m_surface);
+        m_device.createCommandPool(m_transferCommandPool, m_surface, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
         createVertexBuffer();
         createIndexBuffer();
-        mDevice.createCommandBuffers(mCommandPool, mSwapChain.mFramebuffers);
-        recordCommands({0.0f, 0.0f, 0.0f, 1.0f});
+        m_device.createCommandBuffers(m_commandPool, m_swapchain.framebuffers);
+        recordCommands();
 
-        mImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-        mRenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-        mFences.resize(MAX_FRAMES_IN_FLIGHT);
-        mImageFences.resize(mSwapChain.mImageViews.size(), VK_NULL_HANDLE);
+        m_imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+        m_renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+        m_fences.resize(MAX_FRAMES_IN_FLIGHT);
+        m_imageFences.resize(m_swapchain.imageViews.size(), VK_NULL_HANDLE);
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
-            mDevice.createSemaphore(mImageAvailableSemaphores[i]);
-            mDevice.createSemaphore(mRenderFinishedSemaphores[i]);
-            mDevice.createFence(mFences[i]);
+            m_device.createSemaphore(m_imageAvailableSemaphores[i]);
+            m_device.createSemaphore(m_renderFinishedSemaphores[i]);
+            m_device.createFence(m_fences[i]);
         }
 
         spdlog::info("[Renderer] Initialized");
@@ -60,12 +60,11 @@ namespace core {
     Renderer::~Renderer() = default;
 
     void Renderer::draw() {
-        mDevice.waitForFence(mFences[currentFrame]);
+        m_device.waitForFence(m_fences[m_currentFrame]);
 
         uint32_t indexImage;
-
-        VkResult result = mDevice.acquireNextImage(indexImage, mSwapChain.mSwapChain,
-                                                   mImageAvailableSemaphores[currentFrame]);
+        VkResult result = m_device.acquireNextImage(indexImage, m_swapchain.swapchain,
+                                                    m_imageAvailableSemaphores[m_currentFrame]);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
             recreateSwapchain();
@@ -74,188 +73,184 @@ namespace core {
             spdlog::throw_spdlog_ex("Failed to acquire swap chain image");
         }
 
-        if (mImageFences[indexImage] != VK_NULL_HANDLE) {
-            mDevice.waitForFence(mImageFences[indexImage]);
+        if (m_imageFences[indexImage] != VK_NULL_HANDLE) {
+            m_device.waitForFence(m_imageFences[indexImage]);
         }
 
-        mImageFences[indexImage] = mFences[currentFrame];
+        m_imageFences[indexImage] = m_fences[m_currentFrame];
 
-        std::array<VkSemaphore, 1> waitSemaphores = { mImageAvailableSemaphores[currentFrame] };
-        std::array<VkPipelineStageFlags, 1> waitStages = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-        std::array<VkSemaphore, 1> signalSemaphores = { mRenderFinishedSemaphores[currentFrame] };
+        VkSemaphore waitSemaphores[] = {m_imageAvailableSemaphores[m_currentFrame] };
+        VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+        VkSemaphore signalSemaphores[] = {m_renderFinishedSemaphores[m_currentFrame] };
 
         VkSubmitInfo submitInfo{
                 .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-                .waitSemaphoreCount = static_cast<uint32_t>(waitSemaphores.size()),
-                .pWaitSemaphores = waitSemaphores.data(),
-                .pWaitDstStageMask = waitStages.data(),
+                .waitSemaphoreCount = 1,
+                .pWaitSemaphores = waitSemaphores,
+                .pWaitDstStageMask = waitStages,
                 .commandBufferCount = 1,
-                .pCommandBuffers = &mCommandPool.mBuffers[indexImage],
-                .signalSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size()),
-                .pSignalSemaphores = signalSemaphores.data()
+                .pCommandBuffers = &m_commandPool.mBuffers[indexImage],
+                .signalSemaphoreCount = 1,
+                .pSignalSemaphores = signalSemaphores
         };
 
-        mDevice.resetFence(mFences[currentFrame]);
+        m_device.resetFence(m_fences[m_currentFrame]);
 
-        vk::resultValidation(vkQueueSubmit(mGraphicsQueue, 1, &submitInfo, mFences[currentFrame]),
+        vk::resultValidation(vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_fences[m_currentFrame]),
                              "Failed to submit draw command buffer");
 
-        std::array<VkSwapchainKHR, 1> swapChains = { mSwapChain.mSwapChain };
+        VkSwapchainKHR swapChains[] = {m_swapchain.swapchain };
 
         VkPresentInfoKHR presentInfo{
             .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-            .waitSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size()),
-            .pWaitSemaphores = signalSemaphores.data(),
-            .swapchainCount = static_cast<uint32_t>(swapChains.size()),
-            .pSwapchains = swapChains.data(),
+            .waitSemaphoreCount = 1,
+            .pWaitSemaphores = signalSemaphores,
+            .swapchainCount = 1,
+            .pSwapchains = swapChains,
             .pImageIndices = &indexImage,
             .pResults = nullptr
         };
 
-        result = vkQueuePresentKHR(mPresentQueue, &presentInfo);
+        result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
 
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || mWindow->mResize) {
-            mWindow->mResize = false;
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_window->m_resize) {
+            m_window->m_resize = false;
             recreateSwapchain();
         } else if (result != VK_SUCCESS) {
             spdlog::throw_spdlog_ex("Failed to present swap chain image");
         }
 
-        currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-
-        vkQueueWaitIdle(mPresentQueue);
+        m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 
     void Renderer::clean() {
-        mDevice.waitIdle();
+        m_device.waitIdle();
 
         cleanSwapChain();
 
-        mDevice.destroyBuffer(mIndexBuffer);
-        mDevice.destroyBuffer(mVertexBuffer);
+        m_device.destroyBuffer(m_indexBuffer);
+        m_device.destroyBuffer(m_vertexBuffer);
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
-            mDevice.destroySemaphore(mImageAvailableSemaphores[i]);
-            mDevice.destroySemaphore(mRenderFinishedSemaphores[i]);
-            mDevice.destroyFence(mFences[i]);
+            m_device.destroySemaphore(m_imageAvailableSemaphores[i]);
+            m_device.destroySemaphore(m_renderFinishedSemaphores[i]);
+            m_device.destroyFence(m_fences[i]);
         }
 
-        mDevice.destroyCommandPool(mCommandPool.mPool);
-        mDevice.destroyCommandPool(mTransferCommandPool);
-        mDevice.destroy();
-        mInstance.destroySurface(mSurface);
-        mInstance.destroy();
+        m_device.destroyCommandPool(m_commandPool.mPool);
+        m_device.destroyCommandPool(m_transferCommandPool);
+        m_device.destroy();
+        m_instance.destroySurface(m_surface);
+        m_instance.destroy();
 
         spdlog::info("[Renderer] Cleaned");
     }
 
-    void Renderer::recordCommands(const glm::vec4& clearColor) {
-        std::array<VkClearValue, 1> clearColors = {
-                { clearColor.x, clearColor.y, clearColor.z, clearColor.w }
-        };
+    void Renderer::recordCommands() {
+        VkClearValue clearColors[] = { {0.0f, 0.0f, 0.0f, 1.0f} };
 
-        for (size_t i = 0; i < mCommandPool.mBuffers.size(); ++i) {
+        for (size_t i = 0; i < m_commandPool.mBuffers.size(); ++i) {
             VkCommandBufferBeginInfo beginInfo{
                     .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
                     .pInheritanceInfo = nullptr
             };
 
-            vk::resultValidation(vkBeginCommandBuffer(mCommandPool.mBuffers[i], &beginInfo),
+            vk::resultValidation(vkBeginCommandBuffer(m_commandPool.mBuffers[i], &beginInfo),
                              "Failed to begin recording command buffer");
 
             VkRenderPassBeginInfo renderPassInfo{
                     .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-                    .renderPass = mRenderPass,
-                    .framebuffer = mSwapChain.mFramebuffers[i],
+                    .renderPass = m_renderPass,
+                    .framebuffer = m_swapchain.framebuffers[i],
                     .renderArea = {
                             .offset = { 0, 0 },
-                            .extent = mSwapChain.mExtent
+                            .extent = m_swapchain.extent
                     },
-                    .clearValueCount = static_cast<uint32_t>(clearColors.size()),
-                    .pClearValues = clearColors.data()
+                    .clearValueCount = 1,
+                    .pClearValues = clearColors
             };
 
-                vkCmdBeginRenderPass(mCommandPool.mBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+                vkCmdBeginRenderPass(m_commandPool.mBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-                    vkCmdBindPipeline(mCommandPool.mBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
+                    vkCmdBindPipeline(m_commandPool.mBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
 
-                    std::array<VkBuffer, 1> vertexBuffer = { mVertexBuffer.mBuffer };
-                    std::array<VkDeviceSize, 1> offsets = { 0 };
-                    vkCmdBindVertexBuffers(mCommandPool.mBuffers[i], 0, 1, vertexBuffer.data(), offsets.data());
-                    vkCmdBindIndexBuffer(mCommandPool.mBuffers[i], mIndexBuffer.mBuffer, 0, VK_INDEX_TYPE_UINT16);
+                    VkBuffer vertexBuffer[] = {m_vertexBuffer.buffer };
+                    VkDeviceSize offsets[] = { 0 };
+                    vkCmdBindVertexBuffers(m_commandPool.mBuffers[i], 0, 1, vertexBuffer, offsets);
+                    vkCmdBindIndexBuffer(m_commandPool.mBuffers[i], m_indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT16);
 
-                    vkCmdDrawIndexed(mCommandPool.mBuffers[i], static_cast<uint32_t>(indices.size()),
+                    vkCmdDrawIndexed(m_commandPool.mBuffers[i], static_cast<uint32_t>(indices.size()),
                                      1, 0, 0, 0);
 
-                vkCmdEndRenderPass(mCommandPool.mBuffers[i]);
+                vkCmdEndRenderPass(m_commandPool.mBuffers[i]);
 
-            vk::resultValidation(vkEndCommandBuffer(mCommandPool.mBuffers[i]),
+            vk::resultValidation(vkEndCommandBuffer(m_commandPool.mBuffers[i]),
                                  "Failed to record command buffer");
         }
     }
 
     void Renderer::recreateSwapchain() {
         // TODO: Optimize window resize
-        while (mWindow->mSize.mWidth == 0 || mWindow->mSize.mHeight == 0)  {
+        while (m_window->m_size.width == 0 || m_window->m_size.height == 0)  {
             glfwWaitEvents();
         }
 
-        mDevice.waitIdle();
+        m_device.waitIdle();
 
         cleanSwapChain();
 
-        mDevice.createSwapChain(mSwapChain, mWindow->getSize(), mSurface, true);
-        mDevice.createImageViews(mSwapChain);
-        mDevice.createRenderPass(mRenderPass, mSwapChain.mImageFormat);
-        mDevice.createGraphicsPipeline(mGraphicsPipeline, mPipelineLayout, mSwapChain.mExtent, mRenderPass);
-        mDevice.createFramebuffers(mSwapChain, mRenderPass);
-        mDevice.createCommandBuffers(mCommandPool, mSwapChain.mFramebuffers);
-        recordCommands({0.0f, 0.0f, 0.0f, 1.0f});
+        m_device.createSwapChain(m_swapchain, m_window->getSize(), m_surface, true);
+        m_device.createImageViews(m_swapchain);
+        m_device.createRenderPass(m_renderPass, m_swapchain.format);
+        m_device.createGraphicsPipeline(m_graphicsPipeline, m_pipelineLayout, m_swapchain.extent, m_renderPass);
+        m_device.createFramebuffers(m_swapchain, m_renderPass);
+        m_device.createCommandBuffers(m_commandPool, m_swapchain.framebuffers);
+        recordCommands();
     }
 
     void Renderer::cleanSwapChain() {
-        mDevice.destroyFramebuffers(mSwapChain.mFramebuffers);
-        mDevice.freeCommandBuffers(mCommandPool);
-        mDevice.destroyGraphicsPipeline(mGraphicsPipeline, mPipelineLayout);
-        mDevice.destroyRenderPass(mRenderPass);
-        mDevice.destroyImageViews(mSwapChain);
-        mDevice.destroySwapChain(mSwapChain);
+        m_device.destroyFramebuffers(m_swapchain.framebuffers);
+        m_device.freeCommandBuffers(m_commandPool);
+        m_device.destroyGraphicsPipeline(m_graphicsPipeline, m_pipelineLayout);
+        m_device.destroyRenderPass(m_renderPass);
+        m_device.destroyImageViews(m_swapchain);
+        m_device.destroySwapChain(m_swapchain);
     }
 
     void Renderer::createVertexBuffer() {
         VkDeviceSize size = sizeof(Vertex) * vertices.size();
         vk::Buffer stagingBuffer;
 
-        mDevice.createBuffer(stagingBuffer, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        m_device.createBuffer(stagingBuffer, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, size);
 
-        mDevice.copyData(stagingBuffer, vertices.data(), size);
+        m_device.copyData(stagingBuffer, vertices.data(), size);
 
-        mDevice.createBuffer(mVertexBuffer, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, size);
+        m_device.createBuffer(m_vertexBuffer, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                              VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, size);
 
-        mDevice.copyBuffer(stagingBuffer.mBuffer, mVertexBuffer.mBuffer, mTransferCommandPool,
-                           mGraphicsQueue, size);
+        m_device.copyBuffer(stagingBuffer.buffer, m_vertexBuffer.buffer, m_transferCommandPool,
+                            m_graphicsQueue, size);
 
-        mDevice.destroyBuffer(stagingBuffer);
+        m_device.destroyBuffer(stagingBuffer);
     }
 
     void Renderer::createIndexBuffer() {
         VkDeviceSize size = sizeof(uint16_t) * indices.size();
         vk::Buffer stagingBuffer;
 
-        mDevice.createBuffer(stagingBuffer, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        m_device.createBuffer(stagingBuffer, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, size);
 
-        mDevice.copyData(stagingBuffer, indices.data(), size);
+        m_device.copyData(stagingBuffer, indices.data(), size);
 
-        mDevice.createBuffer(mIndexBuffer, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, size);
+        m_device.createBuffer(m_indexBuffer, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                              VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, size);
 
-        mDevice.copyBuffer(stagingBuffer.mBuffer, mIndexBuffer.mBuffer, mTransferCommandPool,
-                           mGraphicsQueue, size);
+        m_device.copyBuffer(stagingBuffer.buffer, m_indexBuffer.buffer, m_transferCommandPool,
+                            m_graphicsQueue, size);
 
-        mDevice.destroyBuffer(stagingBuffer);
+        m_device.destroyBuffer(stagingBuffer);
     }
 
 } // End namespace core

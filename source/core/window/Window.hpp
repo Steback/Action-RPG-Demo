@@ -9,7 +9,7 @@
 
 namespace core {
     struct WindowSize {
-        uint32_t mWidth{}, mHeight{};
+        uint32_t width{}, height{};
     };
 
 
@@ -31,9 +31,9 @@ namespace core {
         static void framebufferResizeCallback(GLFWwindow* tWindow, int width, int height);
 
     private:
-        GLFWwindow* mWindow{};
-        WindowSize mSize;
-        bool mResize = false;
+        GLFWwindow* m_window{};
+        WindowSize m_size;
+        bool m_resize = false;
     };
 
 } // End namespace core

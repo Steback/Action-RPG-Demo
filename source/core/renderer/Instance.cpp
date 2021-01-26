@@ -26,7 +26,7 @@ namespace vk {
             createInfo.pNext = &debugCreateInfo;
         }
 
-        resultValidation(vkCreateInstance(&createInfo, nullptr, &mInstance),
+        resultValidation(vkCreateInstance(&createInfo, nullptr, &m_instance),
                              "Failed to create instance");
 
         if (enableValidationLayers) {
@@ -39,24 +39,24 @@ namespace vk {
 
     void Instance::destroy() {
         if (enableValidationLayers) {
-            destroyDebugUtilsMessengerEXT(mInstance, mDebugMessenger, nullptr);
+            destroyDebugUtilsMessengerEXT(m_instance, debugMessenger, nullptr);
         }
 
-        vkDestroyInstance(mInstance, nullptr);
+        vkDestroyInstance(m_instance, nullptr);
     }
 
     VkInstance &Instance::operator*() {
-        return mInstance;
+        return m_instance;
     }
 
     void Instance::pickPhysicalDevice(PhysicalDevice &physicalDevice, VkSurfaceKHR& surface) {
         uint32_t deviceCount = 0;
-        vkEnumeratePhysicalDevices(mInstance, &deviceCount, nullptr);
+        vkEnumeratePhysicalDevices(m_instance, &deviceCount, nullptr);
 
         if (deviceCount == 0) spdlog::throw_spdlog_ex("Failed to find GPUs with Vulkan support");
 
         std::vector<VkPhysicalDevice> devices(deviceCount);
-        vkEnumeratePhysicalDevices(mInstance, &deviceCount, devices.data());
+        vkEnumeratePhysicalDevices(m_instance, &deviceCount, devices.data());
 
         for (const auto& device : devices) {
             if (isDeviceSuitable(device, surface)) {
@@ -70,19 +70,19 @@ namespace vk {
     }
 
     void Instance::createSurface(GLFWwindow* window, VkSurfaceKHR& surface) {
-        resultValidation(glfwCreateWindowSurface(mInstance, window, nullptr, &surface),
+        resultValidation(glfwCreateWindowSurface(m_instance, window, nullptr, &surface),
                          "Failed to create window surface");
     }
 
     void Instance::destroySurface(VkSurfaceKHR &surface) {
-        vkDestroySurfaceKHR(mInstance, surface, nullptr);
+        vkDestroySurfaceKHR(m_instance, surface, nullptr);
     }
 
     void Instance::setupDebugMessenger() {
         VkDebugUtilsMessengerCreateInfoEXT createInfo;
         populateDebugMessengerCreateInfo(createInfo);
 
-        resultValidation(createDebugUtilsMessengerEXT(mInstance, &createInfo, nullptr, &mDebugMessenger),
+        resultValidation(createDebugUtilsMessengerEXT(m_instance, &createInfo, nullptr, &debugMessenger),
                          "Failed to set up debug messenger");
     }
 
