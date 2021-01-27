@@ -13,14 +13,20 @@ namespace vk {
 
     Device::~Device() = default;
 
-    void Device::init(const PhysicalDevice& physicalDevice, VkSurfaceKHR& surface, VkQueue& graphicsQueue,
+    VkDevice &Device::operator*() {
+        return m_device;
+    }
+
+    void Device::init(const PhysicalDevice& physicalDevice, QueueFamilyIndices indices, VkQueue& graphicsQueue,
                       VkQueue& presentQueue) {
         m_physicalDevice = physicalDevice;
-        QueueFamilyIndices indices = findQueueFamilies(m_physicalDevice.device, surface);
+        m_familyIndices = indices;
+
         VkPhysicalDeviceFeatures physicalDeviceFeatures{};
         std::set<uint32_t> uniqueQueueFamilies = {
                 indices.graphics.value(),
-                indices.present.value() };
+                indices.present.value()
+        };
 
         float queuePriority = 1.0f;
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -60,23 +66,25 @@ namespace vk {
         vkDeviceWaitIdle(m_device);
     }
 
-    void Device::createSwapChain(SwapChain &swapChain, const core::WindowSize& windowSize, VkSurfaceKHR surface, bool recreate) {
+    void Device::createSwapChain(SwapChain &swapChain, const core::WindowSize& windowSize, VkSurfaceKHR surface,
+                                 bool recreate) {
         SwapChainSupportDetails swapChainSupport = querySwapChainSupport(m_physicalDevice.device, surface);
 
         VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
         VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
         VkExtent2D extent = chooseSwapExtend(windowSize, swapChainSupport.capabilities);
 
-        uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+        swapChain.imageCount = swapChainSupport.capabilities.minImageCount + 1;
 
-        if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
-            imageCount = swapChainSupport.capabilities.maxImageCount;
+        if (swapChainSupport.capabilities.maxImageCount > 0 &&
+                swapChain.imageCount > swapChainSupport.capabilities.maxImageCount) {
+            swapChain.imageCount = swapChainSupport.capabilities.maxImageCount;
         }
 
         VkSwapchainCreateInfoKHR createInfo{
             .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
             .surface = surface,
-            .minImageCount = imageCount,
+            .minImageCount = swapChain.imageCount,
             .imageFormat = surfaceFormat.format,
             .imageColorSpace = surfaceFormat.colorSpace,
             .imageExtent = extent,
@@ -89,10 +97,11 @@ namespace vk {
             .oldSwapchain = nullptr
         };
 
-        QueueFamilyIndices indices = findQueueFamilies(m_physicalDevice.device, surface);
-        std::vector<uint32_t> queueFamilyIndices = {indices.graphics.value(), indices.present.value() };
+        std::vector<uint32_t> queueFamilyIndices = {
+                m_familyIndices.graphics.value(), m_familyIndices.present.value()
+        };
 
-        if (indices.graphics != indices.present) {
+        if (m_familyIndices.graphics != m_familyIndices.present) {
             createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT,
             createInfo.queueFamilyIndexCount = static_cast<uint32_t>(queueFamilyIndices.size());
             createInfo.pQueueFamilyIndices = queueFamilyIndices.data();
@@ -105,9 +114,9 @@ namespace vk {
         resultValidation(vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &swapChain.swapchain),
                          "Failed to create swap chain");
 
-        vkGetSwapchainImagesKHR(m_device, swapChain.swapchain, &imageCount, nullptr);
-        swapChain.images.resize(imageCount);
-        vkGetSwapchainImagesKHR(m_device, swapChain.swapchain, &imageCount, swapChain.images.data());
+        vkGetSwapchainImagesKHR(m_device, swapChain.swapchain, &swapChain.imageCount, nullptr);
+        swapChain.images.resize(swapChain.imageCount);
+        vkGetSwapchainImagesKHR(m_device, swapChain.swapchain, &swapChain.imageCount, swapChain.images.data());
 
         swapChain.extent = extent;
         swapChain.format = surfaceFormat.format;
@@ -406,12 +415,10 @@ namespace vk {
 
     void Device::createCommandPool(VkCommandPool &commandPool, VkSurfaceKHR const &surface,
                                    const VkCommandPoolCreateFlags& flags) {
-        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(m_physicalDevice.device, surface);
-
         VkCommandPoolCreateInfo poolInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
             .flags = flags,
-            .queueFamilyIndex = queueFamilyIndices.graphics.value()
+            .queueFamilyIndex = m_familyIndices.graphics.value()
         };
 
         resultValidation(vkCreateCommandPool(m_device, &poolInfo, nullptr, &commandPool),
@@ -423,22 +430,22 @@ namespace vk {
     }
 
     void Device::createCommandBuffers(CommandPool& commandPool, const std::vector<VkFramebuffer>& swapChainFramebuffers) {
-        commandPool.mBuffers.resize(swapChainFramebuffers.size());
+        commandPool.buffers.resize(swapChainFramebuffers.size());
 
         VkCommandBufferAllocateInfo allocInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-            .commandPool = commandPool.mPool,
+            .commandPool = commandPool.pool,
             .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-            .commandBufferCount = static_cast<uint32_t>(commandPool.mBuffers.size())
+            .commandBufferCount = static_cast<uint32_t>(commandPool.buffers.size())
         };
 
-        resultValidation(vkAllocateCommandBuffers(m_device, &allocInfo, commandPool.mBuffers.data()),
+        resultValidation(vkAllocateCommandBuffers(m_device, &allocInfo, commandPool.buffers.data()),
                          "Failed to allocate command buffers");
     }
 
     void Device::freeCommandBuffers(CommandPool& commandPool) {
-        vkFreeCommandBuffers(m_device, commandPool.mPool, static_cast<uint32_t>(commandPool.mBuffers.size()),
-                             commandPool.mBuffers.data());
+        vkFreeCommandBuffers(m_device, commandPool.pool, static_cast<uint32_t>(commandPool.buffers.size()),
+                             commandPool.buffers.data());
     }
 
     void Device::createSemaphore(VkSemaphore& semaphore) {

@@ -18,6 +18,8 @@ namespace core {
 
         ~Renderer();
 
+        void init();
+
         void draw();
 
         void clean();
@@ -36,11 +38,13 @@ namespace core {
         std::unique_ptr<Window>& m_window;
 
         vk::Instance m_instance;
+
         vk::PhysicalDevice m_physicialDevice;
         vk::Device m_device;
 
         VkQueue m_presentQueue{};
         VkQueue m_graphicsQueue{};
+        vk::QueueFamilyIndices m_familyIndices;
 
         VkSurfaceKHR m_surface{};
 

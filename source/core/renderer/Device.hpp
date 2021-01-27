@@ -17,8 +17,8 @@ namespace vk {
 
     // TODO: Check optimized file struct the Command Pools and his buffers
     struct CommandPool {
-        VkCommandPool mPool{};
-        std::vector<VkCommandBuffer> mBuffers;
+        VkCommandPool pool{};
+        std::vector<VkCommandBuffer> buffers;
     };
 
     class Device {
@@ -27,14 +27,17 @@ namespace vk {
 
         ~Device();
 
-        void init(const PhysicalDevice& physicalDevice, VkSurfaceKHR& surface, VkQueue& graphicsQueue,
+        VkDevice& operator*();
+
+        void init(const PhysicalDevice& physicalDevice, QueueFamilyIndices indices, VkQueue& graphicsQueue,
                   VkQueue& presentQueue);
 
         void destroy();
 
         void waitIdle();
 
-        void createSwapChain(SwapChain& swapChain, const core::WindowSize& windowSize, VkSurfaceKHR surface, bool recreate = false);
+        void createSwapChain(SwapChain& swapChain, const core::WindowSize& windowSize, VkSurfaceKHR surface,
+                             bool recreate = false);
 
         void destroySwapChain(SwapChain& swapChain);
 
@@ -104,6 +107,7 @@ namespace vk {
     private:
         VkDevice m_device{};
         PhysicalDevice m_physicalDevice;
+        vk::QueueFamilyIndices m_familyIndices;
     };
 
 } // End namespace vk

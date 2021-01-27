@@ -18,25 +18,36 @@ namespace core {
     };
 
     Renderer::Renderer(std::unique_ptr<Window>& window) : m_window(window) {
+        init();
+
+        spdlog::info("[Renderer] Initialized");
+    }
+
+    Renderer::~Renderer() = default;
+
+    void Renderer::init() {
         VkApplicationInfo appInfo{
-            .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-            .pApplicationName = "Prototype Action RPG",
-            .applicationVersion = VK_MAKE_VERSION(0, 1, 0),
-            .pEngineName = "Custom Engine",
-            .engineVersion = VK_MAKE_VERSION(0, 1, 0),
-            .apiVersion = VK_API_VERSION_1_2
+                .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+                .pApplicationName = "Prototype Action RPG",
+                .applicationVersion = VK_MAKE_VERSION(0, 1, 0),
+                .pEngineName = "Custom Engine",
+                .engineVersion = VK_MAKE_VERSION(0, 1, 0),
+                .apiVersion = VK_API_VERSION_1_2
         };
 
         m_instance.init(appInfo);
         m_instance.createSurface(m_window->m_window, m_surface);
         m_instance.pickPhysicalDevice(m_physicialDevice, m_surface);
-        m_device.init(m_physicialDevice, m_surface, m_graphicsQueue, m_presentQueue);
+
+        m_familyIndices = vk::findQueueFamilies(m_physicialDevice.device, m_surface);
+
+        m_device.init(m_physicialDevice, m_familyIndices, m_graphicsQueue, m_presentQueue);
         m_device.createSwapChain(m_swapchain, m_window->getSize(), m_surface);
         m_device.createImageViews(m_swapchain);
         m_device.createRenderPass(m_renderPass, m_swapchain.format);
         m_device.createGraphicsPipeline(m_graphicsPipeline, m_pipelineLayout, m_swapchain.extent, m_renderPass);
         m_device.createFramebuffers(m_swapchain, m_renderPass);
-        m_device.createCommandPool(m_commandPool.mPool, m_surface);
+        m_device.createCommandPool(m_commandPool.pool, m_surface);
         m_device.createCommandPool(m_transferCommandPool, m_surface, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
         createVertexBuffer();
         createIndexBuffer();
@@ -53,11 +64,7 @@ namespace core {
             m_device.createSemaphore(m_renderFinishedSemaphores[i]);
             m_device.createFence(m_fences[i]);
         }
-
-        spdlog::info("[Renderer] Initialized");
     }
-
-    Renderer::~Renderer() = default;
 
     void Renderer::draw() {
         m_device.waitForFence(m_fences[m_currentFrame]);
@@ -89,7 +96,7 @@ namespace core {
                 .pWaitSemaphores = waitSemaphores,
                 .pWaitDstStageMask = waitStages,
                 .commandBufferCount = 1,
-                .pCommandBuffers = &m_commandPool.mBuffers[indexImage],
+                .pCommandBuffers = &m_commandPool.buffers[indexImage],
                 .signalSemaphoreCount = 1,
                 .pSignalSemaphores = signalSemaphores
         };
@@ -137,7 +144,7 @@ namespace core {
             m_device.destroyFence(m_fences[i]);
         }
 
-        m_device.destroyCommandPool(m_commandPool.mPool);
+        m_device.destroyCommandPool(m_commandPool.pool);
         m_device.destroyCommandPool(m_transferCommandPool);
         m_device.destroy();
         m_instance.destroySurface(m_surface);
@@ -149,13 +156,13 @@ namespace core {
     void Renderer::recordCommands() {
         VkClearValue clearColors[] = { {0.0f, 0.0f, 0.0f, 1.0f} };
 
-        for (size_t i = 0; i < m_commandPool.mBuffers.size(); ++i) {
+        for (size_t i = 0; i < m_commandPool.buffers.size(); ++i) {
             VkCommandBufferBeginInfo beginInfo{
                     .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
                     .pInheritanceInfo = nullptr
             };
 
-            vk::resultValidation(vkBeginCommandBuffer(m_commandPool.mBuffers[i], &beginInfo),
+            vk::resultValidation(vkBeginCommandBuffer(m_commandPool.buffers[i], &beginInfo),
                              "Failed to begin recording command buffer");
 
             VkRenderPassBeginInfo renderPassInfo{
@@ -170,21 +177,21 @@ namespace core {
                     .pClearValues = clearColors
             };
 
-                vkCmdBeginRenderPass(m_commandPool.mBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+                vkCmdBeginRenderPass(m_commandPool.buffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-                    vkCmdBindPipeline(m_commandPool.mBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
+                    vkCmdBindPipeline(m_commandPool.buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
 
                     VkBuffer vertexBuffer[] = {m_vertexBuffer.buffer };
                     VkDeviceSize offsets[] = { 0 };
-                    vkCmdBindVertexBuffers(m_commandPool.mBuffers[i], 0, 1, vertexBuffer, offsets);
-                    vkCmdBindIndexBuffer(m_commandPool.mBuffers[i], m_indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT16);
+                    vkCmdBindVertexBuffers(m_commandPool.buffers[i], 0, 1, vertexBuffer, offsets);
+                    vkCmdBindIndexBuffer(m_commandPool.buffers[i], m_indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT16);
 
-                    vkCmdDrawIndexed(m_commandPool.mBuffers[i], static_cast<uint32_t>(indices.size()),
+                    vkCmdDrawIndexed(m_commandPool.buffers[i], static_cast<uint32_t>(indices.size()),
                                      1, 0, 0, 0);
 
-                vkCmdEndRenderPass(m_commandPool.mBuffers[i]);
+                vkCmdEndRenderPass(m_commandPool.buffers[i]);
 
-            vk::resultValidation(vkEndCommandBuffer(m_commandPool.mBuffers[i]),
+            vk::resultValidation(vkEndCommandBuffer(m_commandPool.buffers[i]),
                                  "Failed to record command buffer");
         }
     }
