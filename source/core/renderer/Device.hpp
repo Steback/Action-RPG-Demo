@@ -9,6 +9,7 @@
 #include "PhysicalDevice.hpp"
 #include "SwapChain.hpp"
 #include "Buffer.hpp"
+#include "Initializers.hpp"
 #include "../mesh/Mesh.hpp"
 #include "../window/Window.hpp"
 
@@ -36,8 +37,7 @@ namespace vk {
 
         void waitIdle();
 
-        void createSwapChain(SwapChain& swapChain, const core::WindowSize& windowSize, VkSurfaceKHR surface,
-                             bool recreate = false);
+        void createSwapChain(SwapChain& swapChain, const core::WindowSize& windowSize, VkSurfaceKHR surface);
 
         void destroySwapChain(SwapChain& swapChain);
 

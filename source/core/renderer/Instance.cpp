@@ -26,8 +26,8 @@ namespace vk {
             createInfo.pNext = &debugCreateInfo;
         }
 
-        resultValidation(vkCreateInstance(&createInfo, nullptr, &m_instance),
-                             "Failed to create instance");
+        validation(vkCreateInstance(&createInfo, nullptr, &m_instance),
+                   "Failed to create instance");
 
         if (enableValidationLayers) {
             if (!checkValidationLayerSupport(validationLayers))
@@ -70,8 +70,8 @@ namespace vk {
     }
 
     void Instance::createSurface(GLFWwindow* window, VkSurfaceKHR& surface) {
-        resultValidation(glfwCreateWindowSurface(m_instance, window, nullptr, &surface),
-                         "Failed to create window surface");
+        validation(glfwCreateWindowSurface(m_instance, window, nullptr, &surface),
+                   "Failed to create window surface");
     }
 
     void Instance::destroySurface(VkSurfaceKHR &surface) {
@@ -82,8 +82,8 @@ namespace vk {
         VkDebugUtilsMessengerCreateInfoEXT createInfo;
         populateDebugMessengerCreateInfo(createInfo);
 
-        resultValidation(createDebugUtilsMessengerEXT(m_instance, &createInfo, nullptr, &debugMessenger),
-                         "Failed to set up debug messenger");
+        validation(createDebugUtilsMessengerEXT(m_instance, &createInfo, nullptr, &debugMessenger),
+                   "Failed to set up debug messenger");
     }
 
 } // End namespace vk

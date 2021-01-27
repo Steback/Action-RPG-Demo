@@ -1,7 +1,9 @@
 #include "Renderer.hpp"
 
 #include "Constants.hpp"
+#include "Initializers.hpp"
 #include "../mesh/Mesh.hpp"
+#include "../Utilities.hpp"
 
 
 namespace core {
@@ -26,14 +28,12 @@ namespace core {
     Renderer::~Renderer() = default;
 
     void Renderer::init() {
-        VkApplicationInfo appInfo{
-                .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-                .pApplicationName = "Prototype Action RPG",
-                .applicationVersion = VK_MAKE_VERSION(0, 1, 0),
-                .pEngineName = "Custom Engine",
-                .engineVersion = VK_MAKE_VERSION(0, 1, 0),
-                .apiVersion = VK_API_VERSION_1_2
-        };
+        VkApplicationInfo appInfo = vk::initializers::applicationInfo();
+        appInfo.pApplicationName = "Prototype Action RPG";
+        appInfo.applicationVersion = VK_MAKE_VERSION(0, 1, 0);
+        appInfo.pEngineName = "Custom Engine";
+        appInfo.engineVersion = VK_MAKE_VERSION(0, 1, 0);
+        appInfo.apiVersion = VK_API_VERSION_1_2;
 
         m_instance.init(appInfo);
         m_instance.createSurface(m_window->m_window, m_surface);
@@ -77,7 +77,7 @@ namespace core {
             recreateSwapchain();
             return;
         } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-            spdlog::throw_spdlog_ex("Failed to acquire swap chain image");
+            throw_ex("Failed to acquire swap chain image");
         }
 
         if (m_imageFences[indexImage] != VK_NULL_HANDLE) {
@@ -90,33 +90,29 @@ namespace core {
         VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
         VkSemaphore signalSemaphores[] = {m_renderFinishedSemaphores[m_currentFrame] };
 
-        VkSubmitInfo submitInfo{
-                .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-                .waitSemaphoreCount = 1,
-                .pWaitSemaphores = waitSemaphores,
-                .pWaitDstStageMask = waitStages,
-                .commandBufferCount = 1,
-                .pCommandBuffers = &m_commandPool.buffers[indexImage],
-                .signalSemaphoreCount = 1,
-                .pSignalSemaphores = signalSemaphores
-        };
+        VkSubmitInfo submitInfo = vk::initializers::submitInfo();
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = waitSemaphores;
+        submitInfo.pWaitDstStageMask = waitStages;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &m_commandPool.buffers[indexImage];
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = signalSemaphores;
 
         m_device.resetFence(m_fences[m_currentFrame]);
 
-        vk::resultValidation(vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_fences[m_currentFrame]),
-                             "Failed to submit draw command buffer");
+        vk::validation(vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_fences[m_currentFrame]),
+                       "Failed to submit draw command buffer");
 
         VkSwapchainKHR swapChains[] = {m_swapchain.swapchain };
 
-        VkPresentInfoKHR presentInfo{
-            .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-            .waitSemaphoreCount = 1,
-            .pWaitSemaphores = signalSemaphores,
-            .swapchainCount = 1,
-            .pSwapchains = swapChains,
-            .pImageIndices = &indexImage,
-            .pResults = nullptr
-        };
+        VkPresentInfoKHR presentInfo = vk::initializers::presentInfo();
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores = signalSemaphores;
+        presentInfo.swapchainCount = 1;
+        presentInfo.pSwapchains = swapChains;
+        presentInfo.pImageIndices = &indexImage;
+        presentInfo.pResults = nullptr;
 
         result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
 
@@ -124,7 +120,7 @@ namespace core {
             m_window->m_resize = false;
             recreateSwapchain();
         } else if (result != VK_SUCCESS) {
-            spdlog::throw_spdlog_ex("Failed to present swap chain image");
+            throw_ex("Failed to present swap chain image");
         }
 
         m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
@@ -155,30 +151,24 @@ namespace core {
 
     void Renderer::recordCommands() {
         VkClearValue clearColors[] = { {0.0f, 0.0f, 0.0f, 1.0f} };
+        VkRenderPassBeginInfo renderPassInfo = vk::initializers::renderPassBeginInfo();
 
         for (size_t i = 0; i < m_commandPool.buffers.size(); ++i) {
-            VkCommandBufferBeginInfo beginInfo{
-                    .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-                    .pInheritanceInfo = nullptr
-            };
+            VkCommandBufferBeginInfo beginInfo = vk::initializers::commandBufferBeginInfo();
+            beginInfo.pInheritanceInfo = nullptr;
 
-            vk::resultValidation(vkBeginCommandBuffer(m_commandPool.buffers[i], &beginInfo),
-                             "Failed to begin recording command buffer");
-
-            VkRenderPassBeginInfo renderPassInfo{
-                    .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-                    .renderPass = m_renderPass,
-                    .framebuffer = m_swapchain.framebuffers[i],
-                    .renderArea = {
-                            .offset = { 0, 0 },
-                            .extent = m_swapchain.extent
-                    },
-                    .clearValueCount = 1,
-                    .pClearValues = clearColors
-            };
+            vk::validation(vkBeginCommandBuffer(m_commandPool.buffers[i], &beginInfo),
+                           "Failed to begin recording command buffer");
+            {
+                renderPassInfo.renderPass = m_renderPass;
+                renderPassInfo.framebuffer = m_swapchain.framebuffers[i];
+                renderPassInfo.renderArea.offset = { 0, 0 };
+                renderPassInfo.renderArea.extent = m_swapchain.extent;
+                renderPassInfo.clearValueCount = 1;
+                renderPassInfo.pClearValues = clearColors;
 
                 vkCmdBeginRenderPass(m_commandPool.buffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
+                {
                     vkCmdBindPipeline(m_commandPool.buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
 
                     VkBuffer vertexBuffer[] = {m_vertexBuffer.buffer };
@@ -188,11 +178,11 @@ namespace core {
 
                     vkCmdDrawIndexed(m_commandPool.buffers[i], static_cast<uint32_t>(indices.size()),
                                      1, 0, 0, 0);
-
+                }
                 vkCmdEndRenderPass(m_commandPool.buffers[i]);
-
-            vk::resultValidation(vkEndCommandBuffer(m_commandPool.buffers[i]),
-                                 "Failed to record command buffer");
+            }
+            vk::validation(vkEndCommandBuffer(m_commandPool.buffers[i]),
+                           "Failed to record command buffer");
         }
     }
 
@@ -206,7 +196,7 @@ namespace core {
 
         cleanSwapChain();
 
-        m_device.createSwapChain(m_swapchain, m_window->getSize(), m_surface, true);
+        m_device.createSwapChain(m_swapchain, m_window->getSize(), m_surface);
         m_device.createImageViews(m_swapchain);
         m_device.createRenderPass(m_renderPass, m_swapchain.format);
         m_device.createGraphicsPipeline(m_graphicsPipeline, m_pipelineLayout, m_swapchain.extent, m_renderPass);

@@ -1,6 +1,6 @@
 #include "Buffer.hpp"
 
-#include "spdlog/spdlog.h"
+#include "../Utilities.hpp"
 
 
 namespace vk {
@@ -15,7 +15,7 @@ namespace vk {
             }
         }
 
-        spdlog::throw_spdlog_ex("Failed to find suitable memory type");
+        core::throw_ex("Failed to find suitable memory type");
 
         return -1;
     }

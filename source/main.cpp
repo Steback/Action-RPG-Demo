@@ -56,7 +56,7 @@ int main() {
 
     try {
         app.run();
-    } catch (const spdlog::spdlog_ex& ex) {
+    } catch (const std::exception& ex) {
         logger.sendLog(core::ERROR, ex.what());
     }
 

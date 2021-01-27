@@ -1,22 +1,24 @@
+#ifndef PROTOTYPE_ACTION_RPG_UTILS_HPP
+#define PROTOTYPE_ACTION_RPG_UTILS_HPP
+
+
 #include <fstream>
 
 #include "vulkan/vulkan.h"
 #include "GLFW/glfw3.h"
 #include "spdlog/spdlog.h"
 
-
 #include "Debug.hpp"
+#include "../Utilities.hpp"
 
 
 namespace vk {
 
-    static void resultValidation(VkResult result, const std::string& errorMessage) {
-        if (result != VK_SUCCESS) {
-            spdlog::throw_spdlog_ex("[Renderer] " + errorMessage);
-        }
+    inline void validation(VkResult result, const std::string& error) {
+        if (result != VK_SUCCESS) core::throw_ex(error);
     }
 
-    static std::vector<const char*> getRequiredExtensions() {
+    inline std::vector<const char*> getRequiredExtensions() {
         uint32_t glfwExtensionCount = 0;
         const char** glfwExtensions;
         glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
@@ -30,7 +32,7 @@ namespace vk {
         return extensions;
     }
 
-    static std::vector<char> readFile(const std::string& fileName) {
+    inline std::vector<char> readFile(const std::string& fileName) {
         std::ifstream file(fileName, std::ios::ate | std::ios::binary);
 
         if (!file.is_open()) spdlog::throw_spdlog_ex("Failed to open file: " + fileName);
@@ -47,3 +49,6 @@ namespace vk {
     }
 
 } // End namespace core
+
+
+#endif //PROTOTYPE_ACTION_RPG_UTILS_HPP
