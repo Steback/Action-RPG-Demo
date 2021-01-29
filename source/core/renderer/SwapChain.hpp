@@ -12,29 +12,41 @@
 
 namespace vk {
 
-    struct SwapChain {
-        VkSwapchainKHR swapchain{};
-        std::vector<VkImage> images;
-        std::vector<VkImageView> imageViews;
-        std::vector<VkFramebuffer> framebuffers;
-        VkFormat format{};
-        VkExtent2D extent{};
-        uint32_t imageCount{};
+    struct SwapChainBuffer {
+        VkImage image;
+        VkImageView view;
     };
 
-    struct SwapChainSupportDetails {
-        VkSurfaceCapabilitiesKHR capabilities;
-        std::vector<VkSurfaceFormatKHR> formats;
-        std::vector<VkPresentModeKHR> presentModes;
+    class SwapChain {
+    public:
+        SwapChain();
+
+        ~SwapChain();
+
+        void connect(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface);
+
+        void create(uint32_t& width, uint32_t& height, uint32_t graphicsFamilyIndex, uint32_t presetFamilyIndex);
+
+        VkResult acquireNextImage(VkSemaphore presentCompleteSemaphore, uint32_t* imageIndex);
+
+        VkResult queuePresent(VkQueue queue, uint32_t imageIndex, VkSemaphore waitSemaphore = VK_NULL_HANDLE);
+
+        void cleanup();
+
+    public:
+        VkFormat m_format{};
+        VkExtent2D m_extent{};
+        VkColorSpaceKHR m_colorSpace{};
+        VkSwapchainKHR m_swapChain = VK_NULL_HANDLE;
+        uint32_t m_imageCount{};
+        std::vector<VkImage> m_images;
+        std::vector<SwapChainBuffer> m_buffers;
+
+    private:
+        VkDevice m_device{};
+        VkPhysicalDevice m_physicalDevice{};
+        VkSurfaceKHR m_surface{};
     };
-
-    SwapChainSupportDetails querySwapChainSupport(const VkPhysicalDevice& device, const VkSurfaceKHR& surface);
-
-    VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
-
-    VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
-
-    VkExtent2D chooseSwapExtend(const core::WindowSize& windowSize, const VkSurfaceCapabilitiesKHR& capabilities);
 
 } // End namespace vk
 

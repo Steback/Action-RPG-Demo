@@ -6,7 +6,6 @@
 #include "GLFW/glfw3.h"
 #include "glm/glm.hpp"
 
-#include "PhysicalDevice.hpp"
 #include "SwapChain.hpp"
 #include "Buffer.hpp"
 #include "Initializers.hpp"
@@ -16,98 +15,63 @@
 
 namespace vk {
 
-    // TODO: Check optimized file struct the Command Pools and his buffers
-    struct CommandPool {
-        VkCommandPool pool{};
-        std::vector<VkCommandBuffer> buffers;
+    struct QueueFamilyIndices {
+        uint32_t graphics;
+        uint32_t present;
+        uint32_t compute;
+        uint32_t transfer;
     };
 
     class Device {
     public:
-        Device();
+        explicit Device(VkPhysicalDevice physicalDevice);
 
         ~Device();
 
-        VkDevice& operator*();
+        void destroy() const;
 
-        void init(const PhysicalDevice& physicalDevice, QueueFamilyIndices indices, VkQueue& graphicsQueue,
-                  VkQueue& presentQueue);
+        explicit operator VkDevice() const;
 
-        void destroy();
+        [[nodiscard]] uint32_t getMemoryType(uint32_t typeBits, VkMemoryPropertyFlags properties) const;
 
-        void waitIdle();
+        [[nodiscard]] uint32_t getQueueFamilyIndex(VkQueueFlagBits queueFlags) const;
 
-        void createSwapChain(SwapChain& swapChain, const core::WindowSize& windowSize, VkSurfaceKHR surface);
+        bool extensionSupported(const std::string& extension);
 
-        void destroySwapChain(SwapChain& swapChain);
+        VkResult createLogicalDevice(VkPhysicalDeviceFeatures enabledFeatures,
+                                     const std::vector<const char *>& enabledExtensions,
+                                     const std::vector<const char *>& validationLayers,
+                                     VkQueueFlags requestedQueueTypes = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT);
 
-        void createImageViews(SwapChain& swapChain);
+        [[nodiscard]] VkCommandPool createCommandPool(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags createFlags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT) const;
 
-        void destroyImageViews(SwapChain& swapChain);
+        VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, VkCommandPool pool, bool begin = false) const;
 
-        void createGraphicsPipeline(VkPipeline& graphicsPipeline, VkPipelineLayout& pipelineLayout,
-                                    const VkExtent2D& swapChainExtend, const VkRenderPass& renderPass);
+        [[nodiscard]] VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, bool begin = false) const;
 
-        void destroyGraphicsPipeline(VkPipeline& graphicsPipeline, VkPipelineLayout& pipelineLayout);
+        void flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, VkCommandPool pool, bool free = true) const;
 
-        VkShaderModule createShaderModule(const std::vector<char>& code);
+        void flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free = true) const;
 
-        void destroyShaderModule(VkShaderModule& shader);
+        VkResult createBuffer(VkBufferUsageFlags usageFlags,
+                              VkMemoryPropertyFlags memoryPropertyFlags,
+                              vk::Buffer *buffer,
+                              VkDeviceSize size,
+                              void *data = nullptr) const;
 
-        void createRenderPass(VkRenderPass& renderPass, const VkFormat& swapChainFormat);
+        void copyBuffer(vk::Buffer *src, vk::Buffer *dst, VkQueue queue, VkBufferCopy *copyRegion = nullptr) const;
 
-        void destroyRenderPass(VkRenderPass& renderPass);
-
-        void createFramebuffers(SwapChain& swapChain, const VkRenderPass& renderPass);
-
-        void destroyFramebuffers(std::vector<VkFramebuffer>& swapChainFramebuffers);
-
-        void createCommandPool(VkCommandPool& commandPool, const VkSurfaceKHR& surface,
-                               const VkCommandPoolCreateFlags& flags = 0);
-
-        void destroyCommandPool(VkCommandPool& commandPool);
-
-        void createCommandBuffers(CommandPool& commandPool, const std::vector<VkFramebuffer>& swapChainFramebuffers);
-
-        void freeCommandBuffers(CommandPool& commandPool);
-
-        void createSemaphore(VkSemaphore& semaphore);
-
-        void destroySemaphore(VkSemaphore& semaphore);
-
-        VkResult acquireNextImage(uint32_t& imageIndex, const VkSwapchainKHR& swapchain,
-                              const VkSemaphore& imageAvailableSemaphore);
-
-        void createFence(VkFence& fence);
-
-        void destroyFence(VkFence& fence);
-
-        void waitForFence(const VkFence& fence);
-
-        void resetFence(const VkFence& fence);
-
-        void createBuffer(Buffer& buffer, const VkBufferUsageFlags& flags, const VkMemoryPropertyFlags& properties,
-                          const VkDeviceSize& size, const VkSharingMode& sharingMode = VK_SHARING_MODE_EXCLUSIVE);
-
-        void destroyBuffer(Buffer& buffer);
-
-        void copyBuffer(VkBuffer& srcBuffer, VkBuffer& dstBuffer, VkCommandPool& commandPool, VkQueue& queue,
-                        const VkDeviceSize& size);
-
-        // TODO: Optimize data copy to memory
-        template<typename T>
-        void copyData(const Buffer& buffer, const T* pData, const VkDeviceSize& size) {
-            void* data;
-
-            vkMapMemory(m_device, buffer.deviceMemory, 0, size, 0, &data);
-            memcpy(data, pData, static_cast<size_t>(size));
-            vkUnmapMemory(m_device, buffer.deviceMemory);
-        }
-
-    private:
-        VkDevice m_device{};
-        PhysicalDevice m_physicalDevice;
-        vk::QueueFamilyIndices m_familyIndices;
+    public:
+        VkPhysicalDevice m_physicalDevice;
+        VkDevice m_logicalDevice{};
+        VkPhysicalDeviceProperties m_properties{};
+        VkPhysicalDeviceFeatures m_features{};
+        VkPhysicalDeviceFeatures m_enabledFeatures{};
+        VkPhysicalDeviceMemoryProperties m_memoryProperties{};
+        std::vector<VkQueueFamilyProperties> m_queueFamilyProperties;
+        std::vector<std::string> m_supportedExtensions;
+        VkCommandPool m_commandPool = VK_NULL_HANDLE;
+        QueueFamilyIndices m_queueFamilyIndices{};
     };
 
 } // End namespace vk

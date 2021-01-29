@@ -1,5 +1,7 @@
 #include "Instance.hpp"
 
+#include "Tools.hpp"
+
 
 namespace vk {
 
@@ -8,7 +10,7 @@ namespace vk {
     Instance::~Instance() = default;
 
     void Instance::init(VkApplicationInfo& appInfo) {
-        std::vector<const char*> extensions = vk::getRequiredExtensions();
+        std::vector<const char*> extensions = vk::tools::getRequiredExtensions();
 
         VkInstanceCreateInfo createInfo{
                 .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
@@ -26,8 +28,8 @@ namespace vk {
             createInfo.pNext = &debugCreateInfo;
         }
 
-        validation(vkCreateInstance(&createInfo, nullptr, &m_instance),
-                   "Failed to create instance");
+        vk::tools::validation(vkCreateInstance(&createInfo, nullptr, &m_instance),
+                              "Failed to create instance");
 
         if (enableValidationLayers) {
             if (!checkValidationLayerSupport(validationLayers))
@@ -49,29 +51,29 @@ namespace vk {
         return m_instance;
     }
 
-    void Instance::pickPhysicalDevice(PhysicalDevice &physicalDevice, VkSurfaceKHR& surface) {
+    void Instance::pickPhysicalDevice(VkPhysicalDevice &physicalDevice, VkSurfaceKHR& surface,
+                                      const std::vector<const char *>& enabledExtensions) {
         uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(m_instance, &deviceCount, nullptr);
 
-        if (deviceCount == 0) spdlog::throw_spdlog_ex("Failed to find GPUs with Vulkan support");
+        if (deviceCount == 0) core::throw_ex("Failed to find GPUs with Vulkan support");
 
         std::vector<VkPhysicalDevice> devices(deviceCount);
         vkEnumeratePhysicalDevices(m_instance, &deviceCount, devices.data());
 
         for (const auto& device : devices) {
-            if (isDeviceSuitable(device, surface)) {
-                physicalDevice.device = device;
-                physicalDevice.deiceName = getPhysicalDeviceProperties(device).deviceName;
+            if (vk::tools::isDeviceSuitable(device, surface, enabledExtensions)) {
+                physicalDevice = device;
                 break;
             }
         }
 
-        if (physicalDevice.device == VK_NULL_HANDLE) spdlog::throw_spdlog_ex("Failed to find a suitable GPU!");
+        if (physicalDevice == VK_NULL_HANDLE) core::throw_ex("Failed to find a suitable GPU!");
     }
 
     void Instance::createSurface(GLFWwindow* window, VkSurfaceKHR& surface) {
-        validation(glfwCreateWindowSurface(m_instance, window, nullptr, &surface),
-                   "Failed to create window surface");
+        vk::tools::validation(glfwCreateWindowSurface(m_instance, window, nullptr, &surface),
+                              "Failed to create window surface");
     }
 
     void Instance::destroySurface(VkSurfaceKHR &surface) {
@@ -82,8 +84,8 @@ namespace vk {
         VkDebugUtilsMessengerCreateInfoEXT createInfo;
         populateDebugMessengerCreateInfo(createInfo);
 
-        validation(createDebugUtilsMessengerEXT(m_instance, &createInfo, nullptr, &debugMessenger),
-                   "Failed to set up debug messenger");
+        vk::tools::validation(createDebugUtilsMessengerEXT(m_instance, &createInfo, nullptr, &debugMessenger),
+                              "Failed to set up debug messenger");
     }
 
 } // End namespace vk

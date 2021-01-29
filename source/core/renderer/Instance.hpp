@@ -5,9 +5,7 @@
 #include "vulkan/vulkan.h"
 #include "GLFW/glfw3.h"
 
-#include "Utils.hpp"
 #include "Debug.hpp"
-#include "PhysicalDevice.hpp"
 
 
 namespace vk {
@@ -24,7 +22,8 @@ namespace vk {
 
         VkInstance& operator*();
 
-        void pickPhysicalDevice(PhysicalDevice& physicalDevice, VkSurfaceKHR& surface);
+        void pickPhysicalDevice(VkPhysicalDevice& physicalDevice, VkSurfaceKHR& surface,
+                                const std::vector<const char *>& enabledExtensions);
 
         void createSurface(GLFWwindow* window, VkSurfaceKHR& surface);
 

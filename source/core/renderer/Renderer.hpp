@@ -3,12 +3,10 @@
 
 
 #include "Instance.hpp"
-#include "PhysicalDevice.hpp"
 #include "Device.hpp"
 #include "SwapChain.hpp"
 #include "Buffer.hpp"
 #include "../window/Window.hpp"
-
 
 namespace core {
 
@@ -20,9 +18,19 @@ namespace core {
 
         void init();
 
+        void clean();
+
         void draw();
 
-        void clean();
+        void createRenderPass();
+
+        void createGraphicsPipeline();
+
+        void createFramebuffers();
+
+        void createCommandPool();
+
+        void createSyncObjects();
 
         void recordCommands();
 
@@ -39,24 +47,27 @@ namespace core {
 
         vk::Instance m_instance;
 
-        vk::PhysicalDevice m_physicialDevice;
-        vk::Device m_device;
+        vk::Device* m_device{};
+        VkPhysicalDevice m_physicalDevice{};
+        VkDevice m_logicalDevice{};
 
         VkQueue m_presentQueue{};
         VkQueue m_graphicsQueue{};
-        vk::QueueFamilyIndices m_familyIndices;
 
         VkSurfaceKHR m_surface{};
 
-        vk::SwapChain m_swapchain{};
+        core::WindowSize m_windowSize;
+
+        vk::SwapChain m_swapChain{};
+        std::vector<VkFramebuffer> m_framebuffers;
 
         VkRenderPass m_renderPass{};
 
         VkPipelineLayout m_pipelineLayout{};
         VkPipeline m_graphicsPipeline{};
 
-        vk::CommandPool m_commandPool;
-        VkCommandPool m_transferCommandPool{};
+        VkCommandPool m_commandPool{};
+        std::vector<VkCommandBuffer> m_commandBuffers;
 
         std::vector<VkSemaphore> m_imageAvailableSemaphores{};
         std::vector<VkSemaphore> m_renderFinishedSemaphores{};

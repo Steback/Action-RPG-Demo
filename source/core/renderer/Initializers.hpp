@@ -115,9 +115,14 @@ namespace vk::initializers {
         };
     }
 
-    inline VkCommandBufferAllocateInfo commandBufferAllocateInfo() {
+    inline VkCommandBufferAllocateInfo commandBufferAllocateInfo(VkCommandPool commandPool,
+                                                                 VkCommandBufferLevel level,
+                                                                 uint32_t bufferCount) {
         return {
-            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+            .commandPool = commandPool,
+            .level = level,
+            .commandBufferCount = bufferCount
         };
     }
 
@@ -136,6 +141,14 @@ namespace vk::initializers {
     inline VkBufferCreateInfo bufferCreateInfo() {
         return {
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO
+        };
+    }
+    inline VkBufferCreateInfo bufferCreateInfo(VkBufferUsageFlags usage,
+                                               VkDeviceSize size) {
+        return {
+            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+            .size = size,
+            .usage = usage
         };
     }
 
