@@ -36,7 +36,7 @@ public:
     }
 
     void clean() {
-        m_renderer->clean();
+        m_renderer->cleanup();
         m_window->clean();
 
         spdlog::info("[App] Cleaned");

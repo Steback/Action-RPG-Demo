@@ -218,6 +218,7 @@ namespace vk {
         // If requested, also start recording for the new command buffer
         if (begin) {
             VkCommandBufferBeginInfo cmdBufInfo = vk::initializers::commandBufferBeginInfo();
+            cmdBufInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
             vk::tools::validation(vkBeginCommandBuffer(cmdBuffer, &cmdBufInfo),
                                   "Failed to begin recording command buffer");

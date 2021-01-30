@@ -33,7 +33,17 @@ namespace vk {
 
         void cleanup();
 
-    public:
+        [[nodiscard]] VkSwapchainKHR getSwapChain() const;
+
+        [[nodiscard]] VkFormat getFormat() const;
+
+        [[nodiscard]] VkExtent2D getExtent() const;
+
+        [[nodiscard]] uint32_t getImageCount() const;
+
+        [[nodiscard]] VkImageView getImageView(size_t index) const;
+
+    private:
         VkFormat m_format{};
         VkExtent2D m_extent{};
         VkColorSpaceKHR m_colorSpace{};
@@ -41,8 +51,6 @@ namespace vk {
         uint32_t m_imageCount{};
         std::vector<VkImage> m_images;
         std::vector<SwapChainBuffer> m_buffers;
-
-    private:
         VkDevice m_device{};
         VkPhysicalDevice m_physicalDevice{};
         VkSurfaceKHR m_surface{};

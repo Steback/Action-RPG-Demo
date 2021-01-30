@@ -8,6 +8,7 @@
 #include "Buffer.hpp"
 #include "../window/Window.hpp"
 
+
 namespace core {
 
     class Renderer {
@@ -18,11 +19,15 @@ namespace core {
 
         void init();
 
-        void clean();
+        void initUI();
+
+        void cleanup();
 
         void draw();
 
         void drawFrame();
+
+        void drawUI();
 
         void createRenderPass();
 
@@ -34,7 +39,7 @@ namespace core {
 
         void createSyncObjects();
 
-        void recordCommands();
+        void recordCommands(uint32_t bufferIdx);
 
         void recreateSwapchain();
 
@@ -54,6 +59,18 @@ namespace core {
 
         void createDescriptorSets();
 
+        void createUIDescriptorPool();
+
+        void createUICommandPool();
+
+        void createUICommandBuffers();
+
+        void createUIFramebuffers();
+
+        void cleanupUIResources();
+
+        void recordUICommands(uint32_t bufferIdx);
+
     private:
         std::unique_ptr<Window>& m_window;
 
@@ -72,6 +89,7 @@ namespace core {
 
         vk::SwapChain m_swapChain{};
         std::vector<VkFramebuffer> m_framebuffers;
+        std::vector<VkFramebuffer> m_uiFramebuffers;
 
         VkRenderPass m_renderPass{};
 
@@ -80,6 +98,8 @@ namespace core {
 
         VkCommandPool m_commandPool{};
         std::vector<VkCommandBuffer> m_commandBuffers;
+        VkCommandPool m_uiCommandPool{};
+        std::vector<VkCommandBuffer> m_uiCommandBuffers;
 
         std::vector<VkSemaphore> m_imageAvailableSemaphores{};
         std::vector<VkSemaphore> m_renderFinishedSemaphores{};
@@ -94,6 +114,7 @@ namespace core {
 
         VkDescriptorSetLayout m_descriptorSetLayout{};
         VkDescriptorPool m_descriptorPool{};
+        VkDescriptorPool m_uiDescriptorPool{};
         std::vector<VkDescriptorSet> m_descriptorSets;
     };
 

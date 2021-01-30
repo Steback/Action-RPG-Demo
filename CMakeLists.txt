@@ -29,12 +29,12 @@ add_subdirectory(source/core)
 
 add_executable(Prototype_Action_RPG source/main.cpp)
 target_link_libraries(${PROJECT_NAME}
+        core
         ${VULKAN}
         glfw
         glm
         imgui
-        spdlog
-        core)
+        spdlog)
 
 ### COMPILE SHADERS ###
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/shaders)

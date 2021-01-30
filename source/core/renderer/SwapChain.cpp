@@ -128,4 +128,24 @@ namespace vk {
         m_swapChain = VK_NULL_HANDLE;
     }
 
+    VkSwapchainKHR SwapChain::getSwapChain() const {
+        return m_swapChain;
+    }
+
+    VkFormat SwapChain::getFormat() const {
+        return m_format;
+    }
+
+    VkExtent2D SwapChain::getExtent() const {
+        return m_extent;
+    }
+
+    uint32_t SwapChain::getImageCount() const {
+        return m_imageCount;
+    }
+
+    VkImageView SwapChain::getImageView(size_t index) const {
+        return m_buffers[index].view;
+    }
+
 } // End namespace vk
