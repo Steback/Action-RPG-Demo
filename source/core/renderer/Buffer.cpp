@@ -1,4 +1,3 @@
-#include <cstring>
 #include "Buffer.hpp"
 
 #include "../Utilities.hpp"
@@ -29,10 +28,6 @@ namespace vk {
         m_descriptor.offset = offset;
         m_descriptor.buffer = m_buffer;
         m_descriptor.range = size;
-    }
-
-    void Buffer::copyTo(void *data, VkDeviceSize size) const {
-        std::memcpy(m_mapped, data, size);
     }
 
     VkResult Buffer::flush(VkDeviceSize size, VkDeviceSize offset) const {

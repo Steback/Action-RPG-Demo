@@ -1,8 +1,5 @@
 #include "Device.hpp"
 
-#include <set>
-#include <array>
-
 #include "Debug.hpp"
 #include "Tools.hpp"
 

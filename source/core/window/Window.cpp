@@ -53,4 +53,8 @@ namespace core {
         window->m_resize = true;
     }
 
+    float Window::aspect() const {
+        return static_cast<float>(m_size.width) / static_cast<float>(m_size.height);
+    }
+
 } // End namespace core

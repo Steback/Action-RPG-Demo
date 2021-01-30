@@ -22,6 +22,8 @@ namespace core {
 
         void draw();
 
+        void drawFrame();
+
         void createRenderPass();
 
         void createGraphicsPipeline();
@@ -41,6 +43,16 @@ namespace core {
         void createVertexBuffer();
 
         void createIndexBuffer();
+
+        void createDescriptorSetLayout();
+
+        void createUniformBuffers();
+
+        void updateUniformBuffer(uint32_t currentImage);
+
+        void createDescriptorPool();
+
+        void createDescriptorSets();
 
     private:
         std::unique_ptr<Window>& m_window;
@@ -78,6 +90,11 @@ namespace core {
 
         vk::Buffer m_vertexBuffer;
         vk::Buffer m_indexBuffer;
+        std::vector<vk::Buffer> m_uniformBuffers;
+
+        VkDescriptorSetLayout m_descriptorSetLayout{};
+        VkDescriptorPool m_descriptorPool{};
+        std::vector<VkDescriptorSet> m_descriptorSets;
     };
 
 } // End namespace core

@@ -27,6 +27,8 @@ namespace core {
 
         WindowSize getSize();
 
+        [[nodiscard]] float aspect() const;
+
     private:
         static void framebufferResizeCallback(GLFWwindow* tWindow, int width, int height);
 

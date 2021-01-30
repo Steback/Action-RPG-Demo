@@ -1,5 +1,7 @@
 #include "Renderer.hpp"
 
+#include "glm/gtc/matrix_transform.hpp"
+
 #include "Constants.hpp"
 #include "Initializers.hpp"
 #include "Tools.hpp"
@@ -65,11 +67,15 @@ namespace core {
         m_swapChain.create(m_windowSize.width, m_windowSize.height, m_device->m_queueFamilyIndices.graphics, m_device->m_queueFamilyIndices.present);
 
         createRenderPass();
+        createDescriptorSetLayout();
         createGraphicsPipeline();
         createFramebuffers();
         createVertexBuffer();
         createIndexBuffer();
+        createUniformBuffers();
+        createDescriptorPool();
         createCommandPool();
+        createDescriptorSets();
         recordCommands();
         createSyncObjects();
     }
@@ -78,6 +84,8 @@ namespace core {
         vkDeviceWaitIdle(m_logicalDevice);
 
         cleanSwapChain();
+
+        vkDestroyDescriptorSetLayout(m_logicalDevice, m_descriptorSetLayout, nullptr);
 
         vkDestroyBuffer(m_logicalDevice, m_vertexBuffer.m_buffer, nullptr);
         vkFreeMemory(m_logicalDevice, m_vertexBuffer.m_memory, nullptr);
@@ -102,6 +110,10 @@ namespace core {
     }
 
     void Renderer::draw() {
+        drawFrame();
+    }
+
+    void Renderer::drawFrame() {
         vkWaitForFences(m_logicalDevice, 1, &m_fences[m_currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
         uint32_t indexImage;
@@ -122,6 +134,8 @@ namespace core {
 
         VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphores[m_currentFrame] };
         VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+
+        updateUniformBuffer(indexImage);
 
         VkSubmitInfo submitInfo = vk::initializers::submitInfo();
         submitInfo.waitSemaphoreCount = 1;
@@ -259,7 +273,7 @@ namespace core {
         rasterizer.rasterizerDiscardEnable = VK_FALSE;
         rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
         rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-        rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+        rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         rasterizer.depthBiasEnable = VK_FALSE;
         rasterizer.depthBiasConstantFactor = 0.0f;
         rasterizer.depthBiasClamp = 0.0f;
@@ -296,8 +310,8 @@ namespace core {
         colorBlending.blendConstants[3] = 0.0f;
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo = vk::initializers::pipelineLayoutCreateInfo();
-        pipelineLayoutInfo.setLayoutCount = 0;
-        pipelineLayoutInfo.pSetLayouts = nullptr;
+        pipelineLayoutInfo.setLayoutCount = 1;
+        pipelineLayoutInfo.pSetLayouts = &m_descriptorSetLayout;
         pipelineLayoutInfo.pushConstantRangeCount = 0;
         pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
@@ -357,8 +371,6 @@ namespace core {
         for (int i = 0; i < m_swapChain.m_imageCount; ++i) {
             m_commandBuffers[i] = m_device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, m_commandPool);
         }
-
-        recordCommands();
     }
 
     void Renderer::createSyncObjects() {
@@ -411,6 +423,8 @@ namespace core {
                     vkCmdBindVertexBuffers(m_commandBuffers[i], 0, 1, vertexBuffer, offsets);
                     vkCmdBindIndexBuffer(m_commandBuffers[i], m_indexBuffer.m_buffer, 0, VK_INDEX_TYPE_UINT16);
 
+                    vkCmdBindDescriptorSets(m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                            m_pipelineLayout, 0, 1, &m_descriptorSets[i], 0, nullptr);
                     vkCmdDrawIndexed(m_commandBuffers[i], static_cast<uint32_t>(indices.size()),
                                      1, 0, 0, 0);
                 }
@@ -435,6 +449,9 @@ namespace core {
         createRenderPass();
         createGraphicsPipeline();
         createFramebuffers();
+        createUniformBuffers();
+        createDescriptorPool();
+        createDescriptorSets();
 
         for (int i = 0; i < m_swapChain.m_imageCount; ++i) {
             m_commandBuffers[i] = m_device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, m_commandPool);
@@ -456,18 +473,24 @@ namespace core {
         vkDestroyRenderPass(m_logicalDevice, m_renderPass, nullptr);
 
         m_swapChain.cleanup();
+
+        for (size_t i = 0; i < m_swapChain.m_imageCount; i++) {
+            vkDestroyBuffer(m_logicalDevice, m_uniformBuffers[i].m_buffer, nullptr);
+            vkFreeMemory(m_logicalDevice, m_uniformBuffers[i].m_memory, nullptr);
+        }
+
+        vkDestroyDescriptorPool(m_logicalDevice, m_descriptorPool, nullptr);
     }
 
     void Renderer::createVertexBuffer() {
         VkDeviceSize size = sizeof(Vertex) * vertices.size();
         vk::Buffer stagingBuffer;
-        void* data = const_cast<void *>(static_cast<const void *>(vertices.data()));
 
         m_device->createBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                &stagingBuffer,
                                size,
-                               data);
+                               (void*)vertices.data());
 
         m_device->createBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -483,13 +506,12 @@ namespace core {
     void Renderer::createIndexBuffer() {
         VkDeviceSize size = sizeof(uint16_t) * indices.size();
         vk::Buffer stagingBuffer;
-        void* data = const_cast<void *>(static_cast<const void *>(indices.data()));
 
         m_device->createBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                &stagingBuffer,
                                size,
-                               data);
+                               (void*)indices.data());
 
         m_device->createBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -500,6 +522,104 @@ namespace core {
 
         vkDestroyBuffer(m_logicalDevice, stagingBuffer.m_buffer, nullptr);
         vkFreeMemory(m_logicalDevice, stagingBuffer.m_memory, nullptr);
+    }
+
+    void Renderer:: createDescriptorSetLayout() {
+        VkDescriptorSetLayoutBinding uboLayoutBinding{};
+        uboLayoutBinding.binding = 0;
+        uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        uboLayoutBinding.descriptorCount = 1;
+        uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        uboLayoutBinding.pImmutableSamplers = nullptr;
+
+        VkDescriptorSetLayoutCreateInfo layoutInfo = vk::initializers::descriptorSetLayoutCreateInfo();
+        layoutInfo.bindingCount = 1;
+        layoutInfo.pBindings = &uboLayoutBinding;
+
+        vk::tools::validation(vkCreateDescriptorSetLayout(m_logicalDevice, &layoutInfo, nullptr, &m_descriptorSetLayout),
+                              "Failed to create descriptor set layout");
+    }
+
+    void Renderer::createUniformBuffers() {
+        VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+
+        m_uniformBuffers.resize(m_swapChain.m_imageCount);
+
+        for (size_t i = 0; i < m_swapChain.m_imageCount; ++i) {
+            m_device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                   &m_uniformBuffers[i],
+                                   bufferSize);
+        }
+    }
+
+    void Renderer::updateUniformBuffer(uint32_t currentImage) {
+        static auto startTime = std::chrono::high_resolution_clock::now();
+
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+        UniformBufferObject ubo{};
+        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f),
+                                glm::vec3(0.0f, 0.0f, 1.0f));
+
+        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f),
+                               glm::vec3(0.0f, 0.0f, 1.0f));
+
+        ubo.proj = glm::perspective(glm::radians(45.0f), m_window->aspect(), 0.1f, 10.0f);
+        ubo.proj[1][1] *= -1;
+
+        m_uniformBuffers[currentImage].map(sizeof(ubo), 0);
+        m_uniformBuffers[currentImage].copyTo(&ubo, sizeof(ubo));
+        m_uniformBuffers[currentImage].unmap();
+    }
+
+    void Renderer::createDescriptorPool() {
+        VkDescriptorPoolSize poolSize{};
+        poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSize.descriptorCount = m_swapChain.m_imageCount;
+
+        VkDescriptorPoolCreateInfo poolInfo{};
+        poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        poolInfo.poolSizeCount = 1;
+        poolInfo.pPoolSizes = &poolSize;
+        poolInfo.maxSets = m_swapChain.m_imageCount;
+        poolInfo.flags = 0;
+
+        vk::tools::validation(vkCreateDescriptorPool(m_logicalDevice, &poolInfo, nullptr, &m_descriptorPool),
+                              "Failed to create descriptor pool");
+    }
+
+    void Renderer::createDescriptorSets() {
+        std::vector<VkDescriptorSetLayout> layouts(m_swapChain.m_imageCount, m_descriptorSetLayout);
+
+        VkDescriptorSetAllocateInfo allocInfo = vk::initializers::descriptorSetAllocateInfo();
+        allocInfo.descriptorPool = m_descriptorPool;
+        allocInfo.descriptorSetCount = m_swapChain.m_imageCount;
+        allocInfo.pSetLayouts = layouts.data();
+
+        m_descriptorSets.resize(m_swapChain.m_imageCount);
+        vk::tools::validation(vkAllocateDescriptorSets(m_logicalDevice, &allocInfo, m_descriptorSets.data()),
+                              "Failed to allocate descriptor sets");
+
+        for (size_t i = 0; i < m_swapChain.m_imageCount; i++) {
+            VkDescriptorBufferInfo bufferInfo{};
+            bufferInfo.buffer = m_uniformBuffers[i].m_buffer;
+            bufferInfo.offset = 0;
+            bufferInfo.range = sizeof(UniformBufferObject);
+
+            VkWriteDescriptorSet descriptorWrite = vk::initializers::writeDescriptorSet();
+            descriptorWrite.dstSet = m_descriptorSets[i];
+            descriptorWrite.dstBinding = 0;
+            descriptorWrite.dstArrayElement = 0;
+            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptorWrite.descriptorCount = 1;
+            descriptorWrite.pBufferInfo = &bufferInfo;
+            descriptorWrite.pImageInfo = nullptr;
+            descriptorWrite.pTexelBufferView = nullptr;
+
+            vkUpdateDescriptorSets(m_logicalDevice, 1, &descriptorWrite, 0, nullptr);
+        }
     }
 
 } // End namespace core

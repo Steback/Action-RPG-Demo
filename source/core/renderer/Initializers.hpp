@@ -188,6 +188,24 @@ namespace vk::initializers {
         };
     }
 
+    inline VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo() {
+        return {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO
+        };
+    }
+
+    inline VkDescriptorSetAllocateInfo descriptorSetAllocateInfo() {
+        return {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO
+        };
+    }
+
+    inline VkWriteDescriptorSet writeDescriptorSet() {
+        return {
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET
+        };
+    }
+
 } // End namespace vk::initializers
 
 

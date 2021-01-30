@@ -2,6 +2,8 @@
 #define PROTOTYPE_ACTION_RPG_BUFFER_HPP
 
 
+#include <cstring>
+
 #include "vulkan/vulkan.h"
 
 
@@ -21,9 +23,12 @@ namespace vk {
 
         void setupDescriptor(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
 
-        void copyTo(void* data, VkDeviceSize size) const;
+        template<typename T>
+        void copyTo(T *data, VkDeviceSize size) const {
+            std::memcpy(m_mapped, data, size);
+        }
 
-        [[nodiscard]] VkResult flush(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0) const;
+        VkResult flush(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0) const;
 
         [[nodiscard]] VkResult invalidate(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0) const;
 

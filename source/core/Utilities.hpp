@@ -7,8 +7,16 @@
 #include <vector>
 #include <fstream>
 
+#include "glm/glm.hpp"
+
 
 namespace core {
+
+    struct UniformBufferObject {
+        alignas(16) glm::mat4 model;
+        alignas(16) glm::mat4 view;
+        alignas(16) glm::mat4 proj;
+    };
 
     inline void throw_ex(const std::string& message) {
         throw std::runtime_error(message);
