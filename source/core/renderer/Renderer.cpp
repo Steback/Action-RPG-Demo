@@ -89,9 +89,6 @@ namespace core {
         ImGui::StyleColorsDark();
 
         createUIDescriptorPool();
-        createUICommandPool();
-        createUICommandBuffers();
-        createUIFramebuffers();
 
         // Provide bind points from Vulkan API
         ImGui_ImplGlfw_InitForVulkan(m_window->m_window, true);
@@ -108,9 +105,9 @@ namespace core {
         ImGui_ImplVulkan_Init(&init_info, m_renderPass);
 
         // Upload the fonts for DearImgui
-        VkCommandBuffer commandBuffer = m_device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, m_uiCommandPool, true);
+        VkCommandBuffer commandBuffer = m_device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, m_commandPool, true);
         ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
-        m_device->flushCommandBuffer(commandBuffer, m_graphicsQueue, m_uiCommandPool, true);
+        m_device->flushCommandBuffer(commandBuffer, m_graphicsQueue, m_commandPool, true);
         ImGui_ImplVulkan_DestroyFontUploadObjects();
     }
 
@@ -138,7 +135,6 @@ namespace core {
         }
 
         vkDestroyDescriptorPool(m_logicalDevice, m_uiDescriptorPool, nullptr);
-        vkDestroyCommandPool(m_logicalDevice, m_uiCommandPool, nullptr);
         vkDestroyCommandPool(m_logicalDevice, m_commandPool, nullptr);
 
         m_device->destroy();
@@ -174,13 +170,13 @@ namespace core {
 
         m_imageFences[indexImage] = m_fences[m_currentFrame];
 
-        recordUICommands(indexImage);
+//        recordUICommands(indexImage);
         recordCommands(indexImage);
         updateUniformBuffer(indexImage);
 
         VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphores[m_currentFrame] };
         VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-        std::array<VkCommandBuffer, 2> cmdBuffers = {m_commandBuffers[indexImage], m_uiCommandBuffers[indexImage]};
+        std::array<VkCommandBuffer, 1> cmdBuffers = { m_commandBuffers[indexImage] };
 
         VkSubmitInfo submitInfo = vk::initializers::submitInfo();
         submitInfo.waitSemaphoreCount = 1;
@@ -468,7 +464,9 @@ namespace core {
     void Renderer::recordCommands(uint32_t bufferIdx) {
         VkClearValue clearColors[] = { {0.0f, 0.0f, 0.0f, 1.0f} };
         VkRenderPassBeginInfo renderPassInfo = vk::initializers::renderPassBeginInfo();
+
         VkCommandBufferBeginInfo beginInfo = vk::initializers::commandBufferBeginInfo();
+        beginInfo.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
         vk::tools::validation(vkBeginCommandBuffer(m_commandBuffers[bufferIdx], &beginInfo),
                               "Failed to begin recording command buffer");
@@ -477,6 +475,8 @@ namespace core {
             renderPassInfo.framebuffer = m_framebuffers[bufferIdx];
             renderPassInfo.renderArea.offset = { 0, 0 };
             renderPassInfo.renderArea.extent = m_swapChain.getExtent();
+            renderPassInfo.renderArea.extent.width = m_swapChain.getExtent().width;
+            renderPassInfo.renderArea.extent.height = m_swapChain.getExtent().height;
             renderPassInfo.clearValueCount = 1;
             renderPassInfo.pClearValues = clearColors;
 
@@ -493,6 +493,8 @@ namespace core {
                                         m_pipelineLayout, 0, 1, &m_descriptorSets[bufferIdx], 0, nullptr);
                 vkCmdDrawIndexed(m_commandBuffers[bufferIdx], static_cast<uint32_t>(indices.size()),
                                  1, 0, 0, 0);
+
+                ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_commandBuffers[bufferIdx], nullptr);
             }
             vkCmdEndRenderPass(m_commandBuffers[bufferIdx]);
         }
@@ -524,13 +526,9 @@ namespace core {
 
         // We also need to take care of the UI
         ImGui_ImplVulkan_SetMinImageCount(m_swapChain.getImageCount());
-        createUICommandBuffers();
-        createUIFramebuffers();
     }
 
     void Renderer::cleanSwapChain() {
-        cleanupUIResources();
-
         for (auto & framebuffer : m_framebuffers) {
             vkDestroyFramebuffer(m_logicalDevice, framebuffer, nullptr);
         }
@@ -716,77 +714,6 @@ namespace core {
 
         vk::tools::validation(vkCreateDescriptorPool(m_logicalDevice, &pool_info, nullptr, &m_uiDescriptorPool),
                               "Cannot allocate UI descriptor pool");
-    }
-
-    void Renderer::createUICommandPool() {
-        m_uiCommandPool = m_device->createCommandPool(m_device->m_queueFamilyIndices.graphics);
-    }
-
-    void Renderer::createUICommandBuffers() {
-        m_uiCommandBuffers.resize(m_swapChain.getImageCount());
-
-        for (size_t i = 0; i < m_swapChain.getImageCount(); ++i) {
-            m_uiCommandBuffers[i] = m_device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, m_uiCommandPool);
-        }
-    }
-
-    void Renderer::createUIFramebuffers() {
-        // Create some UI framebuffers. These will be used in the render pass for the UI
-        m_uiFramebuffers.resize(m_swapChain.getImageCount());
-
-        VkImageView attachment[1];
-        VkFramebufferCreateInfo info = vk::initializers::framebufferCreateInfo();
-        info.renderPass = m_renderPass;
-        info.attachmentCount = 1;
-        info.pAttachments = attachment;
-        info.width = m_swapChain.getExtent().width;
-        info.height = m_swapChain.getExtent().height;
-        info.layers = 1;
-
-        for (uint32_t i = 0; i < m_swapChain.getImageCount(); ++i) {
-            attachment[0] = m_swapChain.getImageView(i);
-
-            vk::tools::validation(vkCreateFramebuffer(m_logicalDevice, &info, nullptr, &m_uiFramebuffers[i]),
-                                  "Unable to create UI framebuffers");
-        }
-    }
-
-    void Renderer::cleanupUIResources() {
-        for (auto& framebuffer : m_uiFramebuffers) {
-            vkDestroyFramebuffer(m_logicalDevice, framebuffer, nullptr);
-        }
-
-        vkFreeCommandBuffers(m_logicalDevice, m_uiCommandPool, static_cast<uint32_t>(m_uiCommandBuffers.size()),
-                             m_uiCommandBuffers.data());
-    }
-
-    void Renderer::recordUICommands(uint32_t bufferIdx) {
-        VkCommandBufferBeginInfo cmdBufferBegin = vk::initializers::commandBufferBeginInfo();
-        cmdBufferBegin.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-        vk::tools::validation(vkBeginCommandBuffer(m_uiCommandBuffers[bufferIdx], &cmdBufferBegin),
-                              "Unable to start recording UI command buffer");
-
-        VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
-        VkRenderPassBeginInfo renderPassBeginInfo = vk::initializers::renderPassBeginInfo();
-        renderPassBeginInfo.renderPass = m_renderPass;
-        renderPassBeginInfo.framebuffer = m_uiFramebuffers[bufferIdx];
-        renderPassBeginInfo.renderArea.extent.width = m_swapChain.getExtent().width;
-        renderPassBeginInfo.renderArea.extent.height = m_swapChain.getExtent().height;
-        renderPassBeginInfo.clearValueCount = 1;
-        renderPassBeginInfo.pClearValues = &clearColor;
-
-        vkCmdBeginRenderPass(m_uiCommandBuffers[bufferIdx], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-        {
-            // Grab and record the draw data for Dear Imgui
-            ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_uiCommandBuffers[bufferIdx], nullptr);
-        }
-        // End and submit render pass
-        vkCmdEndRenderPass(m_uiCommandBuffers[bufferIdx]);
-
-        if (vkEndCommandBuffer(m_uiCommandBuffers[bufferIdx]) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to record command buffers!");
-        }
     }
 
 } // End namespace core

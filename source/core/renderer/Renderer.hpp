@@ -61,16 +61,6 @@ namespace core {
 
         void createUIDescriptorPool();
 
-        void createUICommandPool();
-
-        void createUICommandBuffers();
-
-        void createUIFramebuffers();
-
-        void cleanupUIResources();
-
-        void recordUICommands(uint32_t bufferIdx);
-
     private:
         std::unique_ptr<Window>& m_window;
 
@@ -89,7 +79,6 @@ namespace core {
 
         vk::SwapChain m_swapChain{};
         std::vector<VkFramebuffer> m_framebuffers;
-        std::vector<VkFramebuffer> m_uiFramebuffers;
 
         VkRenderPass m_renderPass{};
 
@@ -98,8 +87,6 @@ namespace core {
 
         VkCommandPool m_commandPool{};
         std::vector<VkCommandBuffer> m_commandBuffers;
-        VkCommandPool m_uiCommandPool{};
-        std::vector<VkCommandBuffer> m_uiCommandBuffers;
 
         std::vector<VkSemaphore> m_imageAvailableSemaphores{};
         std::vector<VkSemaphore> m_renderFinishedSemaphores{};
