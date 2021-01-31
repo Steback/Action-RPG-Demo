@@ -81,12 +81,23 @@ namespace core {
         createCommandPool();
         createDescriptorSets();
         createSyncObjects();
+
+        camera.getEye() = {0.0f, 0.0f, 2.0f};
+        camera.getCenter() = glm::vec3(0.0f, 0.0f, 0.0f);
+        camera.getUp() = glm::vec3(0.0f, 1.0f, 0.0f);
+
+        m_position = glm::vec3(0.0f, 0.0f, 0.0f);
+        m_size = glm::vec3(1.0f, 1.0f, 1.0f);
+        m_angle = 0.0f;
     }
 
     void Renderer::initUI() {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImGui::StyleColorsDark();
+
+        ImGuiIO& io = ImGui::GetIO(); (void)io;
+        io.Fonts->AddFontFromFileTTF("../assets/fonts/Roboto-Medium.ttf", 16.0f);
 
         createUIDescriptorPool();
 
@@ -223,18 +234,59 @@ namespace core {
         ImGui::NewFrame();
 
         static float f = 0.0f;
-        static int counter = 0;
 
-        ImGui::Begin("Renderer Options");
-        ImGui::Text("This is some useful text.");
-        ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+//        ImGui::ShowDemoWindow();
 
-        if (ImGui::Button("Button")) counter++;
+        ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
+        ImGui::SetNextWindowSize(ImVec2(330, 80), ImGuiCond_Always);
+        ImGui::Begin("Application Info", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+        {
+            ImGui::Text("GPU: %s", m_device->m_properties.deviceName);
 
-        ImGui::SameLine();
-        ImGui::Text("counter = %d", counter);
+            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        }
+        ImGui::End();
 
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        ImGui::SetNextWindowSize(ImVec2(220, -1), ImGuiCond_Always);
+        ImGui::SetNextWindowPos(ImVec2(5, 90), ImGuiCond_Always);
+        ImGui::Begin("Camera Control", nullptr, ImGuiWindowFlags_NoCollapse);
+        {
+            if (ImGui::CollapsingHeader("Eye")) {
+                ImGui::InputFloat("Eye X", &camera.getEye().x);
+                ImGui::InputFloat("Eye Y", &camera.getEye().y);
+                ImGui::InputFloat("Eye Z", &camera.getEye().z);
+            }
+
+            if (ImGui::CollapsingHeader("Center")) {
+                ImGui::InputFloat("Center X", &camera.getCenter().x);
+                ImGui::InputFloat("Center Y", &camera.getCenter().y);
+                ImGui::InputFloat("Center Z", &camera.getCenter().z);
+            }
+        }
+        ImGui::End();
+
+        ImGui::SetNextWindowSize(ImVec2(220, -1));
+        ImGui::SetNextWindowPos(ImVec2(5, 340), ImGuiCond_Always);
+        ImGui::Begin("Object", nullptr, ImGuiWindowFlags_NoCollapse);
+        {
+            if (ImGui::CollapsingHeader("Transform")) {
+                if (ImGui::CollapsingHeader("Position")) {
+                    ImGui::InputFloat("Position X", &m_position.x);
+                    ImGui::InputFloat("Position Y", &m_position.y);
+                    ImGui::InputFloat("Position Z", &m_position.z);
+                }
+
+                if (ImGui::CollapsingHeader("Size")) {
+                    ImGui::InputFloat("Size X", &m_size.x);
+                    ImGui::InputFloat("Size Y", &m_size.y);
+                    ImGui::InputFloat("Size Z", &m_size.z);
+                }
+
+                if (ImGui::CollapsingHeader("Angle")) {
+                    ImGui::InputFloat("Angle degree", &m_angle);
+                }
+            }
+        }
         ImGui::End();
 
         ImGui::Render();
@@ -628,11 +680,14 @@ namespace core {
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
         UniformBufferObject ubo{};
-        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f),
-                                glm::vec3(0.0f, 0.0f, 1.0f));
+        glm::mat4 model(1.0f);
+        model = glm::translate(model, m_position);
+        model = glm::scale(model, m_size);
+        model = glm::rotate(model, glm::radians(m_angle), glm::vec3(0.0f, 0.0f, 1.0f));
 
-        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f),
-                               glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.model = model;
+
+        ubo.view = camera.getView();
 
         ubo.proj = glm::perspective(glm::radians(45.0f), m_window->aspect(), 0.1f, 10.0f);
         ubo.proj[1][1] *= -1;

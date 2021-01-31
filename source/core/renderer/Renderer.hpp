@@ -6,6 +6,7 @@
 #include "Device.hpp"
 #include "SwapChain.hpp"
 #include "Buffer.hpp"
+#include "../camera/Camera.hpp"
 #include "../window/Window.hpp"
 
 
@@ -103,6 +104,11 @@ namespace core {
         VkDescriptorPool m_descriptorPool{};
         VkDescriptorPool m_uiDescriptorPool{};
         std::vector<VkDescriptorSet> m_descriptorSets;
+
+        core::Camera camera;
+        glm::vec3 m_position;
+        glm::vec3 m_size;
+        float m_angle;
     };
 
 } // End namespace core
