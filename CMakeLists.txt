@@ -14,7 +14,7 @@ endif()
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()
 
-# imgui
+# ImGui
 include_directories(bindings)
 file(GLOB_RECURSE IMGUI_BINDINGS bindings/*.cpp)
 
@@ -22,25 +22,12 @@ file(GLOB_RECURSE IMGUI_BINDINGS bindings/*.cpp)
 add_subdirectory(source/core)
 
 add_executable(Prototype_Action_RPG source/main.cpp ${IMGUI_BINDINGS})
-target_link_libraries(Prototype_Action_RPG
-        core
-        ${CONAN_LIBS}
-        ${VALIDATION_LAYERS})
+target_link_libraries(Prototype_Action_RPG core ${CONAN_LIBS} ${VALIDATION_LAYERS})
 
 if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
     target_link_libraries(Prototype_Action_RPG ${VALIDATION_LAYERS})
 endif()
 
 ### COMPILE SHADERS ###
-file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/shaders)
-
-set(GLSL_VALIDATOR $ENV{VULKAN_SDK}/bin/glslc)
-file(GLOB_RECURSE shaders_source assets/shaders/*.vert assets/shaders/*.frag)
-
-foreach(shader ${shaders_source})
-    get_filename_component(fileName ${shader} NAME_WE)
-    get_filename_component(fileExt ${shader} EXT)
-    message("Compiling shader: ${fileName}${fileExt}.spv")
-    execute_process(COMMAND ${GLSL_VALIDATOR} ${shader} -o ${fileName}${fileExt}.spv
-            WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/shaders)
-endforeach()
+set(SHADERS_COMPILE_SCRIPT ${PROJECT_SOURCE_DIR}/tools/shadersCompile.py)
+execute_process(COMMAND python ${SHADERS_COMPILE_SCRIPT} ${PROJECT_BINARY_DIR})
