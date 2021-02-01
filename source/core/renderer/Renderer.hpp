@@ -32,15 +32,23 @@ namespace core {
 
         void createRenderPass();
 
+        void createUIRenderPass();
+
         void createGraphicsPipeline();
 
         void createFramebuffers();
 
+        void createUIFramebuffers();
+
         void createCommandPool();
+
+        void createUICommandPool();
 
         void createSyncObjects();
 
         void recordCommands(uint32_t bufferIdx);
+
+        void recordUICommands(uint32_t bufferIdx);
 
         void recreateSwapchain();
 
@@ -80,14 +88,18 @@ namespace core {
 
         vk::SwapChain m_swapChain{};
         std::vector<VkFramebuffer> m_framebuffers;
+        std::vector<VkFramebuffer> m_uiFramebuffers;
 
         VkRenderPass m_renderPass{};
+        VkRenderPass m_uiRenderPass{};
 
         VkPipelineLayout m_pipelineLayout{};
         VkPipeline m_graphicsPipeline{};
 
         VkCommandPool m_commandPool{};
         std::vector<VkCommandBuffer> m_commandBuffers;
+        VkCommandPool m_uiCommandPool{};
+        std::vector<VkCommandBuffer> m_uiCommandBuffers;
 
         std::vector<VkSemaphore> m_imageAvailableSemaphores{};
         std::vector<VkSemaphore> m_renderFinishedSemaphores{};
@@ -106,9 +118,9 @@ namespace core {
         std::vector<VkDescriptorSet> m_descriptorSets;
 
         core::Camera camera;
-        glm::vec3 m_position;
-        glm::vec3 m_size;
-        float m_angle;
+        glm::vec3 m_position{};
+        glm::vec3 m_size{};
+        float m_angle{};
     };
 
 } // End namespace core
