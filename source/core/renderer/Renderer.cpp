@@ -233,9 +233,8 @@ namespace core {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        static float f = 0.0f;
-
-//        ImGui::ShowDemoWindow();
+#ifdef CORE_DEBUG
+        //        ImGui::ShowDemoWindow();
 
         ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
         ImGui::SetNextWindowSize(ImVec2(330, 80), ImGuiCond_Always);
@@ -246,6 +245,7 @@ namespace core {
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
         }
         ImGui::End();
+#endif
 
         ImGui::SetNextWindowSize(ImVec2(220, -1), ImGuiCond_Always);
         ImGui::SetNextWindowPos(ImVec2(5, 90), ImGuiCond_Always);

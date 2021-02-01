@@ -9,6 +9,12 @@
 
 #include "glm/glm.hpp"
 
+#ifdef NDEBUG
+#define CORE_RELEASE
+#else
+#define CORE_DEBUG
+#endif
+
 
 namespace core {
 
