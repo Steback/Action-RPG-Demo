@@ -3,27 +3,33 @@ project(Prototype_Action_RPG)
 
 set(CMAKE_CXX_STANDARD 20)
 
-# Vulkan Hpp
-include_directories($ENV{VULKAN_SDK}/include)
-file(GLOB_RECURSE VULKAN $ENV{LD_LIBRARY_PATH}/libvulkan.so)
-file(GLOB_RECURSE VALIDATION_LAYERS $ENV{LD_LIBRARY_PATH}/libVkLayer_*.so)
+# Vulkan
+if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
+    if (${UNIX})
+        file(GLOB_RECURSE VALIDATION_LAYERS $ENV{LD_LIBRARY_PATH}/libVkLayer_*.so)
+    endif()
+endif()
 
+# Conan
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()
 
 # imgui
-include_directories(${PROJECT_SOURCE_DIR}/thirdparty/imgui)
-add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/imgui)
+include_directories(bindings)
+file(GLOB_RECURSE IMGUI_BINDINGS bindings/*.cpp)
 
 ### SOURCE CODE
 add_subdirectory(source/core)
 
-add_executable(Prototype_Action_RPG source/main.cpp)
-target_link_libraries(${PROJECT_NAME}
+add_executable(Prototype_Action_RPG source/main.cpp ${IMGUI_BINDINGS})
+target_link_libraries(Prototype_Action_RPG
         core
         ${CONAN_LIBS}
-        ${VULKAN}
-        imgui)
+        ${VALIDATION_LAYERS})
+
+if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
+    target_link_libraries(Prototype_Action_RPG ${VALIDATION_LAYERS})
+endif()
 
 ### COMPILE SHADERS ###
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/shaders)
