@@ -8,21 +8,12 @@ include_directories($ENV{VULKAN_SDK}/include)
 file(GLOB_RECURSE VULKAN $ENV{LD_LIBRARY_PATH}/libvulkan.so)
 file(GLOB_RECURSE VALIDATION_LAYERS $ENV{LD_LIBRARY_PATH}/libVkLayer_*.so)
 
-# GLFW
-set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/glfw)
-
-# glm
-add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/glm)
+include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+conan_basic_setup()
 
 # imgui
 include_directories(${PROJECT_SOURCE_DIR}/thirdparty/imgui)
 add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/imgui)
-
-# spdlog
-add_subdirectory(${PROJECT_SOURCE_DIR}/thirdparty/spdlog)
 
 ### SOURCE CODE
 add_subdirectory(source/core)
@@ -30,11 +21,9 @@ add_subdirectory(source/core)
 add_executable(Prototype_Action_RPG source/main.cpp)
 target_link_libraries(${PROJECT_NAME}
         core
+        ${CONAN_LIBS}
         ${VULKAN}
-        glfw
-        glm
-        imgui
-        spdlog)
+        imgui)
 
 ### COMPILE SHADERS ###
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/shaders)

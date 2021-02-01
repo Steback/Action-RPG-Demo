@@ -97,7 +97,7 @@ namespace core {
         ImGui::StyleColorsDark();
 
         ImGuiIO& io = ImGui::GetIO(); (void)io;
-        io.Fonts->AddFontFromFileTTF("../assets/fonts/Roboto-Medium.ttf", 16.0f);
+        io.Fonts->AddFontFromFileTTF("../../assets/fonts/Roboto-Medium.ttf", 16.0f);
 
         createUIDescriptorPool();
 
@@ -333,8 +333,8 @@ namespace core {
     }
 
     void Renderer::createGraphicsPipeline() {
-        auto vertexShaderCode = core::tools::readFile("shaders/shader.vert.spv");
-        auto fragmentShaderCode = core::tools::readFile("shaders/shader.frag.spv");
+        auto vertexShaderCode = core::tools::readFile("../shaders/shader.vert.spv");
+        auto fragmentShaderCode = core::tools::readFile("../shaders/shader.frag.spv");
 
         VkShaderModule vertexShaderModule = vk::tools::loadShader(vertexShaderCode, m_logicalDevice);
         VkShaderModule fragmentShaderModule = vk::tools::loadShader(fragmentShaderCode, m_logicalDevice);
