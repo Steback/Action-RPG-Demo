@@ -10,16 +10,16 @@
 #include "Constants.hpp"
 #include "Initializers.hpp"
 #include "Tools.hpp"
-#include "../mesh/Mesh.hpp"
+#include "../model/Vertex.hpp"
 
 
 namespace core {
 
-    const std::vector<Vertex> vertices = {
-            { {-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f} },
-            { {0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f} },
-            { {0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f} },
-            { {-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f} }
+    const std::vector<core::Vertex> vertices = {
+            {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+            {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+            {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+            {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
     };
 
     const std::vector<uint16_t> indices = {
@@ -90,7 +90,7 @@ namespace core {
 
         camera.getEye() = {0.0f, 0.0f, 2.0f};
         camera.getCenter() = glm::vec3(0.0f, 0.0f, 0.0f);
-        camera.getUp() = glm::vec3(0.0f, 1.0f, 0.0f);
+        camera.getUp() = glm::vec3(0.0f, -1.0f, 0.0f);
 
         m_position = glm::vec3(0.0f, 0.0f, 0.0f);
         m_size = glm::vec3(1.0f, 1.0f, 1.0f);
