@@ -5,6 +5,7 @@
  imgui/1.80
  vulkan-headers/1.2.162.0
  vulkan-loader/1.2.162.0
+ stb/20200203
 
  [generators]
  cmake

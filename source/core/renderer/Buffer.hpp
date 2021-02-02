@@ -35,7 +35,7 @@ namespace vk {
         void destroy() const;
 
     public:
-        VkDevice m_device{};
+        VkDevice m_device = {};
         VkBuffer m_buffer = VK_NULL_HANDLE;
         VkDeviceMemory m_memory = VK_NULL_HANDLE;
         VkDescriptorBufferInfo m_descriptor{};

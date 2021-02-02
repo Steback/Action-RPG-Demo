@@ -6,6 +6,7 @@
 #include "Device.hpp"
 #include "SwapChain.hpp"
 #include "Buffer.hpp"
+#include "../Utilities.hpp"
 #include "../camera/Camera.hpp"
 #include "../window/Window.hpp"
 
@@ -70,6 +71,21 @@ namespace core {
 
         void createUIDescriptorPool();
 
+        void createTextureImage();
+
+        void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
+                         VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+
+        void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+
+        void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+
+        void createTextureImageView();
+
+        VkImageView createImageView(VkImage image, VkFormat format);
+
+        void createTextureSampler();
+
     private:
         std::unique_ptr<Window>& m_window;
 
@@ -88,18 +104,14 @@ namespace core {
 
         vk::SwapChain m_swapChain{};
         std::vector<VkFramebuffer> m_framebuffers;
-        std::vector<VkFramebuffer> m_uiFramebuffers;
 
         VkRenderPass m_renderPass{};
-        VkRenderPass m_uiRenderPass{};
 
         VkPipelineLayout m_pipelineLayout{};
         VkPipeline m_graphicsPipeline{};
 
         VkCommandPool m_commandPool{};
         std::vector<VkCommandBuffer> m_commandBuffers;
-        VkCommandPool m_uiCommandPool{};
-        std::vector<VkCommandBuffer> m_uiCommandBuffers;
 
         std::vector<VkSemaphore> m_imageAvailableSemaphores{};
         std::vector<VkSemaphore> m_renderFinishedSemaphores{};
@@ -114,9 +126,22 @@ namespace core {
 
         VkDescriptorSetLayout m_descriptorSetLayout{};
         VkDescriptorPool m_descriptorPool{};
-        VkDescriptorPool m_uiDescriptorPool{};
         std::vector<VkDescriptorSet> m_descriptorSets;
 
+        // TODO: Create UI class
+        VkRenderPass m_uiRenderPass{};
+        std::vector<VkFramebuffer> m_uiFramebuffers{};
+        VkCommandPool m_uiCommandPool{};
+        std::vector<VkCommandBuffer> m_uiCommandBuffers{};
+        VkDescriptorPool m_uiDescriptorPool{};
+
+        // TODO: Check images flow and control, maybe created a Image Class
+        VkImage m_textureImage{};
+        VkDeviceMemory m_textureImageMemory{};
+        VkImageView m_textureImageView{};
+        VkSampler m_textureSampler{};
+
+        UniformBufferObject ubo{};
         core::Camera camera;
         glm::vec3 m_position{};
         glm::vec3 m_size{};

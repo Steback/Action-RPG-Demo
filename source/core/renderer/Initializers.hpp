@@ -206,6 +206,30 @@ namespace vk::initializers {
         };
     }
 
+    inline VkImageCreateInfo imageCreateInfo() {
+        return {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO
+        };
+    }
+
+    inline VkImageMemoryBarrier imageMemoryBarrier() {
+        return {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER
+        };
+    }
+
+    inline VkSamplerCreateInfo samplerCreateInfo() {
+        return {
+            .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO
+        };
+    }
+
+    inline VkDescriptorPoolCreateInfo descriptorPoolCreateInfo() {
+        return {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO
+        };
+    }
+
 } // End namespace vk::initializers
 
 
