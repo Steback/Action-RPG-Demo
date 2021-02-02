@@ -12,7 +12,7 @@ endif()
 
 # Conan
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-conan_basic_setup()
+conan_basic_setup(NO_OUTPUT_DIRS)
 
 # ImGui
 include_directories(bindings)

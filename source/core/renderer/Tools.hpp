@@ -41,6 +41,9 @@ namespace vk {
 
         VkShaderModule loadShader(const std::vector<char> &code, VkDevice device);
 
+        VkFormat findSupportedFormat(VkPhysicalDevice device, const std::vector<VkFormat>& candidates,
+                                     VkImageTiling tiling, VkFormatFeatureFlags features);
+
     } // namespace tools
 
 } // namespace vk

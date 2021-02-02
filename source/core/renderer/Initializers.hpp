@@ -230,6 +230,12 @@ namespace vk::initializers {
         };
     }
 
+    inline VkPipelineDepthStencilStateCreateInfo pipelineDepthStencilStateCreateInfo() {
+        return {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO
+        };
+    }
+
 } // End namespace vk::initializers
 
 

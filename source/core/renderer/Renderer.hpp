@@ -82,9 +82,11 @@ namespace core {
 
         void createTextureImageView();
 
-        VkImageView createImageView(VkImage image, VkFormat format);
+        VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 
         void createTextureSampler();
+
+        void createDepthResources();
 
     private:
         std::unique_ptr<Window>& m_window;
@@ -140,6 +142,12 @@ namespace core {
         VkDeviceMemory m_textureImageMemory{};
         VkImageView m_textureImageView{};
         VkSampler m_textureSampler{};
+
+        // TODO: Check for optimising in depth buffer
+        VkImage m_depthImage;
+        VkDeviceMemory m_depthImageMemory;
+        VkImageView m_depthImageView;
+        VkFormat m_depthFormat;
 
         UniformBufferObject ubo{};
         core::Camera camera;
