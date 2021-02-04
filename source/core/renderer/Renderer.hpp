@@ -2,6 +2,8 @@
 #define PROTOTYPE_ACTION_RPG_RENDERER_HPP
 
 
+#include <memory>
+
 #include "Instance.hpp"
 #include "Device.hpp"
 #include "SwapChain.hpp"
@@ -12,7 +14,7 @@
 #include "../camera/Camera.hpp"
 #include "../window/Window.hpp"
 #include "../model/Model.hpp"
-#include "../texture/Texture.hpp"
+#include "../texture/TextureManager.hpp"
 
 
 namespace core {
@@ -58,14 +60,6 @@ namespace core {
         void createDescriptorPool();
 
         void createDescriptorSets();
-
-        uint createTexture(const std::string& fileName);
-
-        void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
-
-        void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
-
-        void createTextureSampler();
 
         void createDepthResources();
 
@@ -114,11 +108,8 @@ namespace core {
         // ImGui
         core::UIImGui m_ui;
 
-        // TODO: Create Texture Manager Class with is oen descriptor pool and layout
-        std::vector<core::Texture> textures;
-        VkDescriptorPool samplerDescriptorPool{};
-        VkDescriptorSetLayout samplerSetLayout{};
-        VkSampler m_textureSampler{};
+        // Textures
+        std::unique_ptr<core::TextureManager> m_texturesManager;
 
         // TODO: Check for optimising in depth buffer
         vk::Image m_depthBuffer;
