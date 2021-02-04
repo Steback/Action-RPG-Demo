@@ -3,9 +3,6 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_vulkan.h"
 #include "assimp/Importer.hpp"
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
@@ -23,7 +20,7 @@ namespace core {
 
     Renderer::Renderer(std::unique_ptr<Window>& window) : m_window(window) {
         init();
-        initUI();
+        m_ui = core::UIImGui(m_swapChain, m_device, m_window->m_window, *m_instance, m_graphicsQueue);
 
         spdlog::info("[Renderer] Initialized");
     }
@@ -92,41 +89,7 @@ namespace core {
         m_size = glm::vec3(1.0f, 1.0f, 1.0f);
         m_angle = 0.0f;
 
-        createMeshModel(MODELS_DIR + "viking-room.obj");
-    }
-
-    void Renderer::initUI() {
-        IMGUI_CHECKVERSION();
-        ImGui::CreateContext();
-        ImGui::StyleColorsDark();
-
-        ImGuiIO& io = ImGui::GetIO(); (void)io;
-        io.Fonts->AddFontFromFileTTF(std::string(FONTS_DIR + "Roboto-Medium.ttf").c_str(), 16.0f);
-
-        createUIDescriptorPool();
-        createUIRenderPass();
-        createUICommandPool();
-        createUIFramebuffers();
-
-        // Provide bind points from Vulkan API
-        ImGui_ImplGlfw_InitForVulkan(m_window->m_window, true);
-        ImGui_ImplVulkan_InitInfo init_info = {};
-        init_info.Instance = *m_instance;
-        init_info.PhysicalDevice = m_physicalDevice;
-        init_info.Device = m_logicalDevice;
-        init_info.QueueFamily = m_device->m_queueFamilyIndices.graphics;
-        init_info.Queue = m_graphicsQueue;
-        init_info.PipelineCache = nullptr;
-        init_info.DescriptorPool = m_uiDescriptorPool;
-        init_info.MinImageCount = m_swapChain.getImageCount();
-        init_info.ImageCount = m_swapChain.getImageCount();
-        ImGui_ImplVulkan_Init(&init_info, m_uiRenderPass);
-
-        // Upload the fonts for DearImgui
-        VkCommandBuffer commandBuffer = m_device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, m_uiCommandPool, true);
-        ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
-        m_device->flushCommandBuffer(commandBuffer, m_graphicsQueue, m_uiCommandPool, true);
-        ImGui_ImplVulkan_DestroyFontUploadObjects();
+        createModel(MODELS_DIR + "viking-room.obj");
     }
 
     void Renderer::cleanup() {
@@ -138,18 +101,13 @@ namespace core {
             texture.cleanup(m_logicalDevice);
         }
 
-        // Cleanup DearImGui
-        ImGui_ImplVulkan_Shutdown();
-        ImGui_ImplGlfw_Shutdown();
-        ImGui::DestroyContext();
+        UIImGui::cleanupImGui();
 
         cleanSwapChain();
 
-        vkDestroySampler(m_logicalDevice, m_textureSampler, nullptr);
+        m_ui.cleanup();
 
-        vkDestroyDescriptorPool(m_logicalDevice, m_uiDescriptorPool, nullptr);
-        vkDestroyCommandPool(m_logicalDevice, m_uiCommandPool, nullptr);
-        vkDestroyRenderPass(m_logicalDevice, m_uiRenderPass, nullptr);
+        vkDestroySampler(m_logicalDevice, m_textureSampler, nullptr);
 
         vkDestroyDescriptorSetLayout(m_logicalDevice, m_descriptorSetLayout, nullptr);
         vkDestroyDescriptorSetLayout(m_logicalDevice, samplerSetLayout, nullptr);
@@ -196,12 +154,15 @@ namespace core {
         m_imageFences[indexImage] = m_fences[m_currentFrame];
 
         recordCommands(indexImage);
-        recordUICommands(indexImage);
+        m_ui.recordCommands(indexImage, m_swapChain.getExtent());
         updateUniformBuffer(indexImage);
 
         VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphores[m_currentFrame] };
         VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-        std::array<VkCommandBuffer, 2> cmdBuffers = { m_commandBuffers[indexImage], m_uiCommandBuffers[indexImage] };
+        std::array<VkCommandBuffer, 2> cmdBuffers = {
+                m_commandBuffers[indexImage],
+                m_ui.getCommandBuffer(indexImage)
+        };
 
         VkSubmitInfo submitInfo = vk::initializers::submitInfo();
         submitInfo.waitSemaphoreCount = 1;
@@ -242,10 +203,7 @@ namespace core {
     }
 
     void Renderer::drawUI() {
-        // Start the Dear ImGui frame
-        ImGui_ImplVulkan_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
+        UIImGui::newFrame();
 
 #ifdef CORE_DEBUG
         //        ImGui::ShowDemoWindow();
@@ -263,53 +221,51 @@ namespace core {
 
         ImGui::SetNextWindowSize(ImVec2(220, -1), ImGuiCond_Always);
         ImGui::SetNextWindowPos(ImVec2(5, 90), ImGuiCond_Always);
-        ImGui::Begin("Camera Control", nullptr, ImGuiWindowFlags_NoCollapse);
+        ImGui::Begin("Objects Control", nullptr, ImGuiWindowFlags_NoCollapse);
         {
-            if (ImGui::CollapsingHeader("Eye")) {
-                ImGui::InputFloat("Eye X", &camera.getEye().x);
-                ImGui::InputFloat("Eye Y", &camera.getEye().y);
-                ImGui::InputFloat("Eye Z", &camera.getEye().z);
-            }
+           if (ImGui::CollapsingHeader("Camera")) {
+               if (ImGui::CollapsingHeader("Eye")) {
+                   ImGui::InputFloat("Eye X", &camera.getEye().x);
+                   ImGui::InputFloat("Eye Y", &camera.getEye().y);
+                   ImGui::InputFloat("Eye Z", &camera.getEye().z);
+               }
 
-            if (ImGui::CollapsingHeader("Center")) {
-                ImGui::InputFloat("Center X", &camera.getCenter().x);
-                ImGui::InputFloat("Center Y", &camera.getCenter().y);
-                ImGui::InputFloat("Center Z", &camera.getCenter().z);
-            }
+               if (ImGui::CollapsingHeader("Center")) {
+                   ImGui::InputFloat("Center X", &camera.getCenter().x);
+                   ImGui::InputFloat("Center Y", &camera.getCenter().y);
+                   ImGui::InputFloat("Center Z", &camera.getCenter().z);
+               }
 
-            if (ImGui::CollapsingHeader("Up")) {
-                ImGui::InputFloat("Up X", &camera.getUp().x);
-                ImGui::InputFloat("Up Y", &camera.getUp().y);
-                ImGui::InputFloat("Up Z", &camera.getUp().z);
-            }
+               if (ImGui::CollapsingHeader("Up")) {
+                   ImGui::InputFloat("Up X", &camera.getUp().x);
+                   ImGui::InputFloat("Up Y", &camera.getUp().y);
+                   ImGui::InputFloat("Up Z", &camera.getUp().z);
+               }
+           }
+
+           if (ImGui::CollapsingHeader("Object")) {
+               if (ImGui::CollapsingHeader("Transform")) {
+                   if (ImGui::CollapsingHeader("Position")) {
+                       ImGui::InputFloat("Position X", &m_position.x);
+                       ImGui::InputFloat("Position Y", &m_position.y);
+                       ImGui::InputFloat("Position Z", &m_position.z);
+                   }
+
+                   if (ImGui::CollapsingHeader("Size")) {
+                       ImGui::InputFloat("Size X", &m_size.x);
+                       ImGui::InputFloat("Size Y", &m_size.y);
+                       ImGui::InputFloat("Size Z", &m_size.z);
+                   }
+
+                   if (ImGui::CollapsingHeader("Angle")) {
+                       ImGui::InputFloat("Angle degree", &m_angle);
+                   }
+               }
+           }
         }
         ImGui::End();
 
-        ImGui::SetNextWindowSize(ImVec2(220, -1));
-        ImGui::SetNextWindowPos(ImVec2(5, -1), ImGuiCond_Always);
-        ImGui::Begin("Object", nullptr, ImGuiWindowFlags_NoCollapse);
-        {
-            if (ImGui::CollapsingHeader("Transform")) {
-                if (ImGui::CollapsingHeader("Position")) {
-                    ImGui::InputFloat("Position X", &m_position.x);
-                    ImGui::InputFloat("Position Y", &m_position.y);
-                    ImGui::InputFloat("Position Z", &m_position.z);
-                }
-
-                if (ImGui::CollapsingHeader("Size")) {
-                    ImGui::InputFloat("Size X", &m_size.x);
-                    ImGui::InputFloat("Size Y", &m_size.y);
-                    ImGui::InputFloat("Size Z", &m_size.z);
-                }
-
-                if (ImGui::CollapsingHeader("Angle")) {
-                    ImGui::InputFloat("Angle degree", &m_angle);
-                }
-            }
-        }
-        ImGui::End();
-
-        ImGui::Render();
+        UIImGui::render();
     }
 
     void Renderer::createRenderPass() {
@@ -366,46 +322,6 @@ namespace core {
 
         vk::tools::validation(vkCreateRenderPass(m_logicalDevice, &renderPassInfo, nullptr, &m_renderPass),
                               "Failed to create render pass");
-    }
-
-    void Renderer::createUIRenderPass() {
-        VkAttachmentDescription attachmentDescription = {};
-        attachmentDescription.format = m_swapChain.getFormat();
-        attachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
-        attachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-        attachmentDescription.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        attachmentDescription.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-        attachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        attachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        attachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-
-        VkAttachmentReference attachmentReference = {};
-        attachmentReference.attachment = 0;
-        attachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-        VkSubpassDescription subpass = {};
-        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.colorAttachmentCount = 1;
-        subpass.pColorAttachments = &attachmentReference;
-
-        VkSubpassDependency subpassDependency = {};
-        subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-        subpassDependency.dstSubpass = 0;
-        subpassDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        subpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        subpassDependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        subpassDependency.dstStageMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-        VkRenderPassCreateInfo renderPassInfo = vk::initializers::renderPassCreateInfo();
-        renderPassInfo.attachmentCount = 1;
-        renderPassInfo.pAttachments = &attachmentDescription;
-        renderPassInfo.subpassCount = 1;
-        renderPassInfo.pSubpasses = &subpass;
-        renderPassInfo.dependencyCount = 1;
-        renderPassInfo.pDependencies = &subpassDependency;
-
-        vk::tools::validation(vkCreateRenderPass(m_logicalDevice, &renderPassInfo, nullptr, &m_uiRenderPass),
-                              "Unable to create UI render pass");
     }
 
     void Renderer::createGraphicsPipeline() {
@@ -569,26 +485,6 @@ namespace core {
         }
     }
 
-    void Renderer::createUIFramebuffers() {
-        m_uiFramebuffers.resize(m_swapChain.getImageCount());
-
-        VkImageView attachment[1];
-        VkFramebufferCreateInfo info = vk::initializers::framebufferCreateInfo();
-        info.renderPass = m_uiRenderPass;
-        info.attachmentCount = 1;
-        info.pAttachments = attachment;
-        info.width = m_swapChain.getExtent().width;
-        info.height = m_swapChain.getExtent().height;
-        info.layers = 1;
-
-        for (uint32_t i = 0; i < m_swapChain.getImageCount(); ++i) {
-            attachment[0] = m_swapChain.getImageView(i);
-
-            vk::tools::validation(vkCreateFramebuffer(m_logicalDevice, &info, nullptr, &m_uiFramebuffers[i]),
-                                  "Unable to create UI framebuffers");
-        }
-    }
-
     void Renderer::createCommandPool() {
         m_commandPool = m_device->createCommandPool(m_device->m_queueFamilyIndices.graphics);
 
@@ -596,16 +492,6 @@ namespace core {
 
         for (int i = 0; i < m_swapChain.getImageCount(); ++i) {
             m_commandBuffers[i] = m_device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, m_commandPool);
-        }
-    }
-
-    void Renderer::createUICommandPool() {
-        m_uiCommandPool = m_device->createCommandPool(m_device->m_queueFamilyIndices.graphics);
-
-        m_uiCommandBuffers.resize(m_swapChain.getImageCount());
-
-        for (int i = 0; i < m_swapChain.getImageCount(); ++i) {
-            m_uiCommandBuffers[i] = m_device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, m_uiCommandPool);
         }
     }
 
@@ -684,35 +570,6 @@ namespace core {
                               "Failed to record command buffer");
     }
 
-    void Renderer::recordUICommands(uint32_t bufferIdx) {
-        VkCommandBufferBeginInfo cmdBufferBegin = vk::initializers::commandBufferBeginInfo();
-        cmdBufferBegin.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-        vk::tools::validation(vkBeginCommandBuffer(m_uiCommandBuffers[bufferIdx], &cmdBufferBegin),
-                              "Unable to start recording UI command buffer!");
-
-        VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
-
-        VkRenderPassBeginInfo renderPassBeginInfo = vk::initializers::renderPassBeginInfo();
-        renderPassBeginInfo.renderPass = m_uiRenderPass;
-        renderPassBeginInfo.framebuffer = m_uiFramebuffers[bufferIdx];
-        renderPassBeginInfo.renderArea.extent.width = m_swapChain.getExtent().width;
-        renderPassBeginInfo.renderArea.extent.height = m_swapChain.getExtent().height;
-        renderPassBeginInfo.clearValueCount = 1;
-        renderPassBeginInfo.pClearValues = &clearColor;
-
-        vkCmdBeginRenderPass(m_uiCommandBuffers[bufferIdx], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-        {
-            // Grab and record the draw data for Dear Imgui
-            ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_uiCommandBuffers[bufferIdx]);
-        }
-        // End and submit render pass
-        vkCmdEndRenderPass(m_uiCommandBuffers[bufferIdx]);
-
-        vk::tools::validation(vkEndCommandBuffer(m_uiCommandBuffers[bufferIdx]),
-                              "Failed to record command buffers");
-    }
-
     void Renderer::recreateSwapchain() {
         // TODO: Optimize window resize
         while (m_windowSize.width == 0 || m_windowSize.height == 0)  {
@@ -737,30 +594,17 @@ namespace core {
             m_commandBuffers[i] = m_device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, m_commandPool);
         }
 
-        // We also need to take care of the UI
-        ImGui_ImplVulkan_SetMinImageCount(m_swapChain.getImageCount());
-        m_uiCommandBuffers.resize(m_swapChain.getImageCount());
-
-        for (int i = 0; i < m_swapChain.getImageCount(); ++i) {
-            m_uiCommandBuffers[i] = m_device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, m_uiCommandPool);
-        }
-
-        createUIFramebuffers();
+        m_ui.resize(m_swapChain);
     }
 
     void Renderer::cleanSwapChain() {
         m_depthBuffer.cleanup(m_logicalDevice);
 
-        for (auto & framebuffer : m_uiFramebuffers) {
-            vkDestroyFramebuffer(m_logicalDevice, framebuffer, nullptr);
-        }
+        m_ui.cleanupResources();
 
         for (auto & framebuffer : m_framebuffers) {
             vkDestroyFramebuffer(m_logicalDevice, framebuffer, nullptr);
         }
-
-        vkFreeCommandBuffers(m_logicalDevice, m_uiCommandPool, static_cast<uint64_t>(m_uiCommandBuffers.size()),
-                             m_uiCommandBuffers.data());
 
         vkFreeCommandBuffers(m_logicalDevice, m_commandPool, static_cast<uint64_t>(m_commandBuffers.size()),
                              m_commandBuffers.data());
@@ -824,10 +668,13 @@ namespace core {
     }
 
     void Renderer::updateUniformBuffer(uint32_t currentImage) {
-        static auto startTime = std::chrono::high_resolution_clock::now();
+        auto now = static_cast<float>(glfwGetTime());
+        deltaTime = now - lastTime;
+        lastTime = now;
 
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+        m_angle += 10.0f * deltaTime;
+
+        if (m_angle > 360) m_angle -= 360.0f;
 
         glm::mat4 model(1.0f);
         model = glm::translate(model, m_position);
@@ -906,32 +753,6 @@ namespace core {
             vkUpdateDescriptorSets(m_logicalDevice, static_cast<uint32_t>(descriptorWrites.size()),
                                    descriptorWrites.data(), 0, nullptr);
         }
-    }
-
-    void Renderer::createUIDescriptorPool() {
-        VkDescriptorPoolSize pool_sizes[] = {
-                { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
-                { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
-                { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
-                { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
-                { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
-                { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
-                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
-                { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
-                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
-                { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
-                { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
-        };
-
-        VkDescriptorPoolCreateInfo pool_info = {};
-        pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-        pool_info.maxSets = 1000 * std::size(pool_sizes);
-        pool_info.poolSizeCount = static_cast<uint32_t>(std::size(pool_sizes));
-        pool_info.pPoolSizes = pool_sizes;
-
-        vk::tools::validation(vkCreateDescriptorPool(m_logicalDevice, &pool_info, nullptr, &m_uiDescriptorPool),
-                              "Cannot allocate UI descriptor pool");
     }
 
     uint Renderer::createTexture(const std::string& fileName) {
@@ -1128,7 +949,7 @@ namespace core {
                               VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
     }
 
-    void Renderer::createMeshModel(const std::string &modelFile) {
+    void Renderer::createModel(const std::string &modelFile) {
         // Import model "scene"
         Assimp::Importer importer;
         const aiScene *scene = importer.ReadFile(modelFile, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);

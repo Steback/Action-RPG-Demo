@@ -32,6 +32,7 @@ namespace core {
         m_image.bind(logicalDevice, memoryTypeIndex, size, VK_IMAGE_ASPECT_COLOR_BIT);
     }
 
+    // TODO: Check for update descriptor set in resize window
     void Texture::createDescriptor(VkDevice logicalDevice, VkDescriptorPool descriptorPool, VkSampler sampler,
                                    VkDescriptorSetLayout descriptorSetLayout) {
         VkDescriptorSetAllocateInfo setAllocateInfo{};

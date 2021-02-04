@@ -7,6 +7,7 @@
 #include "SwapChain.hpp"
 #include "Buffer.hpp"
 #include "Image.hpp"
+#include "UIImGui.hpp"
 #include "../Utilities.hpp"
 #include "../camera/Camera.hpp"
 #include "../window/Window.hpp"
@@ -24,8 +25,6 @@ namespace core {
 
         void init();
 
-        void initUI();
-
         void cleanup();
 
         void draw();
@@ -36,23 +35,15 @@ namespace core {
 
         void createRenderPass();
 
-        void createUIRenderPass();
-
         void createGraphicsPipeline();
 
         void createFramebuffers();
 
-        void createUIFramebuffers();
-
         void createCommandPool();
-
-        void createUICommandPool();
 
         void createSyncObjects();
 
         void recordCommands(uint32_t bufferIdx);
-
-        void recordUICommands(uint32_t bufferIdx);
 
         void recreateSwapchain();
 
@@ -68,8 +59,6 @@ namespace core {
 
         void createDescriptorSets();
 
-        void createUIDescriptorPool();
-
         uint createTexture(const std::string& fileName);
 
         void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
@@ -80,7 +69,7 @@ namespace core {
 
         void createDepthResources();
 
-        void createMeshModel(const std::string &modelFile);
+        void createModel(const std::string &modelFile);
 
     private:
         std::unique_ptr<Window>& m_window;
@@ -122,12 +111,8 @@ namespace core {
         VkDescriptorPool m_descriptorPool{};
         std::vector<VkDescriptorSet> m_descriptorSets;
 
-        // TODO: Create UI class
-        VkRenderPass m_uiRenderPass{};
-        std::vector<VkFramebuffer> m_uiFramebuffers{};
-        VkCommandPool m_uiCommandPool{};
-        std::vector<VkCommandBuffer> m_uiCommandBuffers{};
-        VkDescriptorPool m_uiDescriptorPool{};
+        // ImGui
+        core::UIImGui m_ui;
 
         // TODO: Create Texture Manager Class with is oen descriptor pool and layout
         std::vector<core::Texture> textures;
@@ -137,7 +122,7 @@ namespace core {
 
         // TODO: Check for optimising in depth buffer
         vk::Image m_depthBuffer;
-        VkFormat m_depthFormat;
+        VkFormat m_depthFormat{};
 
         // TODO: Temp object
         core::Model vikingRoom{};
@@ -147,6 +132,8 @@ namespace core {
         glm::vec3 m_position{};
         glm::vec3 m_size{};
         float m_angle{};
+        float deltaTime = 0.0f;
+        float lastTime = 0.0f;
     };
 
 } // End namespace core
