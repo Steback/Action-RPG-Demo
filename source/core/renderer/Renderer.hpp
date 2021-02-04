@@ -6,9 +6,12 @@
 #include "Device.hpp"
 #include "SwapChain.hpp"
 #include "Buffer.hpp"
+#include "Image.hpp"
 #include "../Utilities.hpp"
 #include "../camera/Camera.hpp"
 #include "../window/Window.hpp"
+#include "../model/Model.hpp"
+#include "../texture/Texture.hpp"
 
 
 namespace core {
@@ -55,10 +58,6 @@ namespace core {
 
         void cleanSwapChain();
 
-        void createVertexBuffer();
-
-        void createIndexBuffer();
-
         void createDescriptorSetLayout();
 
         void createUniformBuffers();
@@ -71,22 +70,17 @@ namespace core {
 
         void createUIDescriptorPool();
 
-        void createTextureImage();
-
-        void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
-                         VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+        uint createTexture(const std::string& fileName);
 
         void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 
         void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
-        void createTextureImageView();
-
-        VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
-
         void createTextureSampler();
 
         void createDepthResources();
+
+        void createMeshModel(const std::string &modelFile);
 
     private:
         std::unique_ptr<Window>& m_window;
@@ -122,8 +116,6 @@ namespace core {
 
         size_t m_currentFrame = 0;
 
-        vk::Buffer m_vertexBuffer;
-        vk::Buffer m_indexBuffer;
         std::vector<vk::Buffer> m_uniformBuffers;
 
         VkDescriptorSetLayout m_descriptorSetLayout{};
@@ -137,17 +129,18 @@ namespace core {
         std::vector<VkCommandBuffer> m_uiCommandBuffers{};
         VkDescriptorPool m_uiDescriptorPool{};
 
-        // TODO: Check images flow and control, maybe created a Image Class
-        VkImage m_textureImage{};
-        VkDeviceMemory m_textureImageMemory{};
-        VkImageView m_textureImageView{};
+        // TODO: Create Texture Manager Class with is oen descriptor pool and layout
+        std::vector<core::Texture> textures;
+        VkDescriptorPool samplerDescriptorPool{};
+        VkDescriptorSetLayout samplerSetLayout{};
         VkSampler m_textureSampler{};
 
         // TODO: Check for optimising in depth buffer
-        VkImage m_depthImage;
-        VkDeviceMemory m_depthImageMemory;
-        VkImageView m_depthImageView;
+        vk::Image m_depthBuffer;
         VkFormat m_depthFormat;
+
+        // TODO: Temp object
+        core::Model vikingRoom{};
 
         UniformBufferObject ubo{};
         core::Camera camera;

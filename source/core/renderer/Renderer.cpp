@@ -1,38 +1,25 @@
 #include "Renderer.hpp"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
+#include "assimp/Importer.hpp"
+#include "assimp/scene.h"
+#include "assimp/postprocess.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
-#include "Constants.hpp"
 #include "Initializers.hpp"
 #include "Tools.hpp"
 #include "../model/Vertex.hpp"
+#include "../Constants.hpp"
+#include "../Utilities.hpp"
 
 
 namespace core {
-
-    const std::vector<core::Vertex> vertices = {
-            {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-            {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-            {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-            {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
-
-            {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-            {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-            {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-            {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
-    };
-
-    const std::vector<uint16_t> indices = {
-            0, 1, 2, 2, 3, 0,
-            4, 5, 6, 6, 7, 4
-    };
 
     Renderer::Renderer(std::unique_ptr<Window>& window) : m_window(window) {
         init();
@@ -81,34 +68,31 @@ namespace core {
         m_swapChain.connect(m_physicalDevice, m_logicalDevice, m_surface);
         m_swapChain.create(m_windowSize.width, m_windowSize.height, m_device->m_queueFamilyIndices.graphics, m_device->m_queueFamilyIndices.present);
 
-        m_depthFormat = vk::tools::findSupportedFormat(m_physicalDevice,
-                                                       {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
-                                                       VK_IMAGE_TILING_OPTIMAL,
-                                                       VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
-
+        m_depthFormat= vk::tools::findSupportedFormat(m_physicalDevice,
+                                                      {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
+                                                      VK_IMAGE_TILING_OPTIMAL,
+                                                      VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
         createCommandPool();
         createRenderPass();
         createDescriptorSetLayout();
         createGraphicsPipeline();
         createDepthResources();
         createFramebuffers();
-        createTextureImage();
-        createTextureImageView();
         createTextureSampler();
-        createVertexBuffer();
-        createIndexBuffer();
         createUniformBuffers();
         createDescriptorPool();
         createDescriptorSets();
         createSyncObjects();
 
-        camera.getEye() = {0.0f, 0.0f, 2.0f};
+        camera.getEye() = {0.5f, 0.5f, 0.5f};
         camera.getCenter() = glm::vec3(0.0f, 0.0f, 0.0f);
-        camera.getUp() = glm::vec3(0.0f, -1.0f, 0.0f);
+        camera.getUp() = glm::vec3(0.0f, 1.0f, 0.0f);
 
         m_position = glm::vec3(0.0f, 0.0f, 0.0f);
         m_size = glm::vec3(1.0f, 1.0f, 1.0f);
         m_angle = 0.0f;
+
+        createMeshModel(MODELS_DIR + "viking-room.obj");
     }
 
     void Renderer::initUI() {
@@ -117,7 +101,7 @@ namespace core {
         ImGui::StyleColorsDark();
 
         ImGuiIO& io = ImGui::GetIO(); (void)io;
-        io.Fonts->AddFontFromFileTTF("../assets/fonts/Roboto-Medium.ttf", 16.0f);
+        io.Fonts->AddFontFromFileTTF(std::string(FONTS_DIR + "Roboto-Medium.ttf").c_str(), 16.0f);
 
         createUIDescriptorPool();
         createUIRenderPass();
@@ -148,6 +132,12 @@ namespace core {
     void Renderer::cleanup() {
         vkDeviceWaitIdle(m_logicalDevice);
 
+        vikingRoom.clean();
+
+        for (auto& texture : textures) {
+            texture.cleanup(m_logicalDevice);
+        }
+
         // Cleanup DearImGui
         ImGui_ImplVulkan_Shutdown();
         ImGui_ImplGlfw_Shutdown();
@@ -156,20 +146,13 @@ namespace core {
         cleanSwapChain();
 
         vkDestroySampler(m_logicalDevice, m_textureSampler, nullptr);
-        vkDestroyImageView(m_logicalDevice, m_textureImageView, nullptr);
-        vkDestroyImage(m_logicalDevice, m_textureImage, nullptr);
-        vkFreeMemory(m_logicalDevice, m_textureImageMemory, nullptr);
 
         vkDestroyDescriptorPool(m_logicalDevice, m_uiDescriptorPool, nullptr);
         vkDestroyCommandPool(m_logicalDevice, m_uiCommandPool, nullptr);
         vkDestroyRenderPass(m_logicalDevice, m_uiRenderPass, nullptr);
 
         vkDestroyDescriptorSetLayout(m_logicalDevice, m_descriptorSetLayout, nullptr);
-
-        vkDestroyBuffer(m_logicalDevice, m_vertexBuffer.m_buffer, nullptr);
-        vkFreeMemory(m_logicalDevice, m_vertexBuffer.m_memory, nullptr);
-        vkDestroyBuffer(m_logicalDevice, m_indexBuffer.m_buffer, nullptr);
-        vkFreeMemory(m_logicalDevice, m_indexBuffer.m_memory, nullptr);
+        vkDestroyDescriptorSetLayout(m_logicalDevice, samplerSetLayout, nullptr);
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
             vkDestroySemaphore(m_logicalDevice, m_imageAvailableSemaphores[i], nullptr);
@@ -276,60 +259,6 @@ namespace core {
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
         }
         ImGui::End();
-
-        std::string model;
-
-        for (int i = 0; i < 4; ++i) {
-            model.append("| ");
-
-            for (int j = 0; j < 4; ++j) {
-                model.append(std::to_string(ubo.model[i][j]) + " ");
-            }
-
-            model.append(" |\n");
-        }
-
-        std::string view;
-
-        for (int i = 0; i < 4; ++i) {
-            view.append("| ");
-
-            for (int j = 0; j < 4; ++j) {
-                view.append(std::to_string(ubo.view[i][j]) + " ");
-            }
-
-            view.append(" |\n");
-        }
-
-        std::string proj;
-
-        for (int i = 0; i < 4; ++i) {
-            proj.append("| ");
-
-            for (int j = 0; j < 4; ++j) {
-                proj.append(std::to_string(ubo.proj[i][j]) + " ");
-            }
-
-            proj.append(" |\n");
-        }
-
-
-        ImGui::SetNextWindowSize(ImVec2(280, -1), ImGuiCond_Always);
-        ImGui::Begin("MVP", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
-        {
-            if (ImGui::CollapsingHeader("Model")) {
-                ImGui::Text("%s", model.c_str());
-            }
-
-            if (ImGui::CollapsingHeader("View")) {
-                ImGui::Text("%s", view.c_str());
-            }
-
-            if (ImGui::CollapsingHeader("proj")) {
-                ImGui::Text("%s", proj.c_str());
-            }
-        }
-        ImGui::End();
 #endif
 
         ImGui::SetNextWindowSize(ImVec2(220, -1), ImGuiCond_Always);
@@ -347,11 +276,17 @@ namespace core {
                 ImGui::InputFloat("Center Y", &camera.getCenter().y);
                 ImGui::InputFloat("Center Z", &camera.getCenter().z);
             }
+
+            if (ImGui::CollapsingHeader("Up")) {
+                ImGui::InputFloat("Up X", &camera.getUp().x);
+                ImGui::InputFloat("Up Y", &camera.getUp().y);
+                ImGui::InputFloat("Up Z", &camera.getUp().z);
+            }
         }
         ImGui::End();
 
         ImGui::SetNextWindowSize(ImVec2(220, -1));
-        ImGui::SetNextWindowPos(ImVec2(5, 340), ImGuiCond_Always);
+        ImGui::SetNextWindowPos(ImVec2(5, -1), ImGuiCond_Always);
         ImGui::Begin("Object", nullptr, ImGuiWindowFlags_NoCollapse);
         {
             if (ImGui::CollapsingHeader("Transform")) {
@@ -567,9 +502,10 @@ namespace core {
         colorBlending.blendConstants[2] = 0.0f;
         colorBlending.blendConstants[3] = 0.0f;
 
+        std::array<VkDescriptorSetLayout, 2> layouts = { m_descriptorSetLayout, samplerSetLayout };
         VkPipelineLayoutCreateInfo pipelineLayoutInfo = vk::initializers::pipelineLayoutCreateInfo();
-        pipelineLayoutInfo.setLayoutCount = 1;
-        pipelineLayoutInfo.pSetLayouts = &m_descriptorSetLayout;
+        pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(layouts.size());
+        pipelineLayoutInfo.pSetLayouts = layouts.data();
         pipelineLayoutInfo.pushConstantRangeCount = 0;
         pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
@@ -617,7 +553,7 @@ namespace core {
         for (size_t i = 0; i < m_swapChain.getImageCount(); ++i) {
             std::array<VkImageView, 2> attachments = {
                     m_swapChain.getImageView(i),
-                    m_depthImageView
+                    m_depthBuffer.getView()
             };
 
             VkFramebufferCreateInfo framebufferInfo = vk::initializers::framebufferCreateInfo();
@@ -721,15 +657,26 @@ namespace core {
             {
                 vkCmdBindPipeline(m_commandBuffers[bufferIdx], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
 
-                VkBuffer vertexBuffer[] = { m_vertexBuffer.m_buffer };
-                VkDeviceSize offsets[] = { 0 };
-                vkCmdBindVertexBuffers(m_commandBuffers[bufferIdx], 0, 1, vertexBuffer, offsets);
-                vkCmdBindIndexBuffer(m_commandBuffers[bufferIdx], m_indexBuffer.m_buffer, 0, VK_INDEX_TYPE_UINT16);
+                for (int i = 0; i < vikingRoom.getMeshCount(); ++i) {
+                    VkBuffer vertexBuffer[] = { vikingRoom.getMesh(i)->getVertexBuffer() };
+                    VkDeviceSize offsets[] = { 0 };
+                    vkCmdBindVertexBuffers(m_commandBuffers[bufferIdx], 0, 1, vertexBuffer, offsets);
+                    vkCmdBindIndexBuffer(m_commandBuffers[bufferIdx], vikingRoom.getMesh(i)->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
-                vkCmdBindDescriptorSets(m_commandBuffers[bufferIdx], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                        m_pipelineLayout, 0, 1, &m_descriptorSets[bufferIdx], 0, nullptr);
-                vkCmdDrawIndexed(m_commandBuffers[bufferIdx], static_cast<uint32_t>(indices.size()),
-                                 1, 0, 0, 0);
+                    std::array<VkDescriptorSet, 2> descriptorSetGroup = {
+                            m_descriptorSets[bufferIdx],
+                            textures[vikingRoom.getMesh(i)->getTextureId()].getDescriptorSet()
+                    };
+
+                    vkCmdBindDescriptorSets(m_commandBuffers[bufferIdx], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout,
+                                            0, static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0, nullptr);
+
+                    vkCmdBindDescriptorSets(m_commandBuffers[bufferIdx], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                            m_pipelineLayout, 0, 1, &m_descriptorSets[bufferIdx], 0, nullptr);
+
+                    vkCmdDrawIndexed(m_commandBuffers[bufferIdx], vikingRoom.getMesh(i)->getIndexCount(),
+                                     1, 0, 0, 0);
+                }
             }
             vkCmdEndRenderPass(m_commandBuffers[bufferIdx]);
         }
@@ -802,9 +749,7 @@ namespace core {
     }
 
     void Renderer::cleanSwapChain() {
-        vkDestroyImageView(m_logicalDevice, m_depthImageView, nullptr);
-        vkDestroyImage(m_logicalDevice, m_depthImage, nullptr);
-        vkFreeMemory(m_logicalDevice, m_depthImageMemory, nullptr);
+        m_depthBuffer.cleanup(m_logicalDevice);
 
         for (auto & framebuffer : m_uiFramebuffers) {
             vkDestroyFramebuffer(m_logicalDevice, framebuffer, nullptr);
@@ -832,48 +777,7 @@ namespace core {
         }
 
         vkDestroyDescriptorPool(m_logicalDevice, m_descriptorPool, nullptr);
-    }
-
-    void Renderer::createVertexBuffer() {
-        VkDeviceSize size = sizeof(Vertex) * vertices.size();
-        vk::Buffer stagingBuffer;
-
-        m_device->createBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                               &stagingBuffer,
-                               size,
-                               (void*)vertices.data());
-
-        m_device->createBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                               VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                               &m_vertexBuffer,
-                               size);
-
-        m_device->copyBuffer(&stagingBuffer, &m_vertexBuffer, m_graphicsQueue);
-
-        vkDestroyBuffer(m_logicalDevice, stagingBuffer.m_buffer, nullptr);
-        vkFreeMemory(m_logicalDevice, stagingBuffer.m_memory, nullptr);
-    }
-
-    void Renderer::createIndexBuffer() {
-        VkDeviceSize size = sizeof(uint16_t) * indices.size();
-        vk::Buffer stagingBuffer;
-
-        m_device->createBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                               &stagingBuffer,
-                               size,
-                               (void*)indices.data());
-
-        m_device->createBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                               VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                               &m_indexBuffer,
-                               size);
-
-        m_device->copyBuffer(&stagingBuffer, &m_indexBuffer, m_graphicsQueue);
-
-        vkDestroyBuffer(m_logicalDevice, stagingBuffer.m_buffer, nullptr);
-        vkFreeMemory(m_logicalDevice, stagingBuffer.m_memory, nullptr);
+        vkDestroyDescriptorPool(m_logicalDevice, samplerDescriptorPool, nullptr);
     }
 
     void Renderer:: createDescriptorSetLayout() {
@@ -884,6 +788,13 @@ namespace core {
         uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
         uboLayoutBinding.pImmutableSamplers = nullptr;
 
+        VkDescriptorSetLayoutCreateInfo uboLayoutInfo = vk::initializers::descriptorSetLayoutCreateInfo();
+        uboLayoutInfo.bindingCount = 1;
+        uboLayoutInfo.pBindings = &uboLayoutBinding;
+
+        vk::tools::validation(vkCreateDescriptorSetLayout(m_logicalDevice, &uboLayoutInfo, nullptr, &m_descriptorSetLayout),
+                              "Failed to create descriptor set layout");
+
         VkDescriptorSetLayoutBinding samplerLayoutBinding{};
         samplerLayoutBinding.binding = 1;
         samplerLayoutBinding.descriptorCount = 1;
@@ -891,12 +802,11 @@ namespace core {
         samplerLayoutBinding.pImmutableSamplers = nullptr;
         samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-        std::array<VkDescriptorSetLayoutBinding, 2> bindings = {uboLayoutBinding, samplerLayoutBinding};
-        VkDescriptorSetLayoutCreateInfo layoutInfo = vk::initializers::descriptorSetLayoutCreateInfo();
-        layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-        layoutInfo.pBindings = bindings.data();
+        VkDescriptorSetLayoutCreateInfo samplerLayoutInfo = vk::initializers::descriptorSetLayoutCreateInfo();
+        samplerLayoutInfo.bindingCount = 1;
+        samplerLayoutInfo.pBindings = &samplerLayoutBinding;
 
-        vk::tools::validation(vkCreateDescriptorSetLayout(m_logicalDevice, &layoutInfo, nullptr, &m_descriptorSetLayout),
+        vk::tools::validation(vkCreateDescriptorSetLayout(m_logicalDevice, &samplerLayoutInfo, nullptr, &samplerSetLayout),
                               "Failed to create descriptor set layout");
     }
 
@@ -922,7 +832,7 @@ namespace core {
         glm::mat4 model(1.0f);
         model = glm::translate(model, m_position);
         model = glm::scale(model, m_size);
-        model = glm::rotate(model, glm::radians(m_angle), glm::vec3(0.0f, 0.0f, 1.0f));
+        model = glm::rotate(model, glm::radians(m_angle), glm::vec3(0.0f, 1.0f, 0.0f));
 
         ubo.model = model;
 
@@ -937,20 +847,31 @@ namespace core {
     }
 
     void Renderer::createDescriptorPool() {
-        std::array<VkDescriptorPoolSize, 2> poolSizes{};
-        poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSizes[0].descriptorCount = m_swapChain.getImageCount();
-        poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSizes[1].descriptorCount = m_swapChain.getImageCount();
+        VkDescriptorPoolSize uniformPoolSize{};
+        uniformPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        uniformPoolSize.descriptorCount = m_swapChain.getImageCount();
 
-        VkDescriptorPoolCreateInfo poolInfo = vk::initializers::descriptorPoolCreateInfo();
-        poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-        poolInfo.pPoolSizes = poolSizes.data();
-        poolInfo.maxSets = m_swapChain.getImageCount();
-        poolInfo.flags = 0;
+        VkDescriptorPoolCreateInfo uniformPoolInfo = vk::initializers::descriptorPoolCreateInfo();
+        uniformPoolInfo.poolSizeCount = 1;
+        uniformPoolInfo.pPoolSizes = &uniformPoolSize;
+        uniformPoolInfo.maxSets = m_swapChain.getImageCount();
+        uniformPoolInfo.flags = 0;
 
-        vk::tools::validation(vkCreateDescriptorPool(m_logicalDevice, &poolInfo, nullptr, &m_descriptorPool),
+        vk::tools::validation(vkCreateDescriptorPool(m_logicalDevice, &uniformPoolInfo, nullptr, &m_descriptorPool),
                               "Failed to create descriptor pool");
+
+        VkDescriptorPoolSize samplerPoolSizer{};
+        samplerPoolSizer.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        samplerPoolSizer.descriptorCount = MAX_OBJECTS;
+
+        VkDescriptorPoolCreateInfo samplerPoolCreateInfo{};
+        samplerPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        samplerPoolCreateInfo.maxSets = MAX_OBJECTS;
+        samplerPoolCreateInfo.poolSizeCount = 1;
+        samplerPoolCreateInfo.pPoolSizes = &samplerPoolSizer;
+
+        vk::tools::validation(vkCreateDescriptorPool(m_logicalDevice, &samplerPoolCreateInfo, nullptr, &samplerDescriptorPool),
+                              "Failed to create a Descriptor Pool");
     }
 
     void Renderer::createDescriptorSets() {
@@ -971,12 +892,7 @@ namespace core {
             bufferInfo.offset = 0;
             bufferInfo.range = sizeof(UniformBufferObject);
 
-            VkDescriptorImageInfo imageInfo{};
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = m_textureImageView;
-            imageInfo.sampler = m_textureSampler;
-
-            std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+            std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
             descriptorWrites[0] = vk::initializers::writeDescriptorSet();
             descriptorWrites[0].dstSet = m_descriptorSets[i];
             descriptorWrites[0].dstBinding = 0;
@@ -986,16 +902,6 @@ namespace core {
             descriptorWrites[0].pBufferInfo = &bufferInfo;
             descriptorWrites[0].pImageInfo = nullptr;
             descriptorWrites[0].pTexelBufferView = nullptr;
-
-            descriptorWrites[1] = vk::initializers::writeDescriptorSet();
-            descriptorWrites[1].dstSet = m_descriptorSets[i];
-            descriptorWrites[1].dstBinding = 1;
-            descriptorWrites[1].dstArrayElement = 0;
-            descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites[1].descriptorCount = 1;
-            descriptorWrites[1].pBufferInfo = nullptr;
-            descriptorWrites[1].pImageInfo = &imageInfo;
-            descriptorWrites[1].pTexelBufferView = nullptr;
 
             vkUpdateDescriptorSets(m_logicalDevice, static_cast<uint32_t>(descriptorWrites.size()),
                                    descriptorWrites.data(), 0, nullptr);
@@ -1028,20 +934,16 @@ namespace core {
                               "Cannot allocate UI descriptor pool");
     }
 
-    void Renderer::createTextureImage() {
-        int texWidth, texHeight, texChannels;
-        stbi_uc* pixels = stbi_load("..//assets/textures/statue-1275469_1920.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-        VkDeviceSize imageSize = texWidth * texHeight * 4;
-
-        if (!pixels) {
-            core::throw_ex("failed to load texture image!");
-        }
+    uint Renderer::createTexture(const std::string& fileName) {
+        int width, height;
+        VkDeviceSize imageSize;
+        stbi_uc* pixels = core::tools::loadTextureFile(fileName, &width, &height, &imageSize);
 
         vk::Buffer stagingBuffer;
 
         m_device->createBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                               &stagingBuffer, imageSize);
+                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                             &stagingBuffer, imageSize);
 
         stagingBuffer.map(imageSize);
         stagingBuffer.copyTo(pixels, imageSize);
@@ -1049,49 +951,31 @@ namespace core {
 
         stbi_image_free(pixels);
 
-        createImage(texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-                    VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                    m_textureImage, m_textureImageMemory);
+        auto u32Width = static_cast<uint32_t>(width);
+        auto u32Height = static_cast<uint32_t>(height);
 
-        transitionImageLayout(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        copyBufferToImage(stagingBuffer.m_buffer, m_textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
-        transitionImageLayout(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        core::Texture texture(m_logicalDevice, u32Width, u32Height,
+                              VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                              VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+
+        VkMemoryRequirements memoryRequirements{};
+        vkGetImageMemoryRequirements(m_logicalDevice, texture.getTextureImage().getImage(), &memoryRequirements);
+
+        auto memType = m_device->getMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        texture.bind(m_logicalDevice, memType, memoryRequirements.size);
+
+        transitionImageLayout(texture.getTextureImage().getImage(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        copyBufferToImage(stagingBuffer.m_buffer, texture.getTextureImage().getImage(), u32Width, u32Height);
+        transitionImageLayout(texture.getTextureImage().getImage(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
         stagingBuffer.destroy();
-    }
 
-    void Renderer:: createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
-                               VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage &image,
-                               VkDeviceMemory &imageMemory) {
-        VkImageCreateInfo imageInfo = vk::initializers::imageCreateInfo();
-        imageInfo.imageType = VK_IMAGE_TYPE_2D;
-        imageInfo.extent.width = static_cast<uint32_t>(width);
-        imageInfo.extent.height = static_cast<uint32_t>(height);
-        imageInfo.extent.depth = 1;
-        imageInfo.mipLevels = 1;
-        imageInfo.arrayLayers = 1;
-        imageInfo.format = format;
-        imageInfo.tiling = tiling;
-        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageInfo.usage = usage;
-        imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-        imageInfo.flags = 0;
+        texture.createDescriptor(m_logicalDevice, samplerDescriptorPool, m_textureSampler, samplerSetLayout);
 
-        vk::tools::validation(vkCreateImage(m_logicalDevice, &imageInfo, nullptr, &image),
-                              "Failed to create image!");
+        textures.push_back(texture);
 
-        VkMemoryRequirements memRequirements;
-        vkGetImageMemoryRequirements(m_logicalDevice, image, &memRequirements);
-
-        VkMemoryAllocateInfo allocInfo = vk::initializers::memoryAllocateInfo();
-        allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = m_device->getMemoryType(memRequirements.memoryTypeBits, properties);
-
-        vk::tools::validation(vkAllocateMemory(m_logicalDevice, &allocInfo, nullptr, &imageMemory),
-                              "failed to allocate image memory");
-
-        vkBindImageMemory(m_logicalDevice, image, imageMemory, 0);
+        return static_cast<uint>(textures.size()) - 1;
     }
 
     void Renderer::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
@@ -1191,29 +1075,6 @@ namespace core {
         m_device->flushCommandBuffer(commandBuffer, m_graphicsQueue, m_commandPool);
     }
 
-    void Renderer::createTextureImageView() {
-        m_textureImageView = createImageView(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
-    }
-
-    VkImageView Renderer::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) {
-        VkImageViewCreateInfo viewInfo = vk::initializers::imageViewCreateInfo();
-        viewInfo.image = image;
-        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        viewInfo.format = format;
-        viewInfo.subresourceRange.aspectMask = aspectFlags;
-        viewInfo.subresourceRange.baseMipLevel = 0;
-        viewInfo.subresourceRange.levelCount = 1;
-        viewInfo.subresourceRange.baseArrayLayer = 0;
-        viewInfo.subresourceRange.layerCount = 1;
-
-        VkImageView imageView;
-        if (vkCreateImageView(m_logicalDevice, &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create texture image view!");
-        }
-
-        return imageView;
-    }
-
     void Renderer::createTextureSampler() {
         VkSamplerCreateInfo samplerInfo = vk::initializers::samplerCreateInfo();
         samplerInfo.magFilter = VK_FILTER_LINEAR;
@@ -1237,16 +1098,67 @@ namespace core {
     }
 
     void Renderer::createDepthResources() {
-        createImage(m_swapChain.getExtent().width, m_swapChain.getExtent().height, m_depthFormat,
-                    VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_depthImage, m_depthImageMemory);
 
-        m_depthImageView = createImageView(m_depthImage, m_depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 
-        transitionImageLayout(m_depthImage, m_depthFormat, VK_IMAGE_LAYOUT_UNDEFINED,
+        VkImageCreateInfo imageInfo = vk::initializers::imageCreateInfo();
+        imageInfo.imageType = VK_IMAGE_TYPE_2D;
+        imageInfo.extent.width = m_swapChain.getExtent().width;
+        imageInfo.extent.height = m_swapChain.getExtent().height;
+        imageInfo.extent.depth = 1;
+        imageInfo.mipLevels = 1;
+        imageInfo.arrayLayers = 1;
+        imageInfo.format = m_depthFormat;
+        imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        imageInfo.flags = 0;
+
+        m_depthBuffer = vk::Image(m_logicalDevice, imageInfo);
+
+        VkMemoryRequirements memoryRequirements{};
+        vkGetImageMemoryRequirements(m_logicalDevice, m_depthBuffer.getImage(), &memoryRequirements);
+
+        auto memType = m_device->getMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        m_depthBuffer.bind(m_logicalDevice, memType, memoryRequirements.size, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+        transitionImageLayout(m_depthBuffer.getImage(), m_depthBuffer.getFormat(), VK_IMAGE_LAYOUT_UNDEFINED,
                               VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    }
 
+    void Renderer::createMeshModel(const std::string &modelFile) {
+        // Import model "scene"
+        Assimp::Importer importer;
+        const aiScene *scene = importer.ReadFile(modelFile, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
 
+        if (!scene) {
+            throw std::runtime_error("Failed to load model! (" + modelFile + ")");
+        }
+
+        // Get vector of all materials with 1:1 ID placement
+        std::vector<std::string> textureNames = core::Model::loadMaterials(scene);
+
+        // Conversion from the materials list IDs to our Descriptor Array IDs
+        std::vector<uint> matToTex(textureNames.size());
+
+        // Loop over textureNames and create textures for them
+        for (size_t i = 0; i < textureNames.size(); i++) {
+            // If material had no texture, set '0' to indicate no texture, texture 0 will be reserved for a default texture
+            if (textureNames[i].empty()) {
+                matToTex[i] = 0;
+            } else {
+                // Otherwise, create texture and set value to index of new texture
+                matToTex[i] = createTexture(textureNames[i]);
+            }
+        }
+
+        // Load in all our meshes
+        std::vector<core::Mesh> modelMeshes = core::Model::LoadNode(m_device, m_graphicsQueue, scene->mRootNode, scene, matToTex);
+
+        // Create mesh model and add to list
+        vikingRoom = core::Model(modelMeshes);
     }
 
 } // End namespace core

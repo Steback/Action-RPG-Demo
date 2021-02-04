@@ -8,6 +8,9 @@
 #include <fstream>
 
 #include "glm/glm.hpp"
+#include "stb_image.h"
+
+#include "Constants.hpp"
 
 #ifdef NDEBUG
 #define CORE_RELEASE
@@ -44,6 +47,21 @@ namespace core {
             file.close();
 
             return buffer;
+        }
+
+        inline stbi_uc* loadTextureFile(const std::string& fileName, int* width, int* height, VkDeviceSize* size) {
+            int channels;
+
+            // Load pixel data for image
+            std::string fileLoc = TEXTURES_DIR + fileName;
+            stbi_uc* image = stbi_load(fileLoc.c_str(), width, height, &channels, STBI_rgb_alpha);
+
+            if (!image) throw std::runtime_error("Failed to load a Texture file: " + fileName);
+
+            // Calculate image size using given and known data
+            *size = *width * *height * static_cast<int>(STBI_rgb_alpha);
+
+            return image;
         }
 
     } // namespace tools
