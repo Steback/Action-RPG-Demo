@@ -37,12 +37,10 @@ namespace core {
 
         stbi_image_free(pixels);
 
-        auto u32Width = static_cast<uint32_t>(width);
-        auto u32Height = static_cast<uint32_t>(height);
+        VkExtent2D size = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
         auto mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height))));
 
-        core::Texture texture(m_device->m_logicalDevice, u32Width, u32Height,
-                              VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+        core::Texture texture(m_device->m_logicalDevice, size, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
                               VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                               mipLevels);
 
@@ -57,9 +55,9 @@ namespace core {
                                         VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels );
 
         m_device->copyBufferToImage(stagingBuffer.m_buffer, texture.getTextureImage().getImage(), m_graphicsQueue,
-                                    u32Width, u32Height);
+                                    size);
 
-        generateMipmaps(texture, VK_FORMAT_R8G8B8A8_SRGB, u32Width, u32Height, mipLevels);
+        generateMipmaps(texture, VK_FORMAT_R8G8B8A8_SRGB, size, mipLevels);
 
         stagingBuffer.destroy();
 
@@ -90,7 +88,7 @@ namespace core {
         vkDestroyDescriptorPool(m_device->m_logicalDevice, m_descriptorPool, nullptr);
     }
 
-    void TextureManager::generateMipmaps(const core::Texture& texture, VkFormat format, int32_t texWidth, int32_t texHeight, uint32_t mipLevels) {
+    void TextureManager::generateMipmaps(const core::Texture& texture, VkFormat format, VkExtent2D size, uint32_t mipLevels) {
         // Check if image format supports linear blitting
         VkFormatProperties formatProperties;
         vkGetPhysicalDeviceFormatProperties(m_device->m_physicalDevice, format, &formatProperties);
@@ -110,8 +108,8 @@ namespace core {
         barrier.subresourceRange.layerCount = 1;
         barrier.subresourceRange.levelCount = 1;
 
-        int32_t mipWidth = texWidth;
-        int32_t mipHeight = texHeight;
+        auto mipWidth = static_cast<int32_t>(size.width);
+        auto mipHeight = static_cast<int32_t>(size.height);
 
         for (uint32_t i = 1; i < mipLevels; ++i) {
             barrier.subresourceRange.baseMipLevel = i - 1;

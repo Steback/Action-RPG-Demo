@@ -67,12 +67,13 @@ namespace core {
                                                       {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
                                                       VK_IMAGE_TILING_OPTIMAL,
                                                       VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+
+        m_texturesManager = std::make_unique<core::TextureManager>(m_device, m_graphicsQueue);
+        createModel(MODELS_DIR + "viking-room.obj");
+
         createCommandPool();
         createRenderPass();
         createDescriptorSetLayout();
-
-        m_texturesManager = std::make_unique<core::TextureManager>(m_device, m_graphicsQueue);
-
         createGraphicsPipeline();
         createDepthResources();
         createFramebuffers();
@@ -81,15 +82,13 @@ namespace core {
         createDescriptorSets();
         createSyncObjects();
 
-        camera.getEye() = {0.5f, 0.5f, 0.5f};
+        camera.getEye() = {0.3f, 0.3f, 0.3f};
         camera.getCenter() = glm::vec3(0.0f, 0.0f, 0.0f);
         camera.getUp() = glm::vec3(0.0f, 1.0f, 0.0f);
 
         m_position = glm::vec3(0.0f, 0.0f, 0.0f);
         m_size = glm::vec3(1.0f, 1.0f, 1.0f);
         m_angle = 0.0f;
-
-        createModel(MODELS_DIR + "viking-room.obj");
     }
 
     void Renderer::cleanup() {

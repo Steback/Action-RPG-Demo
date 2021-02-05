@@ -125,6 +125,7 @@ namespace core {
         float m_angle{};
         float deltaTime = 0.0f;
         float lastTime = 0.0f;
+        bool increment = true;
     };
 
 } // End namespace core

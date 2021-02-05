@@ -8,13 +8,13 @@ namespace core {
 
     Texture::Texture() = default;
 
-    Texture::Texture(VkDevice logicalDevice, uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
+    Texture::Texture(VkDevice logicalDevice, VkExtent2D size, VkFormat format, VkImageTiling tiling,
                      VkImageUsageFlags usageFlags, uint32_t mipLevels) {
 
         VkImageCreateInfo createInfo = vk::initializers::imageCreateInfo();
         createInfo.imageType = VK_IMAGE_TYPE_2D; // Type of image (1D, 2D or 3D)
-        createInfo.extent.width = width; // Width of Image extent
-        createInfo.extent.height = height; // Height of Image extent
+        createInfo.extent.width = size.width; // Width of Image extent
+        createInfo.extent.height = size.height; // Height of Image extent
         createInfo.extent.depth = 1; // Depth of image (just 1, no 3D aspect)
         createInfo.mipLevels = mipLevels; // Number of mipmap levels
         createInfo.arrayLayers = 1; // Number of levels in image array

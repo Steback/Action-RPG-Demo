@@ -13,7 +13,7 @@ namespace core {
     public:
         Texture();
 
-        Texture(VkDevice logicalDevice, uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
+        Texture(VkDevice logicalDevice, VkExtent2D size, VkFormat format, VkImageTiling tiling,
                 VkImageUsageFlags usageFlags, uint32_t mipLevels = 1);
 
         ~Texture();

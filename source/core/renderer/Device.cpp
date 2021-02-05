@@ -399,7 +399,7 @@ namespace vk {
         flushCommandBuffer(commandBuffer, queue, true);
     }
 
-    void Device::copyBufferToImage(VkBuffer buffer, VkImage image, VkQueue queue, uint32_t width, uint32_t height) const {
+    void Device::copyBufferToImage(VkBuffer buffer, VkImage image, VkQueue queue, VkExtent2D size) const {
         VkCommandBuffer commandBuffer = createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
         VkBufferImageCopy region{};
@@ -414,8 +414,8 @@ namespace vk {
 
         region.imageOffset = {0, 0, 0};
         region.imageExtent = {
-                width,
-                height,
+                size.width,
+                size.height,
                 1
         };
 

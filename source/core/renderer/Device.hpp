@@ -63,7 +63,7 @@ namespace vk {
         void transitionImageLayout(VkImage image, VkFormat format, VkQueue queue, VkImageLayout oldLayout,
                                    VkImageLayout newLayout, uint32_t mipLevels = 1) const;
 
-        void copyBufferToImage(VkBuffer buffer, VkImage image, VkQueue queue, uint32_t width, uint32_t height) const;
+        void copyBufferToImage(VkBuffer buffer, VkImage image, VkQueue queue, VkExtent2D size) const;
 
     public:
         VkPhysicalDevice m_physicalDevice;

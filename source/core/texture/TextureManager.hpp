@@ -33,7 +33,7 @@ namespace core {
 
         void cleanupResources();
 
-        void generateMipmaps(const core::Texture& texture, VkFormat format, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
+        void generateMipmaps(const core::Texture& texture, VkFormat format, VkExtent2D size, uint32_t mipLevels);
 
     private:
         void createDescriptorPool();
