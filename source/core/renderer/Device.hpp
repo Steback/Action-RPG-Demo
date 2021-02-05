@@ -60,7 +60,8 @@ namespace vk {
 
         void copyBuffer(vk::Buffer *src, vk::Buffer *dst, VkQueue queue, VkBufferCopy *copyRegion = nullptr) const;
 
-        void transitionImageLayout(VkImage image, VkFormat format, VkQueue queue, VkImageLayout oldLayout, VkImageLayout newLayout) const;
+        void transitionImageLayout(VkImage image, VkFormat format, VkQueue queue, VkImageLayout oldLayout,
+                                   VkImageLayout newLayout, uint32_t mipLevels = 1) const;
 
         void copyBufferToImage(VkBuffer buffer, VkImage image, VkQueue queue, uint32_t width, uint32_t height) const;
 

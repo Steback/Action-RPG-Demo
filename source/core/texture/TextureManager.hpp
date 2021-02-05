@@ -33,12 +33,12 @@ namespace core {
 
         void cleanupResources();
 
+        void generateMipmaps(const core::Texture& texture, VkFormat format, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
+
     private:
         void createDescriptorPool();
 
         void createDescriptorSetLayout();
-
-        void createTextureSampler();
 
     private:
         vk::Device* m_device{};
@@ -46,7 +46,6 @@ namespace core {
         std::vector<core::Texture> textures;
         VkDescriptorPool m_descriptorPool{};
         VkDescriptorSetLayout m_descriptorSetLayout{};
-        VkSampler m_textureSampler{};
     };
 
 } // namespace core

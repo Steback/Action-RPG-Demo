@@ -1,6 +1,7 @@
 #include "Texture.hpp"
 
 #include "../Utilities.hpp"
+#include "../renderer/Tools.hpp"
 
 
 namespace core {
@@ -8,13 +9,14 @@ namespace core {
     Texture::Texture() = default;
 
     Texture::Texture(VkDevice logicalDevice, uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
-                     VkImageUsageFlags usageFlags) {
+                     VkImageUsageFlags usageFlags, uint32_t mipLevels) {
+
         VkImageCreateInfo createInfo = vk::initializers::imageCreateInfo();
         createInfo.imageType = VK_IMAGE_TYPE_2D; // Type of image (1D, 2D or 3D)
         createInfo.extent.width = width; // Width of Image extent
         createInfo.extent.height = height; // Height of Image extent
         createInfo.extent.depth = 1; // Depth of image (just 1, no 3D aspect)
-        createInfo.mipLevels = 1; // Number of mipmap levels
+        createInfo.mipLevels = mipLevels; // Number of mipmap levels
         createInfo.arrayLayers = 1; // Number of levels in image array
         createInfo.format = format; // Format type of image
         createInfo.tiling = tiling; // How image data should be "tiled" (arranged for optimal reading)
@@ -24,6 +26,8 @@ namespace core {
         createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
         m_image = vk::Image(logicalDevice, createInfo);
+
+        createTextureSampler(logicalDevice, mipLevels);
     }
 
     Texture::~Texture() = default;
@@ -33,8 +37,7 @@ namespace core {
     }
 
     // TODO: Check for update descriptor set in resize window
-    void Texture::createDescriptor(VkDevice logicalDevice, VkDescriptorPool descriptorPool, VkSampler sampler,
-                                   VkDescriptorSetLayout descriptorSetLayout) {
+    void Texture::createDescriptor(VkDevice logicalDevice, VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorSetLayout) {
         VkDescriptorSetAllocateInfo setAllocateInfo{};
         setAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         setAllocateInfo.descriptorPool = descriptorPool;
@@ -48,7 +51,7 @@ namespace core {
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         imageInfo.imageView = m_image.getView();
-        imageInfo.sampler = sampler;
+        imageInfo.sampler = m_sampler;
 
         VkWriteDescriptorSet writeDescriptorSet = vk::initializers::writeDescriptorSet();
         writeDescriptorSet.dstSet = m_descriptorSet;
@@ -62,6 +65,7 @@ namespace core {
     }
 
     void Texture::cleanup(VkDevice logicalDevice) {
+        vkDestroySampler(logicalDevice, m_sampler, nullptr);
         m_image.cleanup(logicalDevice);
     }
 
@@ -87,6 +91,28 @@ namespace core {
 
     VkDescriptorSet Texture::getDescriptorSet() const {
         return m_descriptorSet;
+    }
+
+    void Texture::createTextureSampler(VkDevice logicalDevice, uint32_t mipLevels) {
+        VkSamplerCreateInfo samplerInfo = vk::initializers::samplerCreateInfo();
+        samplerInfo.magFilter = VK_FILTER_LINEAR;
+        samplerInfo.minFilter = VK_FILTER_LINEAR;
+        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.anisotropyEnable = VK_FALSE;
+        samplerInfo.maxAnisotropy = 1.0f;
+        samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+        samplerInfo.unnormalizedCoordinates = VK_FALSE;
+        samplerInfo.compareEnable = VK_FALSE;
+        samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+        samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        samplerInfo.mipLodBias = 0.0f;
+        samplerInfo.minLod = 0.0f;
+        samplerInfo.maxLod = static_cast<float>(mipLevels);
+
+        vk::tools::validation(vkCreateSampler(logicalDevice, &samplerInfo, nullptr, &m_sampler),
+                              "Failed to create texture sampler");
     }
 
 } // namespace core

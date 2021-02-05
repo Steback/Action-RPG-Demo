@@ -14,14 +14,13 @@ namespace core {
         Texture();
 
         Texture(VkDevice logicalDevice, uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
-                VkImageUsageFlags usageFlags);
+                VkImageUsageFlags usageFlags, uint32_t mipLevels = 1);
 
         ~Texture();
 
         void bind(VkDevice logicalDevice, uint32_t memoryTypeIndex, VkDeviceSize size);
 
-        void createDescriptor(VkDevice logicalDevice, VkDescriptorPool descriptorPool, VkSampler sampler,
-                              VkDescriptorSetLayout descriptorSetLayout);
+        void createDescriptor(VkDevice logicalDevice, VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorSetLayout);
 
         void cleanup(VkDevice logicalDevice);
 
@@ -38,8 +37,13 @@ namespace core {
         VkDescriptorSet getDescriptorSet() const;
 
     private:
+
+        void createTextureSampler(VkDevice logicalDevice, uint32_t mipLevels);
+
+    private:
         vk::Image m_image;
         VkDescriptorSet m_descriptorSet{};
+        VkSampler m_sampler{};
     };
 
 } // namespace core

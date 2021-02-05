@@ -333,7 +333,8 @@ namespace vk {
         flushCommandBuffer(copyCmd, queue);
     }
 
-    void Device::transitionImageLayout(VkImage image, VkFormat format, VkQueue queue, VkImageLayout oldLayout, VkImageLayout newLayout) const {
+    void Device::transitionImageLayout(VkImage image, VkFormat format, VkQueue queue, VkImageLayout oldLayout,
+                                       VkImageLayout newLayout, uint32_t mipLevels) const {
         VkCommandBuffer commandBuffer = createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
         VkImageMemoryBarrier barrier = vk::initializers::imageMemoryBarrier();
@@ -344,7 +345,7 @@ namespace vk {
         barrier.image = image;
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         barrier.subresourceRange.baseMipLevel = 0;
-        barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.levelCount = mipLevels;
         barrier.subresourceRange.baseArrayLayer = 0;
         barrier.subresourceRange.layerCount = 1;
         barrier.srcAccessMask = 0;

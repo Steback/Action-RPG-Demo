@@ -22,7 +22,7 @@ public:
     void init() {
         spdlog::info("[App] Start");
 
-        m_window = std::make_unique<core::Window>("Prototype Action RPG", 1200, 700);
+        m_window = std::make_unique<core::Window>("Prototype Action RPG", 1776, 1000);
         m_renderer = std::make_unique<core::Renderer>(m_window);
 
         spdlog::info("[App] Initialized");
