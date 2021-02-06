@@ -65,6 +65,8 @@ namespace vk {
 
         void copyBufferToImage(VkBuffer buffer, VkImage image, VkQueue queue, VkExtent2D size) const;
 
+        VkSampleCountFlagBits getMaxUsableSampleCount() const;
+
     public:
         VkPhysicalDevice m_physicalDevice;
         VkDevice m_logicalDevice{};

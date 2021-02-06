@@ -65,6 +65,8 @@ namespace core {
 
         void createModel(const std::string &modelFile);
 
+        void createMsaaResources();
+
     private:
         std::unique_ptr<Window>& m_window;
 
@@ -110,6 +112,10 @@ namespace core {
 
         // Textures
         std::unique_ptr<core::TextureManager> m_texturesManager;
+        VkSampleCountFlagBits m_msaaSamples = VK_SAMPLE_COUNT_1_BIT;
+
+        // Multisampling anti-aliasing
+        vk::Image m_colorImage;
 
         // TODO: Check for optimising in depth buffer
         vk::Image m_depthBuffer;

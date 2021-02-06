@@ -48,6 +48,7 @@ namespace core {
                               "Failed to create logical device");
 
         m_logicalDevice = m_device->m_logicalDevice;
+        m_msaaSamples = m_device->getMaxUsableSampleCount();
 
         VkBool32 presentSupport = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(m_physicalDevice, m_device->m_queueFamilyIndices.graphics, m_surface, &presentSupport);
@@ -69,18 +70,20 @@ namespace core {
                                                       VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
         m_texturesManager = std::make_unique<core::TextureManager>(m_device, m_graphicsQueue);
-        createModel(MODELS_DIR + "viking-room.obj");
 
         createCommandPool();
         createRenderPass();
         createDescriptorSetLayout();
         createGraphicsPipeline();
+        createMsaaResources();
         createDepthResources();
         createFramebuffers();
         createUniformBuffers();
         createDescriptorPool();
         createDescriptorSets();
         createSyncObjects();
+
+        createModel(MODELS_DIR + "viking-room.obj");
 
         camera.getEye() = {0.3f, 0.3f, 0.3f};
         camera.getCenter() = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -265,7 +268,7 @@ namespace core {
     void Renderer::createRenderPass() {
         VkAttachmentDescription colorAttachment{};
         colorAttachment.format = m_swapChain.getFormat();
-        colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        colorAttachment.samples = m_msaaSamples;
         colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -279,7 +282,7 @@ namespace core {
 
         VkAttachmentDescription depthAttachment{};
         depthAttachment.format = m_depthFormat;
-        depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        depthAttachment.samples = m_msaaSamples;
         depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -291,11 +294,26 @@ namespace core {
         depthAttachmentRef.attachment = 1;
         depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
+        VkAttachmentDescription colorAttachmentResolve{};
+        colorAttachmentResolve.format = m_swapChain.getFormat();
+        colorAttachmentResolve.samples = VK_SAMPLE_COUNT_1_BIT;
+        colorAttachmentResolve.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        colorAttachmentResolve.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        colorAttachmentResolve.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        colorAttachmentResolve.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        colorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        VkAttachmentReference colorAttachmentResolveRef{};
+        colorAttachmentResolveRef.attachment = 2;
+        colorAttachmentResolveRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
         VkSubpassDescription subpass{};
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpass.colorAttachmentCount = 1;
         subpass.pColorAttachments = &colorAttachmentRef;
         subpass.pDepthStencilAttachment = &depthAttachmentRef;
+        subpass.pResolveAttachments = &colorAttachmentResolveRef;
 
         VkSubpassDependency dependency{};
         dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -305,9 +323,9 @@ namespace core {
         dependency.srcAccessMask = 0;
         dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
-        std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
+        std::array<VkAttachmentDescription, 3> attachments = {colorAttachment, depthAttachment, colorAttachmentResolve};
         VkRenderPassCreateInfo renderPassInfo = vk::initializers::renderPassCreateInfo();
-        renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());;
+        renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
         renderPassInfo.pAttachments = attachments.data();;
         renderPassInfo.subpassCount = 1;
         renderPassInfo.pSubpasses = &subpass;
@@ -384,7 +402,7 @@ namespace core {
         rasterizer.lineWidth = 1.0f;
 
         VkPipelineMultisampleStateCreateInfo multisampling = vk::initializers::pipelineMultisampleStateCreateInfo();
-        multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+        multisampling.rasterizationSamples = m_msaaSamples;
         multisampling.sampleShadingEnable = VK_FALSE;
         multisampling.minSampleShading = 1.0f;
         multisampling.pSampleMask = nullptr;
@@ -465,9 +483,10 @@ namespace core {
         m_framebuffers.resize(m_swapChain.getImageCount());
 
         for (size_t i = 0; i < m_swapChain.getImageCount(); ++i) {
-            std::array<VkImageView, 2> attachments = {
-                    m_swapChain.getImageView(i),
-                    m_depthBuffer.getView()
+            std::array<VkImageView, 3> attachments = {
+                    m_colorImage.getView(),
+                    m_depthBuffer.getView(),
+                    m_swapChain.getImageView(i)
             };
 
             VkFramebufferCreateInfo framebufferInfo = vk::initializers::framebufferCreateInfo();
@@ -582,6 +601,7 @@ namespace core {
         m_swapChain.create(m_windowSize.width, m_windowSize.height, m_device->m_queueFamilyIndices.graphics, m_device->m_queueFamilyIndices.present);
         createRenderPass();
         createGraphicsPipeline();
+        createMsaaResources();
         createDepthResources();
         createFramebuffers();
         createUniformBuffers();
@@ -599,6 +619,7 @@ namespace core {
 
     void Renderer::cleanSwapChain() {
         m_depthBuffer.cleanup(m_logicalDevice);
+        m_colorImage.cleanup(m_logicalDevice);
 
         m_ui.cleanupResources();
 
@@ -729,8 +750,6 @@ namespace core {
     }
 
     void Renderer::createDepthResources() {
-
-
         VkImageCreateInfo imageInfo = vk::initializers::imageCreateInfo();
         imageInfo.imageType = VK_IMAGE_TYPE_2D;
         imageInfo.extent.width = m_swapChain.getExtent().width;
@@ -743,7 +762,7 @@ namespace core {
         imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        imageInfo.samples = m_msaaSamples;
         imageInfo.flags = 0;
 
         m_depthBuffer = vk::Image(m_logicalDevice, imageInfo);
@@ -790,6 +809,34 @@ namespace core {
 
         // Create mesh model and add to list
         vikingRoom = core::Model(modelMeshes);
+    }
+
+    void Renderer::createMsaaResources() {
+        VkFormat colorFormat = m_swapChain.getFormat();
+
+        VkImageCreateInfo imageInfo = vk::initializers::imageCreateInfo();
+        imageInfo.imageType = VK_IMAGE_TYPE_2D;
+        imageInfo.extent.width = m_swapChain.getExtent().width;
+        imageInfo.extent.height = m_swapChain.getExtent().height;
+        imageInfo.extent.depth = 1;
+        imageInfo.mipLevels = 1;
+        imageInfo.arrayLayers = 1;
+        imageInfo.format = colorFormat;
+        imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        imageInfo.usage = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        imageInfo.samples = m_msaaSamples;
+        imageInfo.flags = 0;
+
+        m_colorImage = vk::Image(m_logicalDevice, imageInfo);
+
+        VkMemoryRequirements memoryRequirements{};
+        vkGetImageMemoryRequirements(m_logicalDevice, m_colorImage.getImage(), &memoryRequirements);
+
+        auto memType = m_device->getMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        m_colorImage.bind(m_logicalDevice, memType, memoryRequirements.size, VK_IMAGE_ASPECT_COLOR_BIT);
     }
 
 } // End namespace core
