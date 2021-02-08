@@ -53,8 +53,6 @@ namespace core {
 
         void createDescriptorSetLayout();
 
-        void createUniformBuffers();
-
         void updateUniformBuffer(uint32_t currentImage);
 
         void createDescriptorPool();
@@ -66,6 +64,8 @@ namespace core {
         void createModel(const std::string &modelFile);
 
         void createMsaaResources();
+
+        void createPushConstants();
 
     private:
         std::unique_ptr<Window>& m_window;
@@ -101,7 +101,7 @@ namespace core {
 
         size_t m_currentFrame = 0;
 
-        std::vector<vk::Buffer> m_uniformBuffers;
+        VkPushConstantRange m_mvpRange;
 
         VkDescriptorSetLayout m_descriptorSetLayout{};
         VkDescriptorPool m_descriptorPool{};
@@ -124,7 +124,7 @@ namespace core {
         // TODO: Temp object
         core::Model vikingRoom{};
 
-        UniformBufferObject ubo{};
+        MVP m_ubo{};
         core::Camera camera;
         glm::vec3 m_position{};
         glm::vec3 m_size{};

@@ -74,11 +74,11 @@ namespace core {
         createCommandPool();
         createRenderPass();
         createDescriptorSetLayout();
+        createPushConstants();
         createGraphicsPipeline();
         createMsaaResources();
         createDepthResources();
         createFramebuffers();
-        createUniformBuffers();
         createDescriptorPool();
         createDescriptorSets();
         createSyncObjects();
@@ -326,7 +326,7 @@ namespace core {
         std::array<VkAttachmentDescription, 3> attachments = {colorAttachment, depthAttachment, colorAttachmentResolve};
         VkRenderPassCreateInfo renderPassInfo = vk::initializers::renderPassCreateInfo();
         renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-        renderPassInfo.pAttachments = attachments.data();;
+        renderPassInfo.pAttachments = attachments.data();
         renderPassInfo.subpassCount = 1;
         renderPassInfo.pSubpasses = &subpass;
         renderPassInfo.dependencyCount = 1;
@@ -337,8 +337,8 @@ namespace core {
     }
 
     void Renderer::createGraphicsPipeline() {
-        auto vertexShaderCode = core::tools::readFile("shaders/shader.vert.spv");
-        auto fragmentShaderCode = core::tools::readFile("shaders/shader.frag.spv");
+        auto vertexShaderCode = core::tools::readFile("shaders/model.vert.spv");
+        auto fragmentShaderCode = core::tools::readFile("shaders/model.frag.spv");
 
         VkShaderModule vertexShaderModule = vk::tools::loadShader(vertexShaderCode, m_logicalDevice);
         VkShaderModule fragmentShaderModule = vk::tools::loadShader(fragmentShaderCode, m_logicalDevice);
@@ -438,8 +438,8 @@ namespace core {
         VkPipelineLayoutCreateInfo pipelineLayoutInfo = vk::initializers::pipelineLayoutCreateInfo();
         pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(layouts.size());
         pipelineLayoutInfo.pSetLayouts = layouts.data();
-        pipelineLayoutInfo.pushConstantRangeCount = 0;
-        pipelineLayoutInfo.pPushConstantRanges = nullptr;
+        pipelineLayoutInfo.pushConstantRangeCount = 1;
+        pipelineLayoutInfo.pPushConstantRanges = &m_mvpRange;
 
         vk::tools::validation(vkCreatePipelineLayout(m_logicalDevice, &pipelineLayoutInfo, nullptr, &m_pipelineLayout),
                               "Failed to create pipeline layout");
@@ -566,6 +566,9 @@ namespace core {
                     vkCmdBindVertexBuffers(m_commandBuffers[bufferIdx], 0, 1, vertexBuffer, offsets);
                     vkCmdBindIndexBuffer(m_commandBuffers[bufferIdx], vikingRoom.getMesh(i)->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
+                    vkCmdPushConstants(m_commandBuffers[bufferIdx], m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
+                                       sizeof(MVP), &m_ubo);
+
                     std::array<VkDescriptorSet, 2> descriptorSetGroup = {
                             m_descriptorSets[bufferIdx],
                             m_texturesManager->getTextureDescriptorSet(vikingRoom.getMesh(i)->getTextureId())
@@ -604,7 +607,6 @@ namespace core {
         createMsaaResources();
         createDepthResources();
         createFramebuffers();
-        createUniformBuffers();
         createDescriptorPool();
         createDescriptorSets();
 
@@ -636,11 +638,6 @@ namespace core {
 
         m_swapChain.cleanup();
 
-        for (size_t i = 0; i < m_swapChain.getImageCount(); i++) {
-            vkDestroyBuffer(m_logicalDevice, m_uniformBuffers[i].m_buffer, nullptr);
-            vkFreeMemory(m_logicalDevice, m_uniformBuffers[i].m_memory, nullptr);
-        }
-
         vkDestroyDescriptorPool(m_logicalDevice, m_descriptorPool, nullptr);
         m_texturesManager->cleanupResources();
     }
@@ -661,19 +658,6 @@ namespace core {
                               "Failed to create descriptor set layout");
     }
 
-    void Renderer::createUniformBuffers() {
-        VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-
-        m_uniformBuffers.resize(m_swapChain.getImageCount());
-
-        for (size_t i = 0; i < m_swapChain.getImageCount(); ++i) {
-            m_device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                   &m_uniformBuffers[i],
-                                   bufferSize);
-        }
-    }
-
     void Renderer::updateUniformBuffer(uint32_t currentImage) {
         auto now = static_cast<float>(glfwGetTime());
         deltaTime = now - lastTime;
@@ -688,30 +672,26 @@ namespace core {
         model = glm::scale(model, m_size);
         model = glm::rotate(model, glm::radians(m_angle), glm::vec3(0.0f, 1.0f, 0.0f));
 
-        ubo.model = model;
+        m_ubo.model = model;
 
-        ubo.view = camera.getView();
+        m_ubo.view = camera.getView();
 
-        ubo.proj = glm::perspective(glm::radians(45.0f), m_window->aspect(), 0.1f, 10.0f);
-        ubo.proj[1][1] *= -1;
-
-        m_uniformBuffers[currentImage].map(sizeof(ubo), 0);
-        m_uniformBuffers[currentImage].copyTo(&ubo, sizeof(ubo));
-        m_uniformBuffers[currentImage].unmap();
+        m_ubo.proj = glm::perspective(glm::radians(45.0f), m_window->aspect(), 0.1f, 10.0f);
+        m_ubo.proj[1][1] *= -1;
     }
 
     void Renderer::createDescriptorPool() {
-        VkDescriptorPoolSize uniformPoolSize{};
-        uniformPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        uniformPoolSize.descriptorCount = m_swapChain.getImageCount();
+        VkDescriptorPoolSize descriptorPoolSize{};
+        descriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorPoolSize.descriptorCount = m_swapChain.getImageCount();
 
-        VkDescriptorPoolCreateInfo uniformPoolInfo = vk::initializers::descriptorPoolCreateInfo();
-        uniformPoolInfo.poolSizeCount = 1;
-        uniformPoolInfo.pPoolSizes = &uniformPoolSize;
-        uniformPoolInfo.maxSets = m_swapChain.getImageCount();
-        uniformPoolInfo.flags = 0;
+        VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = vk::initializers::descriptorPoolCreateInfo();
+        descriptorPoolCreateInfo.poolSizeCount = 1;
+        descriptorPoolCreateInfo.pPoolSizes = &descriptorPoolSize;
+        descriptorPoolCreateInfo.maxSets = m_swapChain.getImageCount();
+        descriptorPoolCreateInfo.flags = 0;
 
-        vk::tools::validation(vkCreateDescriptorPool(m_logicalDevice, &uniformPoolInfo, nullptr, &m_descriptorPool),
+        vk::tools::validation(vkCreateDescriptorPool(m_logicalDevice, &descriptorPoolCreateInfo, nullptr, &m_descriptorPool),
                               "Failed to create descriptor pool");
     }
 
@@ -726,27 +706,6 @@ namespace core {
         m_descriptorSets.resize(m_swapChain.getImageCount());
         vk::tools::validation(vkAllocateDescriptorSets(m_logicalDevice, &allocInfo, m_descriptorSets.data()),
                               "Failed to allocate descriptor sets");
-
-        for (size_t i = 0; i < m_swapChain.getImageCount(); i++) {
-            VkDescriptorBufferInfo bufferInfo{};
-            bufferInfo.buffer = m_uniformBuffers[i].m_buffer;
-            bufferInfo.offset = 0;
-            bufferInfo.range = sizeof(UniformBufferObject);
-
-            std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
-            descriptorWrites[0] = vk::initializers::writeDescriptorSet();
-            descriptorWrites[0].dstSet = m_descriptorSets[i];
-            descriptorWrites[0].dstBinding = 0;
-            descriptorWrites[0].dstArrayElement = 0;
-            descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrites[0].descriptorCount = 1;
-            descriptorWrites[0].pBufferInfo = &bufferInfo;
-            descriptorWrites[0].pImageInfo = nullptr;
-            descriptorWrites[0].pTexelBufferView = nullptr;
-
-            vkUpdateDescriptorSets(m_logicalDevice, static_cast<uint32_t>(descriptorWrites.size()),
-                                   descriptorWrites.data(), 0, nullptr);
-        }
     }
 
     void Renderer::createDepthResources() {
@@ -837,6 +796,12 @@ namespace core {
         auto memType = m_device->getMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         m_colorImage.bind(m_logicalDevice, memType, memoryRequirements.size, VK_IMAGE_ASPECT_COLOR_BIT);
+    }
+
+    void Renderer::createPushConstants() {
+        m_mvpRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        m_mvpRange.offset = 0;
+        m_mvpRange.size = sizeof(MVP);
     }
 
 } // End namespace core
