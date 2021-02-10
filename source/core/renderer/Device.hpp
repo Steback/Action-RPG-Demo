@@ -37,10 +37,8 @@ namespace vk {
 
         bool extensionSupported(const std::string& extension);
 
-        VkResult createLogicalDevice(VkPhysicalDeviceFeatures enabledFeatures,
-                                     const std::vector<const char *>& enabledExtensions,
-                                     const std::vector<const char *>& validationLayers,
-                                     VkQueueFlags requestedQueueTypes = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT);
+        void createLogicalDevice(VkPhysicalDeviceFeatures enabledFeatures, const std::vector<const char *>& enabledExtensions,
+                                 const std::vector<const char *>& validationLayers, VkQueueFlags requestedQueueTypes = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT);
 
         [[nodiscard]] VkCommandPool createCommandPool(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags createFlags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT) const;
 
@@ -52,11 +50,8 @@ namespace vk {
 
         void flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free = true) const;
 
-        VkResult createBuffer(VkBufferUsageFlags usageFlags,
-                              VkMemoryPropertyFlags memoryPropertyFlags,
-                              vk::Buffer *buffer,
-                              VkDeviceSize size,
-                              void *data = nullptr) const;
+        VkResult createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags,
+                              vk::Buffer *buffer, VkDeviceSize size, void *data = nullptr) const;
 
         void copyBuffer(vk::Buffer *src, vk::Buffer *dst, VkQueue queue, VkBufferCopy *copyRegion = nullptr) const;
 
@@ -65,7 +60,7 @@ namespace vk {
 
         void copyBufferToImage(VkBuffer buffer, VkImage image, VkQueue queue, VkExtent2D size) const;
 
-        VkSampleCountFlagBits getMaxUsableSampleCount() const;
+        [[nodiscard]] VkSampleCountFlagBits getMaxUsableSampleCount() const;
 
     public:
         VkPhysicalDevice m_physicalDevice;

@@ -3,48 +3,41 @@
 #include "GLFW/glfw3.h"
 
 #include "core/logger/Logger.hpp"
-#include "core/window/Window.hpp"
-#include "core/renderer/Renderer.hpp"
+#include "core/Application.hpp"
 
 
-class App {
+class App : public core::Application {
 public:
-    App() = default;
+    explicit App(const std::string& appName) : core::Application(appName) {
 
-    ~App() = default;
-
-    void run() {
-        init();
-        loop();
-        clean();
     }
 
-    void init() {
-        spdlog::info("[App] Start");
+    void init() override {
+        auto enttID = m_registry.create();
+        auto entity = m_scene->addEntity("Viking Room", enttID);
 
-        m_window = std::make_unique<core::Window>("Prototype Action RPG", 1776, 1000);
-        m_renderer = std::make_unique<core::Renderer>(m_window);
-
-        spdlog::info("[App] Initialized");
+        m_registry.emplace<core::Transform>(enttID, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), 0.0f, 0.0f);
+        m_registry.emplace<core::Model>(enttID, m_resourceManager->createModel("viking-room.obj"));
     }
 
-    void loop() {
-        while (m_window->isOpen()) {
-            glfwPollEvents();
-            m_renderer->draw();
+    void update() override {
+        m_scene->update(m_registry);
+    }
+
+    void draw() override {
+
+    }
+
+    void cleanup() override {
+        auto view = m_registry.view<core::Model>();
+
+        for (auto& entity : view) {
+            auto& model = view.get<core::Model>(entity);
+            model.clean();
         }
     }
 
-    void clean() {
-        m_renderer->cleanup();
-        m_window->clean();
-
-        spdlog::info("[App] Cleaned");
-    }
-
 private:
-    std::unique_ptr<core::Window> m_window;
-    std::unique_ptr<core::Renderer> m_renderer;
 };
 
 
@@ -52,7 +45,7 @@ int main() {
     core::Logger logger;
     logger.init("App", "error.log");
 
-    App app;
+    App app("Prototype Action RPG");
 
     try {
         app.run();

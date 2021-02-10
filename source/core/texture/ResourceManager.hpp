@@ -1,5 +1,5 @@
-#ifndef PROTOTYPE_ACTION_RPG_TEXTUREMANAGER_HPP
-#define PROTOTYPE_ACTION_RPG_TEXTUREMANAGER_HPP
+#ifndef PROTOTYPE_ACTION_RPG_RESOURCEMANAGER_HPP
+#define PROTOTYPE_ACTION_RPG_RESOURCEMANAGER_HPP
 
 
 #include <vector>
@@ -8,16 +8,17 @@
 
 #include "Texture.hpp"
 #include "../renderer/Device.hpp"
+#include "../components/Model.hpp"
 #include "../Utilities.hpp"
 
 
 namespace core {
 
-    class TextureManager {
+    class ResourceManager {
     public:
-        explicit TextureManager(vk::Device* device, VkQueue graphicsQueue);
+        explicit ResourceManager(vk::Device* device, VkQueue graphicsQueue);
 
-        ~TextureManager();
+        ~ResourceManager();
 
         void cleanup();
 
@@ -25,15 +26,15 @@ namespace core {
 
         core::Texture& getTexture(size_t index);
 
-        VkDescriptorSet getTextureDescriptorSet(size_t index);
-
-        VkDescriptorSetLayout getDescriptorSetLayout();
+        VkDescriptorSetLayout& getTextureDescriptorSetLayout();
 
         void recreateResources();
 
         void cleanupResources();
 
         void generateMipmaps(const core::Texture& texture, VkFormat format, VkExtent2D size, uint32_t mipLevels);
+
+        core::Model createModel(const std::string& fileName);
 
     private:
         void createDescriptorPool();
@@ -51,4 +52,4 @@ namespace core {
 } // namespace core
 
 
-#endif //PROTOTYPE_ACTION_RPG_TEXTUREMANAGER_HPP
+#endif //PROTOTYPE_ACTION_RPG_RESOURCEMANAGER_HPP

@@ -33,7 +33,7 @@ namespace core {
 
            if (!image) throw std::runtime_error("Failed to load a Texture file: " + fileName);
 
-           // Calculate image size using given and known data
+           // Calculate image m_size using given and known data
            *size = *width * *height * static_cast<int>(STBI_rgb_alpha);
 
            return image;

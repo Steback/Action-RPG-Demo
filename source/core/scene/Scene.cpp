@@ -1,0 +1,49 @@
+#include "Scene.hpp"
+
+#include "GLFW/glfw3.h"
+
+#include "../components/Transform.hpp"
+
+
+namespace core {
+
+    Scene::Scene() = default;
+
+    Scene::~Scene() = default;
+
+    void Scene::update(entt::registry& registry) {
+        auto now = static_cast<float>(glfwGetTime());
+        deltaTime = now - lastTime;
+        lastTime = now;
+
+        auto view = registry.view<core::Transform>();
+
+        for (auto& entity : view) {
+            auto& transform = view.get<core::Transform>(entity);
+            transform.update(deltaTime);
+        }
+    }
+
+    void Scene::render() {
+
+    }
+
+    void Scene::cleanup() {
+
+    }
+
+    core::Entity& Scene::addEntity(const std::string &name, entt::entity enttID) {
+        core::Entity entity;
+        entity.enttID = enttID;
+        entity.name = name;
+        entity.id = m_entities.size();
+
+        m_entities.push_back(entity);
+
+        return m_entities[entity.id];
+    }
+
+    core::Entity &Scene::getEntity(size_t ID) {
+        return m_entities[ID];
+    }
+} // namespace core

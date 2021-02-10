@@ -12,10 +12,7 @@ namespace core {
         uint32_t width{}, height{};
     };
 
-
     class Window {
-        friend class Renderer;
-
     public:
         Window(const std::string& name, int width, int height);
 
@@ -28,6 +25,10 @@ namespace core {
         WindowSize getSize();
 
         [[nodiscard]] float aspect() const;
+
+        GLFWwindow* getWindow();
+
+        bool& resize();
 
     private:
         static void framebufferResizeCallback(GLFWwindow* tWindow, int width, int height);

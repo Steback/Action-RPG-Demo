@@ -3,51 +3,22 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
-#include "assimp/Importer.hpp"
-#include "assimp/scene.h"
-#include "assimp/postprocess.h"
 
 #include "Initializers.hpp"
 #include "Tools.hpp"
-#include "../model/Vertex.hpp"
 #include "../Constants.hpp"
 #include "../Utilities.hpp"
+#include "../components/Transform.hpp"
+#include "../components/Model.hpp"
 
 
 namespace core {
 
-    Renderer::Renderer(std::unique_ptr<Window>& window) : m_window(window) {
-        init();
-        m_ui = core::UIImGui(m_swapChain, m_device, m_window->m_window, *m_instance, m_graphicsQueue);
-
-        spdlog::info("[Renderer] Initialized");
-    }
-
-    Renderer::~Renderer() = default;
-
-    void Renderer::init() {
-        VkApplicationInfo appInfo = vk::initializers::applicationInfo();
-        appInfo.pApplicationName = "Prototype Action RPG";
-        appInfo.applicationVersion = VK_MAKE_VERSION(0, 1, 0);
-        appInfo.pEngineName = "Custom Engine";
-        appInfo.engineVersion = VK_MAKE_VERSION(0, 1, 0);
-        appInfo.apiVersion = VK_API_VERSION_1_2;
-
-        std::vector<const char*> enabledExtensions = {
-                VK_KHR_SWAPCHAIN_EXTENSION_NAME
-        };
-
-        m_instance.init(appInfo);
-        m_instance.createSurface(m_window->m_window, m_surface);
-        m_instance.pickPhysicalDevice(m_physicalDevice, m_surface, enabledExtensions);
-
-        m_device = new vk::Device(m_physicalDevice);
-
-        VkPhysicalDeviceFeatures deviceFeatures{};
-        vk::tools::validation(m_device->createLogicalDevice(deviceFeatures, enabledExtensions, vk::validationLayers),
-                              "Failed to create logical device");
-
+    Renderer::Renderer(std::unique_ptr<Window>& window, VkInstance instance, const std::string& appName, vk::Device* device, VkSurfaceKHR surface)
+            : m_window(window), m_device(device) {
         m_logicalDevice = m_device->m_logicalDevice;
+        m_physicalDevice = m_device->m_physicalDevice;
+        m_surface = surface;
         m_msaaSamples = m_device->getMaxUsableSampleCount();
 
         VkBool32 presentSupport = false;
@@ -69,7 +40,14 @@ namespace core {
                                                       VK_IMAGE_TILING_OPTIMAL,
                                                       VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
-        m_texturesManager = std::make_unique<core::TextureManager>(m_device, m_graphicsQueue);
+        m_ui = core::UIImGui(m_swapChain, m_device, m_window->getWindow(), instance, m_graphicsQueue);
+
+    }
+
+    Renderer::~Renderer() = default;
+
+    void Renderer::init(core::ResourceManager* resourceManager) {
+        m_resourceManager = resourceManager;
 
         createCommandPool();
         createRenderPass();
@@ -83,27 +61,18 @@ namespace core {
         createDescriptorSets();
         createSyncObjects();
 
-        createModel(MODELS_DIR + "viking-room.obj");
+        spdlog::info("[Renderer] Initialized");
 
         camera.getEye() = {0.3f, 0.3f, 0.3f};
         camera.getCenter() = glm::vec3(0.0f, 0.0f, 0.0f);
         camera.getUp() = glm::vec3(0.0f, 1.0f, 0.0f);
-
-        m_position = glm::vec3(0.0f, 0.0f, 0.0f);
-        m_size = glm::vec3(1.0f, 1.0f, 1.0f);
-        m_angle = 0.0f;
     }
 
     void Renderer::cleanup() {
-        vkDeviceWaitIdle(m_logicalDevice);
-
-        vikingRoom.clean();
 
         UIImGui::cleanupImGui();
 
         cleanSwapChain();
-
-        m_texturesManager->cleanup();
 
         m_ui.cleanup();
 
@@ -117,21 +86,15 @@ namespace core {
 
         vkDestroyCommandPool(m_logicalDevice, m_commandPool, nullptr);
 
-        m_device->destroy();
-        delete m_device;
-
-        m_instance.destroySurface(m_surface);
-        m_instance.destroy();
-
         spdlog::info("[Renderer] Cleaned");
     }
 
-    void Renderer::draw() {
+    void Renderer::draw(entt::registry& registry) {
         drawUI();
-        drawFrame();
+        drawFrame(registry);
     }
 
-    void Renderer::drawFrame() {
+    void Renderer::drawFrame(entt::registry& registry) {
         vkWaitForFences(m_logicalDevice, 1, &m_fences[m_currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
         uint32_t indexImage;
@@ -150,9 +113,8 @@ namespace core {
 
         m_imageFences[indexImage] = m_fences[m_currentFrame];
 
-        recordCommands(indexImage);
+        recordCommands(indexImage, registry);
         m_ui.recordCommands(indexImage, m_swapChain.getExtent());
-        updateUniformBuffer(indexImage);
 
         VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphores[m_currentFrame] };
         VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
@@ -189,8 +151,8 @@ namespace core {
 
         result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
 
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_window->m_resize) {
-            m_window->m_resize = false;
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_window->resize()) {
+            m_window->resize() = false;
             recreateSwapchain();
         } else if (result != VK_SUCCESS) {
             throw_ex("Failed to present swap chain image");
@@ -215,7 +177,6 @@ namespace core {
         }
         ImGui::End();
 #endif
-
         ImGui::SetNextWindowSize(ImVec2(220, -1), ImGuiCond_Always);
         ImGui::SetNextWindowPos(ImVec2(5, 90), ImGuiCond_Always);
         ImGui::Begin("Objects Control", nullptr, ImGuiWindowFlags_NoCollapse);
@@ -237,26 +198,6 @@ namespace core {
                    ImGui::InputFloat("Up X", &camera.getUp().x);
                    ImGui::InputFloat("Up Y", &camera.getUp().y);
                    ImGui::InputFloat("Up Z", &camera.getUp().z);
-               }
-           }
-
-           if (ImGui::CollapsingHeader("Object")) {
-               if (ImGui::CollapsingHeader("Transform")) {
-                   if (ImGui::CollapsingHeader("Position")) {
-                       ImGui::InputFloat("Position X", &m_position.x);
-                       ImGui::InputFloat("Position Y", &m_position.y);
-                       ImGui::InputFloat("Position Z", &m_position.z);
-                   }
-
-                   if (ImGui::CollapsingHeader("Size")) {
-                       ImGui::InputFloat("Size X", &m_size.x);
-                       ImGui::InputFloat("Size Y", &m_size.y);
-                       ImGui::InputFloat("Size Z", &m_size.z);
-                   }
-
-                   if (ImGui::CollapsingHeader("Angle")) {
-                       ImGui::InputFloat("Angle degree", &m_angle);
-                   }
                }
            }
         }
@@ -432,7 +373,7 @@ namespace core {
 
         std::array<VkDescriptorSetLayout, 2> layouts = {
                 m_descriptorSetLayout,
-                m_texturesManager->getDescriptorSetLayout()
+                m_resourceManager->getTextureDescriptorSetLayout()
         };
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo = vk::initializers::pipelineLayoutCreateInfo();
@@ -535,58 +476,73 @@ namespace core {
         }
     }
 
-    void Renderer::recordCommands(uint32_t bufferIdx) {
+    void Renderer::recordCommands(uint32_t indexImage, entt::registry& registry) {
         std::array<VkClearValue, 2> clearValues{};
         clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
         clearValues[1].depthStencil = {1.0f, 0};
+
         VkRenderPassBeginInfo renderPassInfo = vk::initializers::renderPassBeginInfo();
+        auto view = registry.view<core::Model, core::Transform>();
 
         VkCommandBufferBeginInfo beginInfo = vk::initializers::commandBufferBeginInfo();
         beginInfo.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-        vk::tools::validation(vkBeginCommandBuffer(m_commandBuffers[bufferIdx], &beginInfo),
+        vk::tools::validation(vkBeginCommandBuffer(m_commandBuffers[indexImage], &beginInfo),
                               "Failed to begin recording command buffer");
         {
             renderPassInfo.renderPass = m_renderPass;
-            renderPassInfo.framebuffer = m_framebuffers[bufferIdx];
-            renderPassInfo.renderArea.offset = { 0, 0 };
+            renderPassInfo.framebuffer = m_framebuffers[indexImage];
+            renderPassInfo.renderArea.offset = {0, 0};
             renderPassInfo.renderArea.extent = m_swapChain.getExtent();
             renderPassInfo.renderArea.extent.width = m_swapChain.getExtent().width;
             renderPassInfo.renderArea.extent.height = m_swapChain.getExtent().height;
             renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
             renderPassInfo.pClearValues = clearValues.data();
 
-            vkCmdBeginRenderPass(m_commandBuffers[bufferIdx], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+            vkCmdBeginRenderPass(m_commandBuffers[indexImage], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
             {
-                vkCmdBindPipeline(m_commandBuffers[bufferIdx], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
+                vkCmdBindPipeline(m_commandBuffers[indexImage], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
 
-                for (int i = 0; i < vikingRoom.getMeshCount(); ++i) {
-                    VkBuffer vertexBuffer[] = { vikingRoom.getMesh(i)->getVertexBuffer() };
-                    VkDeviceSize offsets[] = { 0 };
-                    vkCmdBindVertexBuffers(m_commandBuffers[bufferIdx], 0, 1, vertexBuffer, offsets);
-                    vkCmdBindIndexBuffer(m_commandBuffers[bufferIdx], vikingRoom.getMesh(i)->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+                for (auto& entity : view) {
+                    auto& transform = view.get<core::Transform>(entity);
+                    auto& model = view.get<core::Model>(entity);
 
-                    vkCmdPushConstants(m_commandBuffers[bufferIdx], m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
-                                       sizeof(MVP), &m_ubo);
+                    m_mvp.model = transform.getModelMatrix();
+                    m_mvp.view = camera.getView();
+                    m_mvp.proj = glm::perspective(glm::radians(45.0f), m_window->aspect(), 0.1f, 10.0f);
+                    m_mvp.proj[1][1] *= -1;
 
-                    std::array<VkDescriptorSet, 2> descriptorSetGroup = {
-                            m_descriptorSets[bufferIdx],
-                            m_texturesManager->getTextureDescriptorSet(vikingRoom.getMesh(i)->getTextureId())
-                    };
+                    for (size_t i = 0; i < model.getMeshCount(); ++i) {
+                        VkBuffer vertexBuffer[] = {model.getMesh(i)->getVertexBuffer()};
+                        VkDeviceSize offsets[] = {0};
+                        vkCmdBindVertexBuffers(m_commandBuffers[indexImage], 0, 1, vertexBuffer, offsets);
+                        vkCmdBindIndexBuffer(m_commandBuffers[indexImage], model.getMesh(i)->getIndexBuffer(), 0,
+                                             VK_INDEX_TYPE_UINT32);
 
-                    vkCmdBindDescriptorSets(m_commandBuffers[bufferIdx], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout,
-                                            0, static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0, nullptr);
+                        vkCmdPushConstants(m_commandBuffers[indexImage], m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
+                                           sizeof(MVP), &m_mvp);
 
-                    vkCmdBindDescriptorSets(m_commandBuffers[bufferIdx], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                            m_pipelineLayout, 0, 1, &m_descriptorSets[bufferIdx], 0, nullptr);
+                        std::array<VkDescriptorSet, 2> descriptorSetGroup = {
+                                m_descriptorSets[indexImage],
+                                m_resourceManager->getTexture(model.getMesh(i)->getTextureId()).getDescriptorSet()
+                        };
 
-                    vkCmdDrawIndexed(m_commandBuffers[bufferIdx], vikingRoom.getMesh(i)->getIndexCount(),
-                                     1, 0, 0, 0);
+                        vkCmdBindDescriptorSets(m_commandBuffers[indexImage], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                m_pipelineLayout,
+                                                0, static_cast<uint32_t>(descriptorSetGroup.size()),
+                                                descriptorSetGroup.data(), 0, nullptr);
+
+                        vkCmdBindDescriptorSets(m_commandBuffers[indexImage], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                m_pipelineLayout, 0, 1, &m_descriptorSets[indexImage], 0, nullptr);
+
+                        vkCmdDrawIndexed(m_commandBuffers[indexImage], model.getMesh(i)->getIndexCount(),
+                                         1, 0, 0, 0);
+                    }
                 }
             }
-            vkCmdEndRenderPass(m_commandBuffers[bufferIdx]);
+            vkCmdEndRenderPass(m_commandBuffers[indexImage]);
         }
-        vk::tools::validation(vkEndCommandBuffer(m_commandBuffers[bufferIdx]),
+        vk::tools::validation(vkEndCommandBuffer(m_commandBuffers[indexImage]),
                               "Failed to record command buffer");
     }
 
@@ -615,8 +571,7 @@ namespace core {
         }
 
         m_ui.resize(m_swapChain);
-
-        m_texturesManager->recreateResources();
+        m_resourceManager->recreateResources();
     }
 
     void Renderer::cleanSwapChain() {
@@ -639,7 +594,7 @@ namespace core {
         m_swapChain.cleanup();
 
         vkDestroyDescriptorPool(m_logicalDevice, m_descriptorPool, nullptr);
-        m_texturesManager->cleanupResources();
+        m_resourceManager->cleanupResources();
     }
 
     void Renderer:: createDescriptorSetLayout() {
@@ -656,28 +611,6 @@ namespace core {
 
         vk::tools::validation(vkCreateDescriptorSetLayout(m_logicalDevice, &uboLayoutInfo, nullptr, &m_descriptorSetLayout),
                               "Failed to create descriptor set layout");
-    }
-
-    void Renderer::updateUniformBuffer(uint32_t currentImage) {
-        auto now = static_cast<float>(glfwGetTime());
-        deltaTime = now - lastTime;
-        lastTime = now;
-
-        m_angle += 10.0f * deltaTime;
-
-        if (m_angle > 360) m_angle -= 360.0f;
-
-        glm::mat4 model(1.0f);
-        model = glm::translate(model, m_position);
-        model = glm::scale(model, m_size);
-        model = glm::rotate(model, glm::radians(m_angle), glm::vec3(0.0f, 1.0f, 0.0f));
-
-        m_ubo.model = model;
-
-        m_ubo.view = camera.getView();
-
-        m_ubo.proj = glm::perspective(glm::radians(45.0f), m_window->aspect(), 0.1f, 10.0f);
-        m_ubo.proj[1][1] *= -1;
     }
 
     void Renderer::createDescriptorPool() {
@@ -737,39 +670,6 @@ namespace core {
                                         VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
     }
 
-    void Renderer::createModel(const std::string &modelFile) {
-        // Import model "scene"
-        Assimp::Importer importer;
-        const aiScene *scene = importer.ReadFile(modelFile, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
-
-        if (!scene) {
-            throw std::runtime_error("Failed to load model! (" + modelFile + ")");
-        }
-
-        // Get vector of all materials with 1:1 ID placement
-        std::vector<std::string> textureNames = core::Model::loadMaterials(scene);
-
-        // Conversion from the materials list IDs to our Descriptor Array IDs
-        std::vector<uint> matToTex(textureNames.size());
-
-        // Loop over textureNames and create textures for them
-        for (size_t i = 0; i < textureNames.size(); i++) {
-            // If material had no texture, set '0' to indicate no texture, texture 0 will be reserved for a default texture
-            if (textureNames[i].empty()) {
-                matToTex[i] = 0;
-            } else {
-                // Otherwise, create texture and set value to index of new texture
-                matToTex[i] = m_texturesManager->createTexture(textureNames[i]);
-            }
-        }
-
-        // Load in all our meshes
-        std::vector<core::Mesh> modelMeshes = core::Model::LoadNode(m_device, m_graphicsQueue, scene->mRootNode, scene, matToTex);
-
-        // Create mesh model and add to list
-        vikingRoom = core::Model(modelMeshes);
-    }
-
     void Renderer::createMsaaResources() {
         VkFormat colorFormat = m_swapChain.getFormat();
 
@@ -802,6 +702,14 @@ namespace core {
         m_mvpRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
         m_mvpRange.offset = 0;
         m_mvpRange.size = sizeof(MVP);
+    }
+
+    VkPhysicalDevice &Renderer::getPhysicalDevice() {
+        return m_physicalDevice;
+    }
+
+    VkQueue &Renderer::getGraphicsQueue() {
+        return m_graphicsQueue;
     }
 
 } // End namespace core

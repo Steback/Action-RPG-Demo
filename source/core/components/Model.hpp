@@ -9,7 +9,7 @@
 #include "vulkan/vulkan.h"
 #include "glm/glm.hpp"
 
-#include "Mesh.hpp"
+#include "../mesh/Mesh.hpp"
 #include "../renderer/Device.hpp"
 
 
@@ -27,10 +27,6 @@ namespace core {
 
         core::Mesh* getMesh(size_t index);
 
-        [[nodiscard]] const glm::mat4 &getModel() const;
-
-        void setModel(const glm::mat4 &model);
-
         void clean();
 
         static std::vector<std::string> loadMaterials(const aiScene* scene);
@@ -43,7 +39,6 @@ namespace core {
 
     private:
         std::vector<core::Mesh> m_meshList;
-        glm::mat4 m_model{};
     };
 
 } // namespace core

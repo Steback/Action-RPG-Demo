@@ -7,7 +7,7 @@ namespace core {
 
     Model::Model() = default;
 
-    Model::Model(std::vector<core::Mesh> meshList) : m_meshList(std::move(meshList)), m_model(1.0f) {
+    Model::Model(std::vector<core::Mesh> meshList) : m_meshList(std::move(meshList)) {
 
     }
 
@@ -23,14 +23,6 @@ namespace core {
         }
 
         return &m_meshList[index];
-    }
-
-    const glm::mat4 &Model::getModel() const {
-        return m_model;
-    }
-
-    void Model::setModel(const glm::mat4 &model) {
-        Model::m_model = model;
     }
 
     void Model::clean() {
@@ -57,8 +49,8 @@ namespace core {
                 aiString path;
 
                 if (material->GetTexture(aiTextureType_DIFFUSE, 0, &path) == AI_SUCCESS) {
-                    // Cut off any directory information aleady present
-                    int idx = std::string(path.data).rfind("\\");
+                    // Cut off any directory information already present
+                    int idx = std::string(path.data).rfind('\\');
                     std::string fileName = std::string(path.data).substr(idx + 1);
 
                     textureList[i] = fileName;
@@ -99,7 +91,7 @@ namespace core {
 
         // Go through each vertex and copy it across to our vertices
         for (size_t i = 0; i < mesh->mNumVertices; ++i) {
-            // Set position
+            // Set m_position
             vertices[i].position = { mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z };
 
             // Set tex coords (if they exist)

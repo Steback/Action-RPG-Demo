@@ -57,4 +57,12 @@ namespace core {
         return static_cast<float>(m_size.width) / static_cast<float>(m_size.height);
     }
 
+    GLFWwindow *Window::getWindow() {
+        return m_window;
+    }
+
+    bool& Window::resize() {
+        return m_resize;
+    }
+
 } // End namespace core

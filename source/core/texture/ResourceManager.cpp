@@ -1,19 +1,23 @@
-#include "TextureManager.hpp"
+#include "ResourceManager.hpp"
+
+#include "assimp/Importer.hpp"
+#include "assimp/scene.h"
+#include "assimp/postprocess.h"
 
 #include "../renderer/Tools.hpp"
 
 
 namespace core {
 
-    TextureManager::TextureManager(vk::Device *device, VkQueue graphicsQueue)
+    ResourceManager::ResourceManager(vk::Device *device, VkQueue graphicsQueue)
             : m_device(device), m_graphicsQueue(graphicsQueue) {
         createDescriptorSetLayout();
         createDescriptorPool();
     }
 
-    TextureManager::~TextureManager() = default;
+    ResourceManager::~ResourceManager() = default;
 
-    void TextureManager::cleanup() {
+    void ResourceManager::cleanup() {
         for (auto& texture : textures) {
             texture.cleanup(m_device->m_logicalDevice);
         }
@@ -21,7 +25,7 @@ namespace core {
         vkDestroyDescriptorSetLayout(m_device->m_logicalDevice, m_descriptorSetLayout, nullptr);
     }
 
-    uint TextureManager::createTexture(const std::string &fileName) {
+    uint ResourceManager::createTexture(const std::string &fileName) {
         int width, height;
         VkDeviceSize imageSize;
         stbi_uc* pixels = core::tools::loadTextureFile(fileName, &width, &height, &imageSize);
@@ -68,15 +72,15 @@ namespace core {
         return static_cast<uint>(textures.size()) - 1;
     }
 
-    core::Texture &TextureManager::getTexture(size_t index) {
+    core::Texture &ResourceManager::getTexture(size_t index) {
         return textures[index];
     }
 
-    VkDescriptorSet TextureManager::getTextureDescriptorSet(size_t index) {
-        return textures[index].getDescriptorSet();
+    VkDescriptorSetLayout &ResourceManager::getTextureDescriptorSetLayout() {
+        return m_descriptorSetLayout;
     }
 
-    void TextureManager::recreateResources() {
+    void ResourceManager::recreateResources() {
        createDescriptorPool();
 
        for (auto& texture : textures) {
@@ -84,11 +88,11 @@ namespace core {
        }
     }
 
-    void TextureManager::cleanupResources() {
+    void ResourceManager::cleanupResources() {
         vkDestroyDescriptorPool(m_device->m_logicalDevice, m_descriptorPool, nullptr);
     }
 
-    void TextureManager::generateMipmaps(const core::Texture& texture, VkFormat format, VkExtent2D size, uint32_t mipLevels) {
+    void ResourceManager::generateMipmaps(const core::Texture& texture, VkFormat format, VkExtent2D size, uint32_t mipLevels) {
         // Check if image format supports linear blitting
         VkFormatProperties formatProperties;
         vkGetPhysicalDeviceFormatProperties(m_device->m_physicalDevice, format, &formatProperties);
@@ -174,7 +178,7 @@ namespace core {
         m_device->flushCommandBuffer(commandBuffer, m_graphicsQueue, true);
     }
 
-    void TextureManager::createDescriptorPool() {
+    void ResourceManager::createDescriptorPool() {
         VkDescriptorPoolSize samplerPoolSizer{};
         samplerPoolSizer.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         samplerPoolSizer.descriptorCount = MAX_OBJECTS;
@@ -189,7 +193,7 @@ namespace core {
                               "Failed to create a Descriptor Pool");
     }
 
-    void TextureManager::createDescriptorSetLayout() {
+    void ResourceManager::createDescriptorSetLayout() {
         VkDescriptorSetLayoutBinding samplerLayoutBinding{};
         samplerLayoutBinding.binding = 1;
         samplerLayoutBinding.descriptorCount = 1;
@@ -205,9 +209,37 @@ namespace core {
                               "Failed to create descriptor set layout");
     }
 
+    core::Model ResourceManager::createModel(const std::string &fileName) {
+        // Import model "scene"
+        Assimp::Importer importer;
+        const aiScene *scene = importer.ReadFile(MODELS_DIR + fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
 
-    VkDescriptorSetLayout TextureManager::getDescriptorSetLayout() {
-        return m_descriptorSetLayout;
+        if (!scene) {
+            throw std::runtime_error("Failed to load model! (" + fileName + ")");
+        }
+
+        // Get vector of all materials with 1:1 ID placement
+        std::vector<std::string> textureNames = core::Model::loadMaterials(scene);
+
+        // Conversion from the materials list IDs to our Descriptor Array IDs
+        std::vector<uint> matToTex(textureNames.size());
+
+        // Loop over textureNames and create textures for them
+        for (size_t i = 0; i < textureNames.size(); i++) {
+            // If material had no texture, set '0' to indicate no texture, texture 0 will be reserved for a default texture
+            if (textureNames[i].empty()) {
+                matToTex[i] = 0;
+            } else {
+                // Otherwise, create texture and set value to index of new texture
+                matToTex[i] = createTexture(textureNames[i]);
+            }
+        }
+
+        // Load in all our meshes
+        std::vector<core::Mesh> modelMeshes = core::Model::LoadNode(m_device, m_graphicsQueue, scene->mRootNode, scene, matToTex);
+
+        // Create mesh model and add to list
+        return core::Model(modelMeshes);
     }
 
 } // namespace core

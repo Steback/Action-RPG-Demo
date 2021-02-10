@@ -8,7 +8,9 @@ All the dependencies are installed by [Conan](https://conan.io) package manager 
 * [GLM](https://github.com/g-truc/glm) v0.9.9.8
 * [Dear ImGui](https://github.com/ocornut/imgui) v1.80
 * [spdlog](https://github.com/gabime/spdlog) v1.8.2
+* [stb_image](https://github.com/nothings/stb) 
 * [assimp](https://github.com/assimp/assimp) v5.0.1
+* [Entt](https://github.com/skypjack/entt) v3.3.0
 
 ## Credits
 The resources in this section are all I used for learn some of the key concepts in the project development like as Vulkan, Game design, AI, etc.

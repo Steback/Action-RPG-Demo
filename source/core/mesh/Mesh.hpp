@@ -32,10 +32,6 @@ namespace core {
 
         VkBuffer getIndexBuffer() const;
 
-        [[nodiscard]] const glm::mat4 &getUboModel() const;
-
-        void setUboModel(const glm::mat4 &uboModel);
-
         [[nodiscard]] uint getTextureId() const;
 
         void setTextureId(int textureId);
@@ -46,7 +42,6 @@ namespace core {
         void createIndexBuffer(const std::vector<uint32_t>& indices, VkQueue transferQueue, const vk::Device* device);
 
     private:
-        glm::mat4 m_model{};
         int m_vertexCount{};
         int m_indexCount{};
         vk::Buffer m_vertexBuffer;

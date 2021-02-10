@@ -12,8 +12,6 @@ namespace core {
             : m_vertexCount(vertices.size()), m_indexCount(indices.size()), textureID(newTextureID) {
         createVertexBuffer(vertices, transferQueue, device);
         createIndexBuffer(indices, transferQueue, device);
-
-        m_model = {glm::mat4(1.0f)};
     }
 
     Mesh::~Mesh() = default;
@@ -37,14 +35,6 @@ namespace core {
     void Mesh::cleanup() {
         m_indexBuffer.destroy();
         m_vertexBuffer.destroy();
-    }
-
-    const glm::mat4 &Mesh::getUboModel() const {
-        return m_model;
-    }
-
-    void Mesh::setUboModel(const glm::mat4 &uboModel) {
-        m_model = uboModel;
     }
 
     uint Mesh::getTextureId() const {

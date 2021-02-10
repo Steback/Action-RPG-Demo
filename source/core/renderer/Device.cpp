@@ -105,11 +105,8 @@ namespace vk {
                 != m_supportedExtensions.end());
     }
 
-    VkResult
-    Device::createLogicalDevice(VkPhysicalDeviceFeatures enabledFeatures,
-                                const std::vector<const char *>& enabledExtensions,
-                                const std::vector<const char *>& validationLayers,
-                                VkQueueFlags requestedQueueTypes) {
+    void Device::createLogicalDevice(VkPhysicalDeviceFeatures enabledFeatures, const std::vector<const char *>& enabledExtensions,
+                                const std::vector<const char *>& validationLayers, VkQueueFlags requestedQueueTypes) {
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
 
         // Get queue family indices for the requested queue family types
@@ -184,16 +181,11 @@ namespace vk {
 
         m_enabledFeatures = enabledFeatures;
 
-        VkResult result = vkCreateDevice(m_physicalDevice, &deviceCreateInfo, nullptr, &m_logicalDevice);
-
-        if (result != VK_SUCCESS) {
-            return result;
-        }
+        vk::tools::validation(vkCreateDevice(m_physicalDevice, &deviceCreateInfo, nullptr, &m_logicalDevice),
+                              "Failed to create logical device");
 
         // Create a default command pool for graphics command buffers
         m_commandPool = createCommandPool(m_queueFamilyIndices.graphics);
-
-        return result;
     }
 
     VkCommandPool Device::createCommandPool(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags createFlags) const {

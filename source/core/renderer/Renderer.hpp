@@ -3,6 +3,9 @@
 
 
 #include <memory>
+#include <vector>
+
+#include "entt/entt.hpp"
 
 #include "Instance.hpp"
 #include "Device.hpp"
@@ -13,25 +16,25 @@
 #include "../Utilities.hpp"
 #include "../camera/Camera.hpp"
 #include "../window/Window.hpp"
-#include "../model/Model.hpp"
-#include "../texture/TextureManager.hpp"
+#include "../components/Model.hpp"
+#include "../texture/ResourceManager.hpp"
 
 
 namespace core {
 
     class Renderer {
     public:
-        explicit Renderer(std::unique_ptr<Window>& window);
+        explicit Renderer(std::unique_ptr<Window>& window, VkInstance instance, const std::string& appName, vk::Device* device, VkSurfaceKHR surface);
 
         ~Renderer();
 
-        void init();
+        void init(core::ResourceManager* resourceManager);
 
         void cleanup();
 
-        void draw();
+        void draw(entt::registry& registry);
 
-        void drawFrame();
+        void drawFrame(entt::registry& registry);
 
         void drawUI();
 
@@ -45,7 +48,7 @@ namespace core {
 
         void createSyncObjects();
 
-        void recordCommands(uint32_t bufferIdx);
+        void recordCommands(uint32_t indexImage, entt::registry& registry);
 
         void recreateSwapchain();
 
@@ -53,24 +56,22 @@ namespace core {
 
         void createDescriptorSetLayout();
 
-        void updateUniformBuffer(uint32_t currentImage);
-
         void createDescriptorPool();
 
         void createDescriptorSets();
 
         void createDepthResources();
 
-        void createModel(const std::string &modelFile);
-
         void createMsaaResources();
 
         void createPushConstants();
 
+        VkPhysicalDevice& getPhysicalDevice();
+
+        VkQueue& getGraphicsQueue();
+
     private:
         std::unique_ptr<Window>& m_window;
-
-        vk::Instance m_instance;
 
         vk::Device* m_device{};
         VkPhysicalDevice m_physicalDevice{};
@@ -101,7 +102,7 @@ namespace core {
 
         size_t m_currentFrame = 0;
 
-        VkPushConstantRange m_mvpRange;
+        VkPushConstantRange m_mvpRange{};
 
         VkDescriptorSetLayout m_descriptorSetLayout{};
         VkDescriptorPool m_descriptorPool{};
@@ -111,7 +112,7 @@ namespace core {
         core::UIImGui m_ui;
 
         // Textures
-        std::unique_ptr<core::TextureManager> m_texturesManager;
+        core::ResourceManager* m_resourceManager{};
         VkSampleCountFlagBits m_msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
         // Multisampling anti-aliasing
@@ -121,17 +122,8 @@ namespace core {
         vk::Image m_depthBuffer;
         VkFormat m_depthFormat{};
 
-        // TODO: Temp object
-        core::Model vikingRoom{};
-
-        MVP m_ubo{};
+        MVP m_mvp{};
         core::Camera camera;
-        glm::vec3 m_position{};
-        glm::vec3 m_size{};
-        float m_angle{};
-        float deltaTime = 0.0f;
-        float lastTime = 0.0f;
-        bool increment = true;
     };
 
 } // End namespace core
