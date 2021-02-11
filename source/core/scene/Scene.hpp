@@ -32,6 +32,10 @@ namespace core {
 
         core::Entity& getEntity(size_t ID);
 
+        std::vector<core::Entity>& getEntities();
+
+        size_t getEntitiesCount();
+
     public:
 
     private:

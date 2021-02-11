@@ -2,6 +2,7 @@
 
 
 #include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
 
 
 namespace core {
@@ -9,23 +10,21 @@ namespace core {
 
     Transform::Transform() = default;
 
-    Transform::Transform(const glm::vec3 &position, const glm::vec3 &size, float velocity, float angle)
-        : m_position(position), m_size(size), m_velocity(velocity), m_angle(angle) {
+    Transform::Transform(const glm::vec3 &position, const glm::vec3 &size, float velocity, const glm::vec3& rotation)
+        : m_position(position), m_size(size), m_velocity(velocity), m_rotation(rotation) {
 
     }
 
     void Transform::update(float deltaTime) {
         m_position += m_velocity * deltaTime;
-
-        m_angle += 10.0f * deltaTime;
-
-        if (m_angle > 360) m_angle -= 360.0f;
     }
 
     glm::mat4 Transform::transformMatrix(glm::mat4 model) const {
         model = glm::translate(model, m_position);
         model = glm::scale(model, m_size);
-        model = glm::rotate(model, glm::radians(m_angle), glm::vec3(1.0f, 0.0f, 0.0f));
+
+        auto q = glm::quat(m_rotation);
+        model *= glm::mat4(q);
 
         return model;
     }
@@ -46,7 +45,7 @@ namespace core {
         m_size = size;
     }
 
-    float Transform::getVelocity() const {
+    float& Transform::getVelocity() {
         return m_velocity;
     }
 
@@ -54,12 +53,12 @@ namespace core {
         m_velocity = velocity;
     }
 
-    float Transform::getAngle() const {
-        return m_angle;
+    glm::vec3& Transform::getRotation() {
+        return m_rotation;
     }
 
-    void Transform::setAngle(float angle) {
-        m_angle = angle;
+    void Transform::setRotation(glm::vec3 angle) {
+        m_rotation = angle;
     }
 
 }

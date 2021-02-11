@@ -11,7 +11,7 @@ namespace core {
     public:
         Transform();
 
-        Transform(const glm::vec3& position, const glm::vec3& size, float velocity, float angle);
+        Transform(const glm::vec3& position, const glm::vec3& size, float velocity, const glm::vec3& rotation);
 
         void update(float deltaTime);
 
@@ -25,19 +25,19 @@ namespace core {
 
         void setSize(const glm::vec3 &size);
 
-        [[nodiscard]] float getVelocity() const;
+        [[nodiscard]] float& getVelocity();
 
         void setVelocity(float velocity);
 
-        [[nodiscard]] float getAngle() const;
+        [[nodiscard]] glm::vec3& getRotation();
 
-        void setAngle(float angle);
+        void setRotation(glm::vec3 angle);
 
     private:
         glm::vec3 m_position{};
         glm::vec3 m_size{};
+        glm::vec3 m_rotation{};
         float m_velocity{};
-        float m_angle{};
     };
 
 }

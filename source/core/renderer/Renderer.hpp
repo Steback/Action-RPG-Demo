@@ -36,8 +36,6 @@ namespace core {
 
         void drawFrame(entt::registry& registry);
 
-        void drawUI();
-
         void createRenderPass();
 
         void createGraphicsPipeline();

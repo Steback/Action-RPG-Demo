@@ -46,4 +46,12 @@ namespace core {
     core::Entity &Scene::getEntity(size_t ID) {
         return m_entities[ID];
     }
+
+    std::vector<core::Entity> &Scene::getEntities() {
+        return m_entities;
+    }
+
+    size_t Scene::getEntitiesCount() {
+        return m_entities.size();
+    }
 } // namespace core

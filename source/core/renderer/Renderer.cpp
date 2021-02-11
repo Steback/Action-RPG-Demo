@@ -90,7 +90,6 @@ namespace core {
     }
 
     void Renderer::draw(entt::registry& registry) {
-        drawUI();
         drawFrame(registry);
     }
 
@@ -159,53 +158,6 @@ namespace core {
         }
 
         m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-    }
-
-    void Renderer::drawUI() {
-        UIImGui::newFrame();
-
-#ifdef CORE_DEBUG
-//        ImGui::ShowDemoWindow();
-
-        ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
-        ImGui::SetNextWindowSize(ImVec2(330, 80), ImGuiCond_Always);
-        ImGui::Begin("Application Info", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
-        {
-            ImGui::Text("GPU: %s", m_device->m_properties.deviceName);
-
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-        }
-        ImGui::End();
-#endif
-
-        ImGui::SetNextWindowSize(ImVec2(220, -1), ImGuiCond_Always);
-        ImGui::SetNextWindowPos(ImVec2(5, 90), ImGuiCond_Always);
-        ImGui::Begin("Objects Control", nullptr, ImGuiWindowFlags_NoCollapse);
-        {
-            if (ImGui::CollapsingHeader("Camera")) {
-                if (ImGui::CollapsingHeader("Eye")) {
-                    ImGui::InputFloat("Eye X", &camera.getEye().x);
-                    ImGui::InputFloat("Eye Y", &camera.getEye().y);
-                    ImGui::InputFloat("Eye Z", &camera.getEye().z);
-                }
-
-                if (ImGui::CollapsingHeader("Center")) {
-                    ImGui::InputFloat("Center X", &camera.getCenter().x);
-                    ImGui::InputFloat("Center Y", &camera.getCenter().y);
-                    ImGui::InputFloat("Center Z", &camera.getCenter().z);
-                }
-
-                if (ImGui::CollapsingHeader("Up")) {
-                    ImGui::InputFloat("Up X", &camera.getUp().x);
-                    ImGui::InputFloat("Up Y", &camera.getUp().y);
-                    ImGui::InputFloat("Up Z", &camera.getUp().z);
-                }
-            }
-        }
-        ImGui::End();
-
-
-        UIImGui::render();
     }
 
     void Renderer::createRenderPass() {

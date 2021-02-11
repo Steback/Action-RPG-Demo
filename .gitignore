@@ -10,3 +10,7 @@ cmake-build-debug/
 
 ### Python venv
 venv/
+
+
+### Binaries ###
+bin/
