@@ -22,12 +22,10 @@ namespace core {
         if (m_angle > 360) m_angle -= 360.0f;
     }
 
-    glm::mat4 Transform::getModelMatrix() const {
-        glm::mat4 model(1.0f);
-
+    glm::mat4 Transform::transformMatrix(glm::mat4 model) const {
         model = glm::translate(model, m_position);
         model = glm::scale(model, m_size);
-        model = glm::rotate(model, glm::radians(m_angle), glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(m_angle), glm::vec3(1.0f, 0.0f, 0.0f));
 
         return model;
     }

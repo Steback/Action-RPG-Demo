@@ -165,7 +165,7 @@ namespace core {
         UIImGui::newFrame();
 
 #ifdef CORE_DEBUG
-        //        ImGui::ShowDemoWindow();
+//        ImGui::ShowDemoWindow();
 
         ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
         ImGui::SetNextWindowSize(ImVec2(330, 80), ImGuiCond_Always);
@@ -177,31 +177,33 @@ namespace core {
         }
         ImGui::End();
 #endif
+
         ImGui::SetNextWindowSize(ImVec2(220, -1), ImGuiCond_Always);
         ImGui::SetNextWindowPos(ImVec2(5, 90), ImGuiCond_Always);
         ImGui::Begin("Objects Control", nullptr, ImGuiWindowFlags_NoCollapse);
         {
-           if (ImGui::CollapsingHeader("Camera")) {
-               if (ImGui::CollapsingHeader("Eye")) {
-                   ImGui::InputFloat("Eye X", &camera.getEye().x);
-                   ImGui::InputFloat("Eye Y", &camera.getEye().y);
-                   ImGui::InputFloat("Eye Z", &camera.getEye().z);
-               }
+            if (ImGui::CollapsingHeader("Camera")) {
+                if (ImGui::CollapsingHeader("Eye")) {
+                    ImGui::InputFloat("Eye X", &camera.getEye().x);
+                    ImGui::InputFloat("Eye Y", &camera.getEye().y);
+                    ImGui::InputFloat("Eye Z", &camera.getEye().z);
+                }
 
-               if (ImGui::CollapsingHeader("Center")) {
-                   ImGui::InputFloat("Center X", &camera.getCenter().x);
-                   ImGui::InputFloat("Center Y", &camera.getCenter().y);
-                   ImGui::InputFloat("Center Z", &camera.getCenter().z);
-               }
+                if (ImGui::CollapsingHeader("Center")) {
+                    ImGui::InputFloat("Center X", &camera.getCenter().x);
+                    ImGui::InputFloat("Center Y", &camera.getCenter().y);
+                    ImGui::InputFloat("Center Z", &camera.getCenter().z);
+                }
 
-               if (ImGui::CollapsingHeader("Up")) {
-                   ImGui::InputFloat("Up X", &camera.getUp().x);
-                   ImGui::InputFloat("Up Y", &camera.getUp().y);
-                   ImGui::InputFloat("Up Z", &camera.getUp().z);
-               }
-           }
+                if (ImGui::CollapsingHeader("Up")) {
+                    ImGui::InputFloat("Up X", &camera.getUp().x);
+                    ImGui::InputFloat("Up Y", &camera.getUp().y);
+                    ImGui::InputFloat("Up Z", &camera.getUp().z);
+                }
+            }
         }
         ImGui::End();
+
 
         UIImGui::render();
     }
@@ -507,9 +509,9 @@ namespace core {
                     auto& transform = view.get<core::Transform>(entity);
                     auto& model = view.get<core::Model>(entity);
 
-                    m_mvp.model = transform.getModelMatrix();
+                    m_mvp.model = transform.transformMatrix(model.getMatrixModel());
                     m_mvp.view = camera.getView();
-                    m_mvp.proj = glm::perspective(glm::radians(45.0f), m_window->aspect(), 0.1f, 10.0f);
+                    m_mvp.proj = glm::perspective(glm::radians(45.0f), m_window->aspect(), 0.1f, 200.0f);
                     m_mvp.proj[1][1] *= -1;
 
                     for (size_t i = 0; i < model.getMeshCount(); ++i) {

@@ -15,7 +15,7 @@ namespace core {
 
         void update(float deltaTime);
 
-        [[nodiscard]] glm::mat4 getModelMatrix() const;
+        [[nodiscard]] glm::mat4 transformMatrix(glm::mat4 model) const;
 
         [[nodiscard]] glm::vec3 &getPosition();
 

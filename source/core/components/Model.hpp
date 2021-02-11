@@ -5,9 +5,10 @@
 #include <vector>
 #include <string>
 
-#include "assimp/scene.h"
 #include "vulkan/vulkan.h"
 #include "glm/glm.hpp"
+#define TINYGLTF_NO_STB_IMAGE_WRITE
+#include "tiny_gltf.h"
 
 #include "../mesh/Mesh.hpp"
 #include "../renderer/Device.hpp"
@@ -19,7 +20,7 @@ namespace core {
     public:
         Model();
 
-        explicit Model(std::vector<core::Mesh> meshList);
+        explicit Model(std::vector<core::Mesh>  meshList);
 
         ~Model();
 
@@ -27,18 +28,21 @@ namespace core {
 
         core::Mesh* getMesh(size_t index);
 
+        glm::mat4& getMatrixModel();
+
+        void setModel(const glm::mat4& model);
+
         void clean();
 
-        static std::vector<std::string> loadMaterials(const aiScene* scene);
+        static std::vector<core::Mesh> loadNode(const vk::Device* device, VkQueue queue, const tinygltf::Node& node,
+                                                const tinygltf::Model& model, const std::vector<uint>& texturesID);
 
-        static std::vector<core::Mesh> LoadNode(const vk::Device* device, VkQueue queue, aiNode *node, const aiScene *scene,
-                                                const std::vector<uint>& matToTex);
-
-        static core::Mesh LoadMesh(const vk::Device* device, VkQueue queue, aiMesh* mesh, const aiScene* scene,
-                                    const std::vector<uint>& matToTex);
+        static core::Mesh loadMesh(const vk::Device* device, VkQueue queue, const tinygltf::Mesh& mesh,
+                                   const tinygltf::Model& model, const std::vector<uint>& texturesID);
 
     private:
         std::vector<core::Mesh> m_meshList;
+        glm::mat4 m_model{};
     };
 
 } // namespace core

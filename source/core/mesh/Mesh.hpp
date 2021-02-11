@@ -24,13 +24,13 @@ namespace core {
 
         [[nodiscard]] int getVertexCount() const;
 
-        VkBuffer getVertexBuffer() const;
+        [[nodiscard]] VkBuffer getVertexBuffer() const;
 
         void cleanup();
 
         [[nodiscard]] int getIndexCount() const;
 
-        VkBuffer getIndexBuffer() const;
+        [[nodiscard]] VkBuffer getIndexBuffer() const;
 
         [[nodiscard]] uint getTextureId() const;
 
@@ -46,7 +46,7 @@ namespace core {
         int m_indexCount{};
         vk::Buffer m_vertexBuffer;
         vk::Buffer m_indexBuffer;
-        uint textureID{};
+        uint m_textureID{};
     };
 
 } // namespace core

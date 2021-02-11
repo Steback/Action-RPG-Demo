@@ -1,11 +1,13 @@
 #include "ResourceManager.hpp"
 
-#include "assimp/Importer.hpp"
-#include "assimp/scene.h"
-#include "assimp/postprocess.h"
+#define TINYGLTF_IMPLEMENTATION
+#define TINYGLTF_NO_STB_IMAGE_WRITE
+#include "tiny_gltf.h"
+#include "fmt/format.h"
+#include "glm/detail/type_quat.hpp"
+#include "glm/gtc/type_ptr.hpp"
 
 #include "../renderer/Tools.hpp"
-
 
 namespace core {
 
@@ -209,37 +211,39 @@ namespace core {
                               "Failed to create descriptor set layout");
     }
 
+    // TODO: Check create model
     core::Model ResourceManager::createModel(const std::string &fileName) {
-        // Import model "scene"
-        Assimp::Importer importer;
-        const aiScene *scene = importer.ReadFile(MODELS_DIR + fileName, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
+        tinygltf::Model model;
+        tinygltf::TinyGLTF loader;
+        std::string error, warning;
 
-        if (!scene) {
-            throw std::runtime_error("Failed to load model! (" + fileName + ")");
-        }
+        bool fileLoaded = loader.LoadASCIIFromFile(&model, &error, &warning, MODELS_DIR + fileName);
 
-        // Get vector of all materials with 1:1 ID placement
-        std::vector<std::string> textureNames = core::Model::loadMaterials(scene);
+        if (fileLoaded) {
+            std::vector<uint>textureIDs(model.images.size());
 
-        // Conversion from the materials list IDs to our Descriptor Array IDs
-        std::vector<uint> matToTex(textureNames.size());
-
-        // Loop over textureNames and create textures for them
-        for (size_t i = 0; i < textureNames.size(); i++) {
-            // If material had no texture, set '0' to indicate no texture, texture 0 will be reserved for a default texture
-            if (textureNames[i].empty()) {
-                matToTex[i] = 0;
-            } else {
-                // Otherwise, create texture and set value to index of new texture
-                matToTex[i] = createTexture(textureNames[i]);
+            for (size_t i = 0; i < model.images.size(); ++i) {
+                textureIDs[i] = createTexture(model.images[i].uri);
             }
+
+            std::vector<core::Mesh> meshes = core::Model::loadNode(m_device, m_graphicsQueue, model.nodes[0], model, textureIDs);
+
+            auto meshModel = core::Model(meshes);
+            glm::mat4 modelMatrix(1.0f);
+
+            if (model.nodes[0].rotation.size() == 4) {
+                glm::quat q = glm::make_quat(model.nodes[0].rotation.data());
+                modelMatrix *= glm::mat4(q);
+            }
+
+            meshModel.setModel(modelMatrix);
+
+            return meshModel;
+        } else {
+            fmt::print(stderr, "[Model] error: {} \n", error);
         }
 
-        // Load in all our meshes
-        std::vector<core::Mesh> modelMeshes = core::Model::LoadNode(m_device, m_graphicsQueue, scene->mRootNode, scene, matToTex);
-
-        // Create mesh model and add to list
-        return core::Model(modelMeshes);
+        return {};
     }
 
 } // namespace core
