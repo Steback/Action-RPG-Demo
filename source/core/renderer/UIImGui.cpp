@@ -108,7 +108,7 @@ namespace core {
 
         vkCmdBeginRenderPass(m_commandBuffers[imageIndex], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
         {
-            // Grab and record the draw data for Dear Imgui
+            // Grab and record the transform data for Dear Imgui
             ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_commandBuffers[imageIndex]);
         }
         // End and submit render pass

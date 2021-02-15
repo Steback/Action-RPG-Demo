@@ -21,6 +21,10 @@ namespace core {
 
         [[nodiscard]] glm::mat4 getView() const;
 
+        glm::mat4 getProjection(float fovy, float aspect, float zNear, float zFar);
+
+        glm::mat4 getProjectionFlipY(float fovy, float aspect, float zNear, float zFar);
+
     private:
         glm::vec3 m_eye{};
         glm::vec3 m_center{};

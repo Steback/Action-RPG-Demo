@@ -1,13 +1,18 @@
 #include "Scene.hpp"
 
 #include "GLFW/glfw3.h"
+#include "glm/gtc/matrix_transform.hpp"
 
 #include "../components/Transform.hpp"
 
 
 namespace core {
 
-    Scene::Scene() = default;
+    Scene::Scene() {
+        m_camera.getEye() = {1.0f, 1.0f, 1.0f};
+        m_camera.getCenter() = glm::vec3(0.0f, 0.0f, 0.0f);
+        m_camera.getUp() = glm::vec3(0.0f, 1.0f, 0.0f);
+    }
 
     Scene::~Scene() = default;
 
@@ -54,4 +59,9 @@ namespace core {
     size_t Scene::getEntitiesCount() {
         return m_entities.size();
     }
+
+    core::Camera &Scene::getCamera() {
+        return m_camera;
+    }
+
 } // namespace core

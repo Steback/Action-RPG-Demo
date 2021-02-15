@@ -64,6 +64,8 @@ namespace core {
 
         void createPushConstants();
 
+        void updateVP(const glm::mat4& view, const glm::mat4& proj);
+
         VkPhysicalDevice& getPhysicalDevice();
 
         VkQueue& getGraphicsQueue();
@@ -121,7 +123,6 @@ namespace core {
         VkFormat m_depthFormat{};
 
         MVP m_mvp{};
-        core::Camera camera;
     };
 
 } // End namespace core

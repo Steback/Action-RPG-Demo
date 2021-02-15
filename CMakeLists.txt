@@ -18,10 +18,6 @@ endif()
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup(NO_OUTPUT_DIRS)
 
-# ImGui
-include_directories(bindings)
-file(GLOB_RECURSE IMGUI_BINDINGS bindings/*.cpp)
-
 # Source code and link
 add_subdirectory(source/core)
 add_subdirectory(source/editor)

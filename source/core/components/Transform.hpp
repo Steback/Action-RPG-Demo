@@ -3,6 +3,7 @@
 
 
 #include "glm/glm.hpp"
+#include <glm/detail/type_quat.hpp>
 
 
 namespace core {
@@ -11,11 +12,11 @@ namespace core {
     public:
         Transform();
 
-        Transform(const glm::vec3& position, const glm::vec3& size, float velocity, const glm::vec3& rotation);
+        Transform(const glm::mat4& model, const glm::vec3& position, const glm::vec3& size, float velocity, const glm::vec3& rotation);
 
         void update(float deltaTime);
 
-        [[nodiscard]] glm::mat4 transformMatrix(glm::mat4 model) const;
+        [[nodiscard]] glm::mat4 worldTransformMatrix() const;
 
         [[nodiscard]] glm::vec3 &getPosition();
 
@@ -31,9 +32,13 @@ namespace core {
 
         [[nodiscard]] glm::vec3& getRotation();
 
-        void setRotation(glm::vec3 angle);
+        void setRotation(glm::vec3 rotation);
+
+        glm::mat4& getTransform();
 
     private:
+        glm::mat4 m_worldTransform{};
+        glm::mat4 m_localTransform{};
         glm::vec3 m_position{};
         glm::vec3 m_size{};
         glm::vec3 m_rotation{};

@@ -62,10 +62,6 @@ namespace core {
         createSyncObjects();
 
         spdlog::info("[Renderer] Initialized");
-
-        camera.getEye() = {0.3f, 0.3f, 0.3f};
-        camera.getCenter() = glm::vec3(0.0f, 0.0f, 0.0f);
-        camera.getUp() = glm::vec3(0.0f, 1.0f, 0.0f);
     }
 
     void Renderer::cleanup() {
@@ -136,7 +132,7 @@ namespace core {
         vkResetFences(m_logicalDevice, 1, &m_fences[m_currentFrame]);
 
         vk::tools::validation(vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_fences[m_currentFrame]),
-                              "Failed to submit draw command buffer");
+                              "Failed to submit transform command buffer");
 
         VkSwapchainKHR swapChains[] = { m_swapChain.getSwapChain() };
 
@@ -461,10 +457,7 @@ namespace core {
                     auto& transform = view.get<core::Transform>(entity);
                     auto& model = view.get<core::Model>(entity);
 
-                    m_mvp.model = transform.transformMatrix(model.getMatrixModel());
-                    m_mvp.view = camera.getView();
-                    m_mvp.proj = glm::perspective(glm::radians(45.0f), m_window->aspect(), 0.1f, 200.0f);
-                    m_mvp.proj[1][1] *= -1;
+                    m_mvp.model = transform.getTransform();
 
                     for (size_t i = 0; i < model.getMeshCount(); ++i) {
                         VkBuffer vertexBuffer[] = {model.getMesh(i)->getVertexBuffer()};
@@ -656,6 +649,11 @@ namespace core {
         m_mvpRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
         m_mvpRange.offset = 0;
         m_mvpRange.size = sizeof(MVP);
+    }
+
+    void Renderer::updateVP(const glm::mat4& view, const glm::mat4& proj) {
+        m_mvp.view = view;
+        m_mvp.proj = proj;
     }
 
     VkPhysicalDevice &Renderer::getPhysicalDevice() {

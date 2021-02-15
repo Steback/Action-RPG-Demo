@@ -7,14 +7,16 @@
 
 #include "entt/entt.hpp"
 
+#include "../camera/Camera.hpp"
+
 
 namespace core {
+
     struct Entity {
         entt::entity enttID;
         uint32_t id;
         std::string name;
     };
-
 
     class Scene {
     public:
@@ -36,12 +38,13 @@ namespace core {
 
         size_t getEntitiesCount();
 
-    public:
+        core::Camera& getCamera();
 
     private:
         std::vector<core::Entity> m_entities;
         float deltaTime{};
         float lastTime{};
+        core::Camera m_camera{};
     };
 
 }

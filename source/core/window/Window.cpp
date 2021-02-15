@@ -21,6 +21,7 @@ namespace core {
 
         glfwSetWindowUserPointer(m_window, this);
         glfwSetFramebufferSizeCallback(m_window, framebufferResizeCallback);
+        glfwSetKeyCallback(m_window, keyCallback);
 
         spdlog::info("[Window] Initialized");
     }
@@ -48,11 +49,6 @@ namespace core {
         return m_size;
     }
 
-    void Window::framebufferResizeCallback(GLFWwindow *tWindow, int width, int height) {
-        auto window = reinterpret_cast<Window*>(glfwGetWindowUserPointer(tWindow));
-        window->m_resize = true;
-    }
-
     float Window::aspect() const {
         return static_cast<float>(m_size.width) / static_cast<float>(m_size.height);
     }
@@ -63,6 +59,35 @@ namespace core {
 
     bool& Window::resize() {
         return m_resize;
+    }
+
+    std::array<char, 1024> &Window::getKeys() {
+        return m_keys;
+    }
+
+    bool Window::keyPressed(int key) {
+        return m_keys[key];
+    }
+
+    void Window::setKeyValue(int key, bool pressed) {
+        m_keys[key] = pressed;
+    }
+
+    void Window::framebufferResizeCallback(GLFWwindow *tWindow, int width, int height) {
+        auto window = reinterpret_cast<Window*>(glfwGetWindowUserPointer(tWindow));
+        window->m_resize = true;
+    }
+
+    void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+        auto* w = reinterpret_cast<Window *>(glfwGetWindowUserPointer(window));
+
+        if (action >= 0 && key <= 1024) {
+            if (action == GLFW_PRESS) {
+                w->m_keys[key] = true;
+            } else if (action == GLFW_RELEASE) {
+                w->m_keys[key] = false;
+            }
+        }
     }
 
 } // End namespace core

@@ -1,8 +1,5 @@
-# Third party
-include_directories(../../thirdparty/glfw/include)
-include_directories(../../thirdparty/glm)
-include_directories(../../thirdparty/spdlog/include)
-include_directories(../../thirdparty/imgui)
+# ImGui
+include_directories(../../bindings)
 
 # Source Code
 file(GLOB_RECURSE RENDERER_HEADER_FILES renderer/*.hpp)
