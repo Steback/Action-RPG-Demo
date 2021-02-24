@@ -28,12 +28,17 @@ namespace editor {
 
         void entitiesPanel();
 
+        void cameraControls();
+
+        void cameraMovement();
+
         void drawGizmo();
 
     private:
         size_t entitySelected = -1;
         glm::mat4 m_proj{};
         bool m_gizmoDraw = true;
+        bool m_cameraControls = false;
         ImGuizmo::OPERATION m_currentOperation;
     };
 

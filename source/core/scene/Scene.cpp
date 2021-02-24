@@ -8,18 +8,11 @@
 
 namespace core {
 
-    Scene::Scene() {
-        m_camera.getEye() = {1.0f, 1.0f, 1.0f};
-        m_camera.getCenter() = glm::vec3(0.0f, 0.0f, 0.0f);
-        m_camera.getUp() = glm::vec3(0.0f, 1.0f, 0.0f);
-    }
+    Scene::Scene() = default;
 
     Scene::~Scene() = default;
 
-    void Scene::update(entt::registry& registry) {
-        auto now = static_cast<float>(glfwGetTime());
-        deltaTime = now - lastTime;
-        lastTime = now;
+    void Scene::update(entt::registry& registry, float deltaTime) {
 
         auto view = registry.view<core::Transform>();
 

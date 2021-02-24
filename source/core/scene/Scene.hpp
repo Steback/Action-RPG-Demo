@@ -24,7 +24,7 @@ namespace core {
 
         ~Scene();
 
-        void update(entt::registry& registry);
+        void update(entt::registry& registry, float deltaTime);
 
         void render();
 
@@ -42,8 +42,6 @@ namespace core {
 
     private:
         std::vector<core::Entity> m_entities;
-        float deltaTime{};
-        float lastTime{};
         core::Camera m_camera{};
     };
 

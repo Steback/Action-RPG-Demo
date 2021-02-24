@@ -28,7 +28,7 @@ namespace core {
 
         ~Renderer();
 
-        void init(core::ResourceManager* resourceManager);
+        void init(core::ResourceManager* resourceManager, bool drawGrid = false);
 
         void cleanup();
 
@@ -63,6 +63,8 @@ namespace core {
         void createMsaaResources();
 
         void createPushConstants();
+
+        void createGridPipeline(VkGraphicsPipelineCreateInfo& createInfo);
 
         void updateVP(const glm::mat4& view, const glm::mat4& proj);
 
@@ -123,6 +125,11 @@ namespace core {
         VkFormat m_depthFormat{};
 
         MVP m_mvp{};
+
+        // Editor grid
+        bool m_drawGrid;
+        VkPipeline m_gridPipeline;
+        VkPipelineLayout m_gridPipelineLayout;
     };
 
 } // End namespace core

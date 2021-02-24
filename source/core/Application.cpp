@@ -5,7 +5,7 @@
 
 namespace core {
 
-    Application::Application(const std::string& appName) {
+    Application::Application(const std::string& appName, bool drawGrid) {
         spdlog::info("[App] Start");
 
         m_window = std::make_unique<core::Window>(appName, 1776, 1000);
@@ -35,7 +35,7 @@ namespace core {
         m_renderer = std::make_unique<core::Renderer>(m_window, *m_instance, appName, m_device, m_surface);
         m_resourceManager = new core::ResourceManager(m_device, m_renderer->getGraphicsQueue());
 
-        m_renderer->init(m_resourceManager);
+        m_renderer->init(m_resourceManager, drawGrid);
 
         m_scene = std::make_unique<core::Scene>();
 
@@ -70,6 +70,11 @@ namespace core {
     void Application::loop() {
         while (m_window->isOpen()) {
             glfwPollEvents();
+
+            auto now = static_cast<float>(glfwGetTime());
+            m_deltaTime = now - m_lastTime;
+            m_lastTime = now;
+
             update();
             draw();
             m_renderer->draw(m_registry);

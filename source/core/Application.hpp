@@ -21,7 +21,7 @@ namespace core {
 
     class Application {
     public:
-        explicit Application(const std::string& appName);
+        explicit Application(const std::string& appName, bool drawGrid = false);
 
         ~Application();
 
@@ -48,6 +48,7 @@ namespace core {
         vk::Instance m_instance;
         VkSurfaceKHR m_surface{};
         entt::registry m_registry;
+        float m_lastTime{}, m_deltaTime{};
     };
 
 } // namespace core

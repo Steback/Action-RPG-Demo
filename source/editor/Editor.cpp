@@ -2,19 +2,22 @@
 
 #include "imgui.h"
 #include "glm/gtc/type_ptr.hpp"
+#include "fmt/format.h"
 
 #include "renderer/UIImGui.hpp"
 #include "Gizmos.hpp"
 
 namespace editor {
 
-    Editor::Editor() : core::Application("Editor"), m_currentOperation(ImGuizmo::OPERATION::TRANSLATE) {
+    Editor::Editor() : core::Application("Editor", true), m_currentOperation(ImGuizmo::OPERATION::TRANSLATE) {
 
     }
 
     Editor::~Editor() = default;
 
     void Editor::init() {
+        m_scene->getCamera().init(45.0f, 45.0f, {0.0f, 1.0f, 0.0f}, 20.0f, 45.0f, 0.01f, 100.0f);
+
         m_resourceManager->createTexture("plain.png");
         auto enttID = m_registry.create();
         auto entity = m_scene->addEntity("Viking Room", enttID);
@@ -24,11 +27,9 @@ namespace editor {
     }
 
     void Editor::update() {
-        auto& camera = m_scene->getCamera();
-        m_proj = camera.getProjection(45.0f, m_window->aspect(), 0.1f, 100.f);
-        m_renderer->updateVP(camera.getView(), m_proj);
+        cameraMovement();
 
-        m_scene->update(m_registry);
+        m_scene->update(m_registry, m_deltaTime);
     }
 
     void Editor::draw() {
@@ -38,6 +39,9 @@ namespace editor {
 
         menuBar();
         entitiesPanel();
+
+        if (m_cameraControls) cameraControls();
+
         drawGizmo();
 
         core::UIImGui::render();
@@ -56,6 +60,10 @@ namespace editor {
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("File")) {
                 ImGui::MenuItem("Save", nullptr, nullptr);
+            }
+
+            if (ImGui::BeginMenu("Tools")) {
+                if (ImGui::MenuItem("Camera Controls", nullptr)) m_cameraControls = !m_cameraControls;
             }
         }
     }
@@ -106,10 +114,41 @@ namespace editor {
         ImGui::End();
     }
 
+    void Editor::cameraControls() {
+        ImGui::Begin("Camera Controls", &m_cameraControls);
+        {
+            ImGui::InputFloat3("Eye", glm::value_ptr(m_scene->getCamera().getEye()));
+            ImGui::InputFloat3("Front", glm::value_ptr(m_scene->getCamera().getCenter()));
+            ImGui::InputFloat3("Up", glm::value_ptr(m_scene->getCamera().getUp()));
+            ImGui::Separator();
+            ImGui::InputFloat3("Euler Angles", glm::value_ptr(m_scene->getCamera().getEulerAngles()));
+            ImGui::Separator();
+            ImGui::InputFloat("FOV", &m_scene->getCamera().getFovy());
+        }
+        ImGui::End();
+    }
+
+    void Editor::cameraMovement() {
+        auto& camera = m_scene->getCamera();
+
+        camera.setDistance(m_deltaTime, m_window->getScrollOffset(), m_window->isScrolling());
+
+        if (m_window->mouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT) && m_window->keyPressed(GLFW_KEY_LEFT_ALT)) {
+            camera.move(m_deltaTime, m_window->getCursorPos(), core::Camera::MoveType::ROTATION);
+        }
+
+        if (m_window->mouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT) && m_window->keyPressed(GLFW_KEY_LEFT_SHIFT)) {
+            camera.move(m_deltaTime, m_window->getCursorPos(), core::Camera::MoveType::TRANSLATE);
+        }
+
+        m_proj = camera.getProjection(m_window->aspect());
+        m_renderer->updateVP(camera.getView(), m_proj);
+    }
+
     void Editor::drawGizmo() {
         ImGuizmo::BeginFrame();
 
-        glm::mat4 projMatrix = m_scene->getCamera().getProjectionFlipY(45.0f, m_window->aspect(), 0.1f, 100.f);
+        glm::mat4 projMatrix = m_scene->getCamera().getProjectionFlipY(m_window->aspect());
 
         if (entitySelected != -1) {
             if (m_gizmoDraw) ImGuizmo::Enable(m_gizmoDraw);

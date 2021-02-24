@@ -9,9 +9,23 @@ namespace core {
 
     class Camera {
     public:
+
+        enum MoveType {
+            ROTATION,
+            TRANSLATE
+        };
+
         Camera();
 
         ~Camera();
+
+        void init(float yaw, float pitch, const glm::vec3& up, float velocity, float fovy, float zNear, float zFar);
+
+        void move(float deltaTime, const glm::vec2& angle, MoveType type);
+
+        void setDirection(float yaw, float pitch);
+
+        void setDistance(float deltaTime, glm::vec2& offset, bool& scrolling);
 
         glm::vec3& getEye();
 
@@ -21,14 +35,27 @@ namespace core {
 
         [[nodiscard]] glm::mat4 getView() const;
 
-        glm::mat4 getProjection(float fovy, float aspect, float zNear, float zFar);
+        [[nodiscard]] glm::mat4 getProjection(float aspect) const;
 
-        glm::mat4 getProjectionFlipY(float fovy, float aspect, float zNear, float zFar);
+        [[nodiscard]] glm::mat4 getProjectionFlipY(float aspect) const;
+
+        glm::vec2& getEulerAngles();
+
+        float& getFovy();
+
+        float& getNearPlane();
+
+        float& getFarPlane();
 
     private:
-        glm::vec3 m_eye{};
-        glm::vec3 m_center{};
+        glm::vec3 m_direction{};
+        glm::vec3 m_front{};
         glm::vec3 m_up{};
+        float m_velocity{};
+        glm::vec2 m_eulerAngles{};
+        float m_fovy{};
+        float m_zNear{};
+        float m_zFar{};
     };
 
 } // namespace core

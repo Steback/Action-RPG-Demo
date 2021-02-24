@@ -46,8 +46,9 @@ namespace core {
 
     Renderer::~Renderer() = default;
 
-    void Renderer::init(core::ResourceManager* resourceManager) {
+    void Renderer::init(core::ResourceManager* resourceManager, bool drawGrid) {
         m_resourceManager = resourceManager;
+        m_drawGrid = drawGrid;
 
         createCommandPool();
         createRenderPass();
@@ -368,6 +369,10 @@ namespace core {
 
         vkDestroyShaderModule(m_logicalDevice, vertexShaderModule, nullptr);
         vkDestroyShaderModule(m_logicalDevice, fragmentShaderModule, nullptr);
+
+        if (m_drawGrid) {
+            createGridPipeline(pipelineInfo);
+        }
     }
 
     void Renderer::createFramebuffers() {
@@ -428,7 +433,7 @@ namespace core {
 
     void Renderer::recordCommands(uint32_t indexImage, entt::registry& registry) {
         std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
+        clearValues[0].color = {0.24f, 0.24f, 0.24f, 1.0f};
         clearValues[1].depthStencil = {1.0f, 0};
 
         VkRenderPassBeginInfo renderPassInfo = vk::initializers::renderPassBeginInfo();
@@ -486,6 +491,17 @@ namespace core {
                                          1, 0, 0, 0);
                     }
                 }
+
+                if (m_drawGrid) {
+                    vkCmdBindPipeline(m_commandBuffers[indexImage], VK_PIPELINE_BIND_POINT_GRAPHICS, m_gridPipeline);
+
+                    m_mvp.model = glm::mat4(1.0f);
+
+                    vkCmdPushConstants(m_commandBuffers[indexImage], m_gridPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
+                                       sizeof(MVP), &m_mvp);
+
+                    vkCmdDraw(m_commandBuffers[indexImage], 6, 1, 0, 0);
+                }
             }
             vkCmdEndRenderPass(m_commandBuffers[indexImage]);
         }
@@ -533,6 +549,11 @@ namespace core {
 
         vkFreeCommandBuffers(m_logicalDevice, m_commandPool, static_cast<uint64_t>(m_commandBuffers.size()),
                              m_commandBuffers.data());
+
+        if (m_drawGrid) {
+            vkDestroyPipeline(m_logicalDevice, m_gridPipeline, nullptr);
+            vkDestroyPipelineLayout(m_logicalDevice, m_gridPipelineLayout, nullptr);
+        }
 
         vkDestroyPipeline(m_logicalDevice, m_graphicsPipeline, nullptr);
         vkDestroyPipelineLayout(m_logicalDevice, m_pipelineLayout, nullptr);
@@ -649,6 +670,53 @@ namespace core {
         m_mvpRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
         m_mvpRange.offset = 0;
         m_mvpRange.size = sizeof(MVP);
+    }
+
+    void Renderer::createGridPipeline(VkGraphicsPipelineCreateInfo& createInfo) {
+        auto vertexShaderCode = core::tools::readFile("shaders/grid.vert.spv");
+        auto fragmentShaderCode = core::tools::readFile("shaders/grid.frag.spv");
+
+        VkShaderModule vertShaderModule = vk::tools::loadShader(vertexShaderCode, m_logicalDevice);
+        VkShaderModule fragShaderModule = vk::tools::loadShader(fragmentShaderCode, m_logicalDevice);
+
+        VkPipelineShaderStageCreateInfo vertShaderStageInfo = vk::initializers::pipelineShaderStageCreateInfo();
+        vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+        vertShaderStageInfo.module = vertShaderModule;
+        vertShaderStageInfo.pName = "main";
+
+        VkPipelineShaderStageCreateInfo fragShaderStageInfo = vk::initializers::pipelineShaderStageCreateInfo();
+        fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+        fragShaderStageInfo.module = fragShaderModule;
+        fragShaderStageInfo.pName = "main";
+
+        std::vector<VkPipelineShaderStageCreateInfo> shaderStages = {
+                vertShaderStageInfo,
+                fragShaderStageInfo
+        };
+
+        VkPipelineVertexInputStateCreateInfo vertexInputInfo = vk::initializers::pipelineVertexInputStateCreateInfo();
+        vertexInputInfo.vertexBindingDescriptionCount = 0;
+        vertexInputInfo.pVertexBindingDescriptions = nullptr;
+        vertexInputInfo.vertexAttributeDescriptionCount = 0;
+        vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+
+        createInfo.pVertexInputState = &vertexInputInfo;
+
+        VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = vk::initializers::pipelineLayoutCreateInfo();
+        pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
+        pipelineLayoutCreateInfo.pPushConstantRanges = &m_mvpRange;
+
+        vk::tools::validation(vkCreatePipelineLayout(m_logicalDevice, &pipelineLayoutCreateInfo, nullptr, &m_gridPipelineLayout),
+                              "Failed to create grid pipeline layout");
+
+        createInfo.pStages = shaderStages.data();
+        createInfo.layout = m_gridPipelineLayout;
+
+        vk::tools::validation(vkCreateGraphicsPipelines(m_logicalDevice, nullptr, 1, &createInfo, nullptr, &m_gridPipeline),
+                              "Failed to create grid pipeline");
+
+        vkDestroyShaderModule(m_logicalDevice, vertShaderModule, nullptr);
+        vkDestroyShaderModule(m_logicalDevice, fragShaderModule, nullptr);
     }
 
     void Renderer::updateVP(const glm::mat4& view, const glm::mat4& proj) {
