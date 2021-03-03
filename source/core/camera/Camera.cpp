@@ -30,8 +30,8 @@ namespace core {
             m_direction = m_front + glm::normalize(m_direction);
         } else if (type == MoveType::TRANSLATE) {
             // TODO: Add center movement in z axis
-            m_front += glm::vec3(angle.x, angle.y, 0.0f) * deltaTime * (m_velocity * 0.01f);
-            m_direction += glm::vec3(angle.x, angle.y, 0.0f) * deltaTime * (m_velocity * 0.01f);
+            m_front += glm::vec3(angle.x, angle.y, 0.0f) * deltaTime * (m_velocity * 0.05f);
+            m_direction += glm::vec3(angle.x, angle.y, 0.0f) * deltaTime * (m_velocity * 0.05f);
         }
     }
 

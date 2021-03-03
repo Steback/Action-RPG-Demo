@@ -16,8 +16,8 @@
 #include "../Utilities.hpp"
 #include "../camera/Camera.hpp"
 #include "../window/Window.hpp"
-#include "../components/Model.hpp"
-#include "../texture/ResourceManager.hpp"
+#include "../resources/Model.hpp"
+#include "../resources/ResourceManager.hpp"
 
 
 namespace core {

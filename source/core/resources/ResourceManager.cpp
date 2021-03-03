@@ -20,14 +20,14 @@ namespace core {
     ResourceManager::~ResourceManager() = default;
 
     void ResourceManager::cleanup() {
-        for (auto& texture : textures) {
-            texture.cleanup(m_device->m_logicalDevice);
-        }
+        for (auto& model : m_models) model.second.cleanup();
+
+        for (auto& texture : m_textures) texture.second.cleanup(m_device->m_logicalDevice);
 
         vkDestroyDescriptorSetLayout(m_device->m_logicalDevice, m_descriptorSetLayout, nullptr);
     }
 
-    uint ResourceManager::createTexture(const std::string &fileName) {
+    void ResourceManager::createTexture(const std::string &fileName, const std::string& name) {
         int width, height;
         VkDeviceSize imageSize;
         stbi_uc* pixels = core::tools::loadTextureFile(fileName, &width, &height, &imageSize);
@@ -69,13 +69,11 @@ namespace core {
 
         texture.createDescriptor(m_device->m_logicalDevice, m_descriptorPool, m_descriptorSetLayout);
 
-        textures.push_back(texture);
-
-        return static_cast<uint>(textures.size()) - 1;
+        m_textures[name] = texture;
     }
 
-    core::Texture &ResourceManager::getTexture(size_t index) {
-        return textures[index];
+    core::Texture &ResourceManager::getTexture(const std::string& name) {
+        return m_textures[name];
     }
 
     VkDescriptorSetLayout &ResourceManager::getTextureDescriptorSetLayout() {
@@ -85,8 +83,8 @@ namespace core {
     void ResourceManager::recreateResources() {
        createDescriptorPool();
 
-       for (auto& texture : textures) {
-           texture.createDescriptor(m_device->m_logicalDevice, m_descriptorPool, m_descriptorSetLayout);
+       for (auto& texture : m_textures) {
+           texture.second.createDescriptor(m_device->m_logicalDevice, m_descriptorPool, m_descriptorSetLayout);
        }
     }
 
@@ -212,38 +210,35 @@ namespace core {
     }
 
     // TODO: Check create model
-    core::Model ResourceManager::createModel(const std::string &fileName) {
+    void ResourceManager::createModel(const std::string &uri, const std::string& name, uint& meshNodeID) {
         tinygltf::Model model;
         tinygltf::TinyGLTF loader;
         std::string error, warning;
 
-        bool fileLoaded = loader.LoadASCIIFromFile(&model, &error, &warning, MODELS_DIR + fileName);
+        bool fileLoaded = loader.LoadASCIIFromFile(&model, &error, &warning, MODELS_DIR + uri);
 
         if (fileLoaded) {
-            std::vector<uint>textureIDs(model.images.size());
+            std::vector<core::Model::Node> nodes;
+            std::vector<uint32_t> indices;
+            std::vector<core::Vertex> vertices;
+            core::Mesh modelMesh;
 
-            for (size_t i = 0; i < model.images.size(); ++i) {
-                textureIDs[i] = createTexture(model.images[i].uri);
-            }
+            for (auto& image : model.images) createTexture(image.uri, image.name);
 
-            std::vector<core::Mesh> meshes = core::Model::loadNode(m_device, m_graphicsQueue, model.nodes[0], model, textureIDs);
+            for (auto& nodeID : model.scenes[0].nodes) core::Model::loadNode(model.nodes[nodeID], model, meshNodeID, nodes);
 
-            auto meshModel = core::Model(meshes);
-            glm::mat4 modelMatrix(1.0f);
+            // TODO: Update textures names load for X amount of textures
+            for (auto& mesh : model.meshes)
+                modelMesh = core::Model::loadMesh(m_device, m_graphicsQueue, mesh, model, model.images[0].name);
 
-            if (model.nodes[0].rotation.size() == 4) {
-                glm::quat q = glm::make_quat(model.nodes[0].rotation.data());
-                modelMatrix *= glm::mat4(q);
-            }
-
-            meshModel.setModel(modelMatrix);
-
-            return meshModel;
+            m_models[name] = core::Model(modelMesh, nodes);
         } else {
             fmt::print(stderr, "[Model] error: {} \n", error);
         }
+    }
 
-        return {};
+    core::Model& ResourceManager::getModel(const std::string& id) {
+        return m_models[id];
     }
 
 } // namespace core

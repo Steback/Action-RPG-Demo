@@ -10,13 +10,13 @@ namespace core {
 
     Transform::Transform() = default;
 
-    Transform::Transform(const glm::mat4& model, const glm::vec3 &position, const glm::vec3 &size, float velocity, const glm::vec3& rotation)
-        : m_position(position), m_size(size), m_velocity(velocity), m_rotation(rotation), m_worldTransform(model), m_localTransform(model) {
+    Transform::Transform(const glm::vec3 &position, const glm::vec3 &size, float velocity, const glm::vec3& rotation)
+        : m_position(position), m_size(size), m_velocity(velocity), m_rotation(rotation), m_worldTransform(1.0f) {
 
     }
 
     void Transform::update(float deltaTime) {
-        m_worldTransform = m_localTransform * worldTransformMatrix();
+
     }
 
     glm::mat4 Transform::worldTransformMatrix() const {

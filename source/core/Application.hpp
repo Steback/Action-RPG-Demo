@@ -14,7 +14,7 @@
 #include "renderer/Instance.hpp"
 #include "scene/Scene.hpp"
 #include "components/Transform.hpp"
-#include "texture/ResourceManager.hpp"
+#include "resources/ResourceManager.hpp"
 
 
 namespace core {

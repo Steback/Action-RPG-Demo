@@ -9,7 +9,8 @@
 #include "../Constants.hpp"
 #include "../Utilities.hpp"
 #include "../components/Transform.hpp"
-#include "../components/Model.hpp"
+#include "../components/MeshModel.hpp"
+#include "../resources/Model.hpp"
 
 
 namespace core {
@@ -437,7 +438,7 @@ namespace core {
         clearValues[1].depthStencil = {1.0f, 0};
 
         VkRenderPassBeginInfo renderPassInfo = vk::initializers::renderPassBeginInfo();
-        auto view = registry.view<core::Model, core::Transform>();
+        auto view = registry.view<core::MeshModel, core::Transform>();
 
         VkCommandBufferBeginInfo beginInfo = vk::initializers::commandBufferBeginInfo();
         beginInfo.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -460,15 +461,15 @@ namespace core {
 
                 for (auto& entity : view) {
                     auto& transform = view.get<core::Transform>(entity);
-                    auto& model = view.get<core::Model>(entity);
+                    auto& meshModel = view.get<core::MeshModel>(entity);
+                    core::Model& model = m_resourceManager->getModel(meshModel.getModelName());
 
-                    m_mvp.model = transform.getTransform();
+                    m_mvp.model = model.getNode(meshModel.getMeshNodeID()).mModel * transform.worldTransformMatrix();
 
-                    for (size_t i = 0; i < model.getMeshCount(); ++i) {
-                        VkBuffer vertexBuffer[] = {model.getMesh(i)->getVertexBuffer()};
+                        VkBuffer vertexBuffer[] = {model.getMesh().getVertexBuffer()};
                         VkDeviceSize offsets[] = {0};
                         vkCmdBindVertexBuffers(m_commandBuffers[indexImage], 0, 1, vertexBuffer, offsets);
-                        vkCmdBindIndexBuffer(m_commandBuffers[indexImage], model.getMesh(i)->getIndexBuffer(), 0,
+                        vkCmdBindIndexBuffer(m_commandBuffers[indexImage], model.getMesh().getIndexBuffer(), 0,
                                              VK_INDEX_TYPE_UINT32);
 
                         vkCmdPushConstants(m_commandBuffers[indexImage], m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
@@ -476,7 +477,7 @@ namespace core {
 
                         std::array<VkDescriptorSet, 2> descriptorSetGroup = {
                                 m_descriptorSets[indexImage],
-                                m_resourceManager->getTexture(model.getMesh(i)->getTextureId()).getDescriptorSet()
+                                m_resourceManager->getTexture(model.getMesh().getTextureId()).getDescriptorSet()
                         };
 
                         vkCmdBindDescriptorSets(m_commandBuffers[indexImage], VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -487,9 +488,8 @@ namespace core {
                         vkCmdBindDescriptorSets(m_commandBuffers[indexImage], VK_PIPELINE_BIND_POINT_GRAPHICS,
                                                 m_pipelineLayout, 0, 1, &m_descriptorSets[indexImage], 0, nullptr);
 
-                        vkCmdDrawIndexed(m_commandBuffers[indexImage], model.getMesh(i)->getIndexCount(),
+                        vkCmdDrawIndexed(m_commandBuffers[indexImage], model.getMesh().getIndexCount(),
                                          1, 0, 0, 0);
-                    }
                 }
 
                 if (m_drawGrid) {

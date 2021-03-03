@@ -12,58 +12,59 @@ namespace core {
 
     Model::Model() = default;
 
-    Model::Model(std::vector<core::Mesh>  meshList) : m_meshList(std::move(meshList)) {
+    Model::Model(const core::Mesh& mesh, std::vector<Node> nodes) : m_mesh(mesh), m_nodes(std::move(nodes)) {
 
     }
 
     Model::~Model() = default;
 
-    size_t Model::getMeshCount() const {
-        return m_meshList.size();
+    core::Mesh& Model::getMesh() {
+        return m_mesh;
     }
 
-    core::Mesh *Model::getMesh(size_t index) {
-        if (index >= m_meshList.size()) {
-            core::throw_ex("Attempted to access invalid Mesh Index");
+    Model::Node &Model::getNode(uint id) {
+        return m_nodes[id];
+    }
+
+    void Model::cleanup() {
+        m_mesh.cleanup();
+    }
+
+    void Model::loadNode(const tinygltf::Node& node, const tinygltf::Model& model, uint& meshNodeID, std::vector<Node>& nodes, Node* parent) {
+        glm::mat4 modelMatrix(1.0f);
+        Node modelNode{};
+        modelNode.id = nodes.size();
+        modelNode.name = node.name;
+
+        if (node.translation.size() == 3)
+            modelMatrix = glm::translate(modelMatrix, glm::make_vec3(reinterpret_cast<const float*>(node.translation.data())));
+
+        if (node.rotation.size() == 4)
+            modelMatrix *= glm::mat4(glm::quat(glm::make_quat(node.rotation.data())));
+
+        if (node.scale.size() == 3)
+            modelMatrix = glm::scale(modelMatrix, glm::make_vec3(reinterpret_cast<const float*>(node.scale.data())));
+
+        modelNode.mModel = modelMatrix;
+
+        if (node.mesh > -1) meshNodeID = modelNode.id;
+
+        if (parent) {
+            parent->children.push_back(modelNode.id);
+            modelNode.mModel *= parent->mModel;
         }
 
-        return &m_meshList[index];
-    }
-
-    glm::mat4 &Model::getMatrixModel() {
-        return m_model;
-    }
-
-    void Model::setModel(const glm::mat4 &model) {
-        m_model = model;
-    }
-
-    void Model::clean() {
-        for (auto& mesh : m_meshList) {
-            mesh.cleanup();
-        }
-    }
-
-    std::vector<core::Mesh> Model::loadNode(const vk::Device* device, VkQueue queue, const tinygltf::Node& node,
-                                            const tinygltf::Model& model, const std::vector<uint>& texturesID) {
-        std::vector<core::Mesh> meshes;
+        nodes.push_back(modelNode);
 
         if (!node.children.empty()) {
             for (size_t i : node.children) {
-                auto meshList = loadNode(device, queue, model.nodes[i], model, texturesID);
-                meshes.insert(meshes.end(), meshList.begin(), meshList.end());
+                loadNode(model.nodes[i], model, meshNodeID, nodes, &nodes[modelNode.id]);
             }
         }
-
-        if (node.mesh > -1) {
-            meshes.push_back(loadMesh(device, queue, model.meshes[node.mesh], model, texturesID));
-        }
-
-        return meshes;
     }
 
     core::Mesh Model::loadMesh(const vk::Device* device, VkQueue queue, const tinygltf::Mesh& mesh, const tinygltf::Model& model,
-                               const std::vector<uint>& texturesID) {
+                               const std::string& texturesID) {
         std::vector<core::Vertex> vertices;
         std::vector<uint32_t> indices;
 
@@ -139,7 +140,7 @@ namespace core {
             }
         }
 
-        return core::Mesh(vertices, indices, queue, texturesID[0], device);
+        return core::Mesh(vertices, indices, queue, texturesID, device);
     }
 
 } // namespace core

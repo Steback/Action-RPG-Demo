@@ -8,7 +8,7 @@
 
 #include "Texture.hpp"
 #include "../renderer/Device.hpp"
-#include "../components/Model.hpp"
+#include "Model.hpp"
 #include "../Utilities.hpp"
 
 
@@ -22,9 +22,9 @@ namespace core {
 
         void cleanup();
 
-        uint createTexture(const std::string& fileName);
+        void createTexture(const std::string& uri, const std::string& name);
 
-        core::Texture& getTexture(size_t index);
+        core::Texture& getTexture(const std::string& name);
 
         VkDescriptorSetLayout& getTextureDescriptorSetLayout();
 
@@ -34,7 +34,9 @@ namespace core {
 
         void generateMipmaps(const core::Texture& texture, VkFormat format, VkExtent2D size, uint32_t mipLevels);
 
-        core::Model createModel(const std::string& fileName);
+        void createModel(const std::string& uri, const std::string& name, uint& meshNodeID);
+
+        core::Model& getModel(const std::string& id);
 
     private:
         void createDescriptorPool();
@@ -44,7 +46,8 @@ namespace core {
     private:
         vk::Device* m_device{};
         VkQueue m_graphicsQueue{};
-        std::vector<core::Texture> textures;
+        std::unordered_map<std::string, core::Texture> m_textures;
+        std::unordered_map<std::string, core::Model> m_models;
         VkDescriptorPool m_descriptorPool{};
         VkDescriptorSetLayout m_descriptorSetLayout{};
     };

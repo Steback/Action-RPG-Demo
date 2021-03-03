@@ -4,6 +4,7 @@
 #include "glm/gtc/type_ptr.hpp"
 #include "fmt/format.h"
 
+#include "components/MeshModel.hpp"
 #include "renderer/UIImGui.hpp"
 #include "Gizmos.hpp"
 
@@ -18,12 +19,15 @@ namespace editor {
     void Editor::init() {
         m_scene->getCamera().init(45.0f, 45.0f, {0.0f, 1.0f, 0.0f}, 20.0f, 45.0f, 0.01f, 100.0f);
 
-        m_resourceManager->createTexture("plain.png");
+        m_resourceManager->createTexture("plain.png", "plain");
         auto enttID = m_registry.create();
         auto entity = m_scene->addEntity("Viking Room", enttID);
 
-        auto& model = m_registry.emplace<core::Model>(enttID, m_resourceManager->createModel("viking-room.gltf"));
-        auto& transform = m_registry.emplace<core::Transform>(enttID, model.getMatrixModel(), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), 0.0f, glm::vec3(0.0f));
+        uint meshNodeID;
+        m_resourceManager->createModel("viking-room.gltf", "viking-room", meshNodeID);
+
+        auto& model = m_registry.emplace<core::MeshModel>(enttID, "viking-room", meshNodeID);
+        auto& transform = m_registry.emplace<core::Transform>(enttID, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), 0.0f, glm::vec3(0.0f));
     }
 
     void Editor::update() {
@@ -48,12 +52,7 @@ namespace editor {
     }
 
     void Editor::cleanup() {
-        auto view = m_registry.view<core::Model>();
 
-        for (auto& entity : view) {
-            auto& model = view.get<core::Model>(entity);
-            model.clean();
-        }
     }
 
     void Editor::menuBar() {
@@ -108,6 +107,12 @@ namespace editor {
                     ImGui::InputFloat3("Size", glm::value_ptr(transform.getSize()));
                     ImGui::InputFloat3("Rotation", glm::value_ptr(transform.getRotation()));
                     ImGui::InputFloat("Velocity", &transform.getVelocity());
+                }
+
+                if (ImGui::CollapsingHeader("Model")) {
+                    auto meshModel = m_registry.get<core::MeshModel>(entity.enttID);
+
+                    ImGui::Text("Name: %s", meshModel.getModelName().c_str());
                 }
             }
         }

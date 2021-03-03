@@ -8,8 +8,8 @@ namespace core {
     Mesh::Mesh() = default;
 
     Mesh::Mesh(const std::vector<core::Vertex>& vertices,const std::vector<uint32_t>& indices,
-               VkQueue transferQueue, int newTextureID, const vk::Device* device)
-            : m_vertexCount(vertices.size()), m_indexCount(indices.size()), m_textureID(newTextureID) {
+               VkQueue transferQueue, const std::string& textureID, const vk::Device* device)
+            : m_vertexCount(vertices.size()), m_indexCount(indices.size()), m_textureID(textureID) {
         createVertexBuffer(vertices, transferQueue, device);
         createIndexBuffer(indices, transferQueue, device);
     }
@@ -37,12 +37,8 @@ namespace core {
         m_vertexBuffer.destroy();
     }
 
-    uint Mesh::getTextureId() const {
+    std::string Mesh::getTextureId() const {
         return m_textureID;
-    }
-
-    void Mesh::setTextureId(int textureId) {
-        m_textureID = textureId;
     }
 
     void Mesh::createVertexBuffer(const std::vector<core::Vertex> &vertices, VkQueue transferQueue, const vk::Device* device) {

@@ -12,7 +12,7 @@ namespace core {
     public:
         Transform();
 
-        Transform(const glm::mat4& model, const glm::vec3& position, const glm::vec3& size, float velocity, const glm::vec3& rotation);
+        Transform(const glm::vec3& position, const glm::vec3& size, float velocity, const glm::vec3& rotation);
 
         void update(float deltaTime);
 
@@ -38,7 +38,6 @@ namespace core {
 
     private:
         glm::mat4 m_worldTransform{};
-        glm::mat4 m_localTransform{};
         glm::vec3 m_position{};
         glm::vec3 m_size{};
         glm::vec3 m_rotation{};
