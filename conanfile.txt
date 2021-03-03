@@ -2,12 +2,13 @@
  spdlog/1.8.2
  glfw/3.3.2
  glm/0.9.9.8
- imgui/1.80
- vulkan-headers/1.2.162.0
- vulkan-loader/1.2.162.0
+ imgui/1.81
+ vulkan-headers/1.2.170.0
+ vulkan-loader/1.2.170.0
  stb/20200203
  entt/3.6.0
  tinygltf/2.5.0
+ nlohmann_json/3.9.1
 
  [generators]
  cmake
