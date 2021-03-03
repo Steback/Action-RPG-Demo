@@ -22,10 +22,9 @@ namespace core {
     glm::mat4 Transform::worldTransformMatrix() const {
         glm::mat4 model(1.0f);
 
-        // I'm noob, for this reason I not understand why I need to swap z-y values, and flip y
-        model = glm::translate(model, glm::vec3(m_position.x, m_position.z, -m_position.y));
-        model = glm::scale(model, glm::vec3(m_size.x, m_size.z, m_size.y));
-        model *= glm::mat4(glm::quat(glm::vec3(m_rotation.x, m_rotation.z, -m_rotation.y)));
+        model = glm::translate(model, m_position);
+        model = glm::scale(model, m_size) ;
+        model *= glm::mat4(glm::quat(m_rotation));
 
         return model;
     }

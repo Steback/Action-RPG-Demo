@@ -36,6 +36,7 @@ namespace core {
         modelNode.id = nodes.size();
         modelNode.name = node.name;
 
+
         if (node.translation.size() == 3)
             modelMatrix = glm::translate(modelMatrix, glm::make_vec3(reinterpret_cast<const float*>(node.translation.data())));
 
@@ -51,7 +52,9 @@ namespace core {
 
         if (parent) {
             parent->children.push_back(modelNode.id);
-            modelNode.mModel *= parent->mModel;
+
+            if (node.translation.size() != 0 && node.scale.size() != 0 && node.rotation.size() != 0)
+                modelNode.mModel *= parent->mModel;
         }
 
         nodes.push_back(modelNode);

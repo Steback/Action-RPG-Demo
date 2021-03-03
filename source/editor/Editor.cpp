@@ -21,12 +21,12 @@ namespace editor {
 
         m_resourceManager->createTexture("plain.png", "plain");
         auto enttID = m_registry.create();
-        auto entity = m_scene->addEntity("Viking Room", enttID);
+        auto entity = m_scene->addEntity("Hero", enttID);
 
         uint meshNodeID;
-        m_resourceManager->createModel("viking-room.gltf", "viking-room", meshNodeID);
+        m_resourceManager->createModel("hero.gltf", "hero", meshNodeID);
 
-        auto& model = m_registry.emplace<core::MeshModel>(enttID, "viking-room", meshNodeID);
+        auto& model = m_registry.emplace<core::MeshModel>(enttID, "hero", meshNodeID);
         auto& transform = m_registry.emplace<core::Transform>(enttID, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), 0.0f, glm::vec3(0.0f));
     }
 
