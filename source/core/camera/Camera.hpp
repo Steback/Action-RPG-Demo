@@ -10,19 +10,16 @@ namespace core {
     class Camera {
     public:
 
-        enum MoveType {
-            ROTATION,
-            TRANSLATE
-        };
-
         Camera();
 
-        explicit Camera(float yaw, float pitch, const glm::vec3& up, const glm::vec3& target, float velocity, float distance,
-                        float yFov, float zNear, float zFar);
+        explicit Camera(const glm::vec2& angles, const glm::vec3& up, const glm::vec3& target, float velocity, float turnVelocity,
+                        float distance, float yFov, float zNear, float zFar);
 
         ~Camera();
 
-        void move(float deltaTime, const glm::vec2& angle, MoveType type);
+        void move(float deltaTime, const glm::vec3& offset);
+
+        void rotate(float deltaTime, const glm::vec2& offset);
 
         void setDirection(float yaw, float pitch);
 
@@ -46,11 +43,19 @@ namespace core {
 
         float& getFarPlane();
 
+        float& getVelocity();
+
+        float& getTurnVelocity();
+
+        float& getDistance();
+
     private:
+        glm::vec3 m_position{};
         glm::vec3 m_direction{};
         glm::vec3 m_target{};
         glm::vec3 m_up{};
         float m_velocity{};
+        float m_turnVelocity{};
         glm::vec2 m_eulerAngles{};
         float m_yFov{};
         float m_zNear{};

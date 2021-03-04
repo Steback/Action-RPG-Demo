@@ -17,7 +17,8 @@ namespace editor {
     Editor::~Editor() = default;
 
     void Editor::init() {
-        m_scene->getCamera() = core::Camera(45.0f, 45.0f, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, 20.0f, 1.0f, 45.0f, 0.01f, 100.0f);
+        m_scene->getCamera() = core::Camera({45.0f, 45.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, 1.0f, 10.0f, 1.0f, 45.0f,
+                                            0.01f, 100.0f);
 
         m_resourceManager->createTexture("plain.png", "plain");
         auto enttID = m_registry.create();
@@ -27,7 +28,7 @@ namespace editor {
         m_resourceManager->createModel("hero.gltf", "hero", meshNodeID);
 
         auto& model = m_registry.emplace<core::MeshModel>(enttID, "hero", meshNodeID);
-        auto& transform = m_registry.emplace<core::Transform>(enttID, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), 0.0f, glm::vec3(0.0f));
+        auto& transform = m_registry.emplace<core::Transform>(enttID, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.1f, 0.1f, 0.1f), 0.0f, glm::vec3(0.0f));
     }
 
     void Editor::update() {
@@ -125,9 +126,14 @@ namespace editor {
             ImGui::InputFloat3("Front", glm::value_ptr(m_scene->getCamera().getCenter()));
             ImGui::InputFloat3("Up", glm::value_ptr(m_scene->getCamera().getUp()));
             ImGui::Separator();
-            ImGui::InputFloat3("Euler Angles", glm::value_ptr(m_scene->getCamera().getEulerAngles()));
+            ImGui::InputFloat2("Euler Angles", glm::value_ptr(m_scene->getCamera().getEulerAngles()));
             ImGui::Separator();
             ImGui::InputFloat("FOV", &m_scene->getCamera().getFovy());
+            ImGui::Separator();
+            ImGui::InputFloat("Velocity", &m_scene->getCamera().getVelocity());
+            ImGui::InputFloat("Turn Velocity", &m_scene->getCamera().getTurnVelocity());
+            ImGui::Separator();
+            ImGui::InputFloat("Distances", &m_scene->getCamera().getDistance());
         }
         ImGui::End();
     }
@@ -138,11 +144,11 @@ namespace editor {
         camera.setZoom(m_deltaTime, m_window->getScrollOffset(), m_window->isScrolling());
 
         if (m_window->mouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT) && m_window->keyPressed(GLFW_KEY_LEFT_ALT)) {
-            camera.move(m_deltaTime, m_window->getCursorPos(), core::Camera::MoveType::ROTATION);
+            camera.rotate(m_deltaTime, m_window->getCursorPos());
         }
 
         if (m_window->mouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT) && m_window->keyPressed(GLFW_KEY_LEFT_SHIFT)) {
-            camera.move(m_deltaTime, m_window->getCursorPos(), core::Camera::MoveType::TRANSLATE);
+            camera.move(m_deltaTime, glm::vec3(m_window->getCursorPos(), 0.0f));
         }
 
         m_proj = camera.getProjection(m_window->aspect());

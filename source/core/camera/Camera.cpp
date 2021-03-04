@@ -7,26 +7,27 @@ namespace core {
 
     Camera::Camera() = default;
 
-    Camera::Camera(float yaw, float pitch, const glm::vec3& up, const glm::vec3& target, float velocity, float distance,
-                   float yFov, float zNear, float zFar) : m_eulerAngles({yaw, pitch}), m_up(up), m_target(target), m_velocity(velocity),
-                   m_distance(distance), m_yFov(yFov), m_zNear(zNear), m_zFar(zFar) {
-        setDirection(yaw, pitch);
+    Camera::Camera(const glm::vec2& angles, const glm::vec3& up, const glm::vec3& target, float velocity, float turnVelocity, float distance,
+                   float yFov, float zNear, float zFar) : m_eulerAngles(angles), m_up(up), m_target(target), m_velocity(velocity),
+                   m_turnVelocity(turnVelocity), m_distance(distance), m_yFov(yFov), m_zNear(zNear), m_zFar(zFar) {
+        setDirection(m_eulerAngles.x, m_eulerAngles.y);
+        m_position = m_target + (m_direction * m_distance);
     }
 
     Camera::~Camera() = default;
 
-    void Camera::move(float deltaTime, const glm::vec2& angle, MoveType type) {
-        if (type == MoveType::ROTATION) {
-            m_eulerAngles += angle * deltaTime * m_velocity;
+    void Camera::move(float deltaTime, const glm::vec3& offset) {
+        // TODO: Add center movement in z axis
+        m_target += offset * deltaTime * m_velocity;
+        m_position += offset * deltaTime * m_velocity;
+    }
 
-            setDirection(m_eulerAngles.x, m_eulerAngles.y);
+    void Camera::rotate(float deltaTime, const glm::vec2& offset) {
+        m_eulerAngles += offset * deltaTime * m_turnVelocity;
 
-            m_direction = (m_target + glm::normalize(m_direction)) * m_distance;
-        } else if (type == MoveType::TRANSLATE) {
-            // TODO: Add center movement in z axis
-            m_target += glm::vec3(angle.x, angle.y, 0.0f) * deltaTime * (m_velocity * 0.05f);
-            m_direction += glm::vec3(angle.x, angle.y, 0.0f) * deltaTime * (m_velocity * 0.05f);
-        }
+        setDirection(m_eulerAngles.x, m_eulerAngles.y);
+
+        m_position = m_target + (m_direction * m_distance);
     }
 
     void Camera::setDirection(float yaw, float pitch) {
@@ -37,14 +38,14 @@ namespace core {
 
     void Camera::setZoom(float deltaTime, glm::vec2 &offset, bool& scrolling) {
         if (scrolling) {
-            m_yFov += -offset.y * (m_velocity * 5) * deltaTime;
+            m_yFov -= offset.y * (m_velocity * 20) * deltaTime;
 
             scrolling = false;
         }
     }
 
     glm::vec3 &Camera::getEye() {
-        return m_direction;
+        return m_position;
     }
 
     glm::vec3 &Camera::getCenter() {
@@ -56,7 +57,7 @@ namespace core {
     }
 
     glm::mat4 Camera::getView() const {
-        return glm::lookAt(m_direction, m_target, m_up);
+        return glm::lookAt(m_position, m_target, m_up);
     }
 
     glm::mat4 Camera::getProjection(float aspect, bool flipY) const {
@@ -81,6 +82,18 @@ namespace core {
 
     float &Camera::getFarPlane() {
         return m_zFar;
+    }
+
+    float &Camera::getVelocity() {
+        return m_velocity;
+    }
+
+    float &Camera::getTurnVelocity() {
+        return m_turnVelocity;
+    }
+
+    float &Camera::getDistance() {
+        return m_distance;
     }
 
 } // namespace core
