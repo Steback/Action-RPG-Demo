@@ -57,4 +57,12 @@ namespace core {
         return m_camera;
     }
 
+    void Scene::loadScene(const std::string &uri) {
+
+    }
+
+    void Scene::saveScene(const std::string &uri) {
+
+    }
+
 } // namespace core

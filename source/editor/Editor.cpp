@@ -17,7 +17,7 @@ namespace editor {
     Editor::~Editor() = default;
 
     void Editor::init() {
-        m_scene->getCamera().init(45.0f, 45.0f, {0.0f, 1.0f, 0.0f}, 20.0f, 45.0f, 0.01f, 100.0f);
+        m_scene->getCamera() = core::Camera(45.0f, 45.0f, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, 20.0f, 1.0f, 45.0f, 0.01f, 100.0f);
 
         m_resourceManager->createTexture("plain.png", "plain");
         auto enttID = m_registry.create();
@@ -32,8 +32,6 @@ namespace editor {
 
     void Editor::update() {
         cameraMovement();
-
-        m_scene->update(m_registry, m_deltaTime);
     }
 
     void Editor::draw() {
@@ -120,6 +118,7 @@ namespace editor {
     }
 
     void Editor::cameraControls() {
+        ImGui::SetNextWindowSize({-1, -1});
         ImGui::Begin("Camera Controls", &m_cameraControls);
         {
             ImGui::InputFloat3("Eye", glm::value_ptr(m_scene->getCamera().getEye()));

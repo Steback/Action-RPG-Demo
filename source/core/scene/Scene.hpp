@@ -6,16 +6,25 @@
 #include <vector>
 
 #include "entt/entt.hpp"
+#include "nlohmann/json.hpp"
 
 #include "../camera/Camera.hpp"
 
+using json = nlohmann::json;
+
 
 namespace core {
+
+    enum EntityType {
+        CAMERA = 1,
+        PLAYER = 2
+    };
 
     struct Entity {
         entt::entity enttID;
         uint32_t id;
         std::string name;
+        EntityType type;
     };
 
     class Scene {
@@ -40,9 +49,14 @@ namespace core {
 
         core::Camera& getCamera();
 
+        void loadScene(const std::string& uri);
+
+        void saveScene(const std::string& uri);
+
     private:
         std::vector<core::Entity> m_entities;
         core::Camera m_camera{};
+        json m_jScene;
     };
 
 }

@@ -17,9 +17,10 @@ namespace core {
 
         Camera();
 
-        ~Camera();
+        explicit Camera(float yaw, float pitch, const glm::vec3& up, const glm::vec3& target, float velocity, float distance,
+                        float fovy, float zNear, float zFar);
 
-        void init(float yaw, float pitch, const glm::vec3& up, float velocity, float fovy, float zNear, float zFar);
+        ~Camera();
 
         void move(float deltaTime, const glm::vec2& angle, MoveType type);
 
@@ -49,13 +50,14 @@ namespace core {
 
     private:
         glm::vec3 m_direction{};
-        glm::vec3 m_front{};
+        glm::vec3 m_target{};
         glm::vec3 m_up{};
         float m_velocity{};
         glm::vec2 m_eulerAngles{};
         float m_fovy{};
         float m_zNear{};
         float m_zFar{};
+        float m_distance{};
     };
 
 } // namespace core
