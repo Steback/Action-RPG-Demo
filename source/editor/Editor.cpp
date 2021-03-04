@@ -135,7 +135,7 @@ namespace editor {
     void Editor::cameraMovement() {
         auto& camera = m_scene->getCamera();
 
-        camera.setDistance(m_deltaTime, m_window->getScrollOffset(), m_window->isScrolling());
+        camera.setZoom(m_deltaTime, m_window->getScrollOffset(), m_window->isScrolling());
 
         if (m_window->mouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT) && m_window->keyPressed(GLFW_KEY_LEFT_ALT)) {
             camera.move(m_deltaTime, m_window->getCursorPos(), core::Camera::MoveType::ROTATION);
@@ -152,7 +152,7 @@ namespace editor {
     void Editor::drawGizmo() {
         ImGuizmo::BeginFrame();
 
-        glm::mat4 projMatrix = m_scene->getCamera().getProjectionFlipY(m_window->aspect());
+        glm::mat4 projMatrix = m_scene->getCamera().getProjection(m_window->aspect(), false);
 
         if (entitySelected != -1) {
             if (m_gizmoDraw) ImGuizmo::Enable(m_gizmoDraw);

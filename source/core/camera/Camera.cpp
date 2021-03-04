@@ -8,8 +8,8 @@ namespace core {
     Camera::Camera() = default;
 
     Camera::Camera(float yaw, float pitch, const glm::vec3& up, const glm::vec3& target, float velocity, float distance,
-                   float fovy, float zNear, float zFar) : m_eulerAngles({yaw, pitch}), m_up(up), m_target(target), m_velocity(velocity),
-                   m_distance(distance), m_fovy(fovy), m_zNear(zNear), m_zFar(zFar) {
+                   float yFov, float zNear, float zFar) : m_eulerAngles({yaw, pitch}), m_up(up), m_target(target), m_velocity(velocity),
+                   m_distance(distance), m_yFov(yFov), m_zNear(zNear), m_zFar(zFar) {
         setDirection(yaw, pitch);
     }
 
@@ -35,9 +35,9 @@ namespace core {
         m_direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
     }
 
-    void Camera::setDistance(float deltaTime, glm::vec2 &distance, bool& scrolling) {
+    void Camera::setZoom(float deltaTime, glm::vec2 &offset, bool& scrolling) {
         if (scrolling) {
-            m_fovy += -distance.y * (m_velocity * 5) * deltaTime;
+            m_yFov += -offset.y * (m_velocity * 5) * deltaTime;
 
             scrolling = false;
         }
@@ -59,15 +59,12 @@ namespace core {
         return glm::lookAt(m_direction, m_target, m_up);
     }
 
-    glm::mat4 Camera::getProjection(float aspect) const {
-        glm::mat4 proj = glm::perspective(glm::radians(m_fovy), aspect, m_zNear, m_zFar);
-        proj[1][1] *= -1;
+    glm::mat4 Camera::getProjection(float aspect, bool flipY) const {
+        glm::mat4 proj = glm::perspective(glm::radians(m_yFov), aspect, m_zNear, m_zFar);
+
+        if (flipY) proj[1][1] *= -1;
 
         return proj;
-    }
-
-    glm::mat4 Camera::getProjectionFlipY(float aspect) const {
-        return glm::perspective(glm::radians(m_fovy), aspect, m_zNear, m_zFar);
     }
 
     glm::vec2 &Camera::getEulerAngles() {
@@ -75,7 +72,7 @@ namespace core {
     }
 
     float &Camera::getFovy() {
-        return m_fovy;
+        return m_yFov;
     }
 
     float &Camera::getNearPlane() {

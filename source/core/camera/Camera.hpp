@@ -18,7 +18,7 @@ namespace core {
         Camera();
 
         explicit Camera(float yaw, float pitch, const glm::vec3& up, const glm::vec3& target, float velocity, float distance,
-                        float fovy, float zNear, float zFar);
+                        float yFov, float zNear, float zFar);
 
         ~Camera();
 
@@ -26,7 +26,7 @@ namespace core {
 
         void setDirection(float yaw, float pitch);
 
-        void setDistance(float deltaTime, glm::vec2& offset, bool& scrolling);
+        void setZoom(float deltaTime, glm::vec2& offset, bool& scrolling);
 
         glm::vec3& getEye();
 
@@ -36,9 +36,7 @@ namespace core {
 
         [[nodiscard]] glm::mat4 getView() const;
 
-        [[nodiscard]] glm::mat4 getProjection(float aspect) const;
-
-        [[nodiscard]] glm::mat4 getProjectionFlipY(float aspect) const;
+        [[nodiscard]] glm::mat4 getProjection(float aspect, bool flipY = true) const;
 
         glm::vec2& getEulerAngles();
 
@@ -54,7 +52,7 @@ namespace core {
         glm::vec3 m_up{};
         float m_velocity{};
         glm::vec2 m_eulerAngles{};
-        float m_fovy{};
+        float m_yFov{};
         float m_zNear{};
         float m_zFar{};
         float m_distance{};
