@@ -17,7 +17,6 @@ namespace core {
     Camera::~Camera() = default;
 
     void Camera::move(float deltaTime, const glm::vec3& offset) {
-        // TODO: Add center movement in z axis
         m_target += offset * deltaTime * m_velocity;
         m_position += offset * deltaTime * m_velocity;
     }

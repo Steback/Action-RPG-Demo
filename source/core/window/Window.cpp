@@ -127,8 +127,7 @@ namespace core {
             w->m_mouseFirstMove = false;
         }
 
-        w->m_cursorChangePos = {static_cast<float>(xPos) - w->m_lastCursorPos.x, w->m_lastCursorPos.y - static_cast<float>(yPos)};
-
+        w->m_cursorChangePos = {static_cast<float>(xPos) - w->m_lastCursorPos.x, static_cast<float>(yPos) - w->m_lastCursorPos.y};
         w->m_lastCursorPos = {static_cast<float>(xPos), static_cast<float>(yPos)};
     }
 

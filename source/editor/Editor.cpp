@@ -17,7 +17,7 @@ namespace editor {
     Editor::~Editor() = default;
 
     void Editor::init() {
-        m_scene->getCamera() = core::Camera({45.0f, 45.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, 1.0f, 10.0f, 1.0f, 45.0f,
+        m_scene->getCamera() = core::Camera({45.0f, 45.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, 0.5f, 10.0f, 1.0f, 45.0f,
                                             0.01f, 100.0f);
 
         m_resourceManager->createTexture("plain.png", "plain");
@@ -148,7 +148,16 @@ namespace editor {
         }
 
         if (m_window->mouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT) && m_window->keyPressed(GLFW_KEY_LEFT_SHIFT)) {
-            camera.move(m_deltaTime, glm::vec3(m_window->getCursorPos(), 0.0f));
+            // Work "fine" for now, I hope in future learn how to do this correctly
+            glm::vec3 direction;
+            glm::vec2 cursorChange = m_window->getCursorPos();
+            glm::vec2 camAngles = m_scene->getCamera().getEulerAngles();
+
+            direction.x = cursorChange.x * glm::sin(camAngles.x);
+            direction.y = cursorChange.y;
+            direction.z = cursorChange.x * -glm::cos(camAngles.x);
+
+            camera.move(m_deltaTime, direction);
         }
 
         m_proj = camera.getProjection(m_window->aspect());
