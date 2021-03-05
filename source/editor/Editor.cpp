@@ -20,6 +20,8 @@ namespace editor {
         m_scene->getCamera() = core::Camera({45.0f, 45.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, 0.5f, 10.0f, 1.0f, 45.0f,
                                             0.01f, 100.0f);
 
+        m_renderer->updateVP(m_scene->getCamera().getView(), m_scene->getCamera().getProjection(m_window->aspect()));
+
         m_resourceManager->createTexture("plain.png", "plain");
         auto enttID = m_registry.create();
         auto entity = m_scene->addEntity("Hero", enttID);
@@ -145,6 +147,8 @@ namespace editor {
 
         if (m_window->mouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT) && m_window->keyPressed(GLFW_KEY_LEFT_ALT)) {
             camera.rotate(m_deltaTime, m_window->getCursorPos());
+
+            m_renderer->updateVP(camera.getView(), camera.getProjection(m_window->aspect()));
         }
 
         if (m_window->mouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT) && m_window->keyPressed(GLFW_KEY_LEFT_SHIFT)) {
@@ -158,10 +162,9 @@ namespace editor {
             direction.z = cursorChange.x * -glm::cos(camAngles.x);
 
             camera.move(m_deltaTime, direction);
-        }
 
-        m_proj = camera.getProjection(m_window->aspect());
-        m_renderer->updateVP(camera.getView(), m_proj);
+            m_renderer->updateVP(camera.getView(), camera.getProjection(m_window->aspect()));
+        }
     }
 
     void Editor::drawGizmo() {
