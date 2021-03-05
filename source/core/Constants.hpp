@@ -1,6 +1,11 @@
 #ifndef PROTOTYPE_ACTION_RPG_CONSTANTS_HPP
 #define PROTOTYPE_ACTION_RPG_CONSTANTS_HPP
 
+#ifdef NDEBUG
+#define CORE_RELEASE
+#else
+#define CORE_DEBUG
+#endif
 
 #include <string>
 

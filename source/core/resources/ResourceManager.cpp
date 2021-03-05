@@ -210,10 +210,11 @@ namespace core {
     }
 
     // TODO: Check create model
-    void ResourceManager::createModel(const std::string &uri, const std::string& name, uint& meshNodeID) {
+    void ResourceManager::createModel(const std::string &uri, const std::string& name) {
         tinygltf::Model model;
         tinygltf::TinyGLTF loader;
         std::string error, warning;
+        uint meshNodeID;
 
         bool fileLoaded = loader.LoadASCIIFromFile(&model, &error, &warning, MODELS_DIR + uri);
 
@@ -228,10 +229,13 @@ namespace core {
             for (auto& nodeID : model.scenes[0].nodes) core::Model::loadNode(model.nodes[nodeID], model, meshNodeID, nodes);
 
             // TODO: Update textures names load for X amount of textures
-            for (auto& mesh : model.meshes)
-                modelMesh = core::Model::loadMesh(m_device, m_graphicsQueue, mesh, model, model.images[0].name);
+            for (auto& mesh : model.meshes) {
+                std::string textureName = (model.images.empty() ? "plain" : model.images[0].name);
 
-            m_models[name] = core::Model(modelMesh, nodes);
+                modelMesh = core::Model::loadMesh(m_device, m_graphicsQueue, mesh, model, textureName);
+            }
+
+            m_models[name] = core::Model(modelMesh, nodes, meshNodeID);
         } else {
             fmt::print(stderr, "[Model] error: {} \n", error);
         }

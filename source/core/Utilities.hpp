@@ -1,7 +1,6 @@
 #ifndef PROTOTYPE_ACTION_RPG_UTILITIES_HPP
 #define PROTOTYPE_ACTION_RPG_UTILITIES_HPP
 
-
 #include <string>
 #include <stdexcept>
 #include <vector>
@@ -12,12 +11,6 @@
 #include "stb_image.h"
 
 #include "Constants.hpp"
-
-#ifdef NDEBUG
-#define CORE_RELEASE
-#else
-#define CORE_DEBUG
-#endif
 
 
 namespace core {

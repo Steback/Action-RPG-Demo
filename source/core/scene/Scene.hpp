@@ -9,6 +9,8 @@
 #include "nlohmann/json.hpp"
 
 #include "../camera/Camera.hpp"
+#include "../resources/ResourceManager.hpp"
+#include "../Constants.hpp"
 
 using json = nlohmann::json;
 
@@ -39,7 +41,7 @@ namespace core {
 
         void cleanup();
 
-        core::Entity& addEntity(const std::string& name, entt::entity enttID);
+        core::Entity& addEntity(const std::string& name, entt::entity enttID, core::EntityType type);
 
         core::Entity& getEntity(size_t ID);
 
@@ -49,14 +51,13 @@ namespace core {
 
         core::Camera& getCamera();
 
-        void loadScene(const std::string& uri);
+        void loadScene(const std::string& uri, core::ResourceManager* resourceManager, entt::registry* registry, bool editorBuild = false);
 
-        void saveScene(const std::string& uri);
+        void saveScene(const std::string& uri, core::ResourceManager* resourceManager, entt::registry* registry);
 
     private:
         std::vector<core::Entity> m_entities;
         core::Camera m_camera{};
-        json m_jScene;
     };
 
 }

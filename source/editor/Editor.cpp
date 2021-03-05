@@ -17,20 +17,14 @@ namespace editor {
     Editor::~Editor() = default;
 
     void Editor::init() {
+        m_resourceManager->createTexture("plain.png", "plain");
+        m_resourceManager->createModel("cube.gltf", "cube");
+
+        m_scene->loadScene("../data/basicScene.json", m_resourceManager, &m_registry, true);
+
         m_scene->getCamera() = core::Camera({45.0f, 45.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, 0.5f, 10.0f, 1.0f, 45.0f,
                                             0.01f, 100.0f);
-
         m_renderer->updateVP(m_scene->getCamera().getView(), m_scene->getCamera().getProjection(m_window->aspect()));
-
-        m_resourceManager->createTexture("plain.png", "plain");
-        auto enttID = m_registry.create();
-        auto entity = m_scene->addEntity("Hero", enttID);
-
-        uint meshNodeID;
-        m_resourceManager->createModel("hero.gltf", "hero", meshNodeID);
-
-        auto& model = m_registry.emplace<core::MeshModel>(enttID, "hero", meshNodeID);
-        auto& transform = m_registry.emplace<core::Transform>(enttID, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.1f, 0.1f, 0.1f), 0.0f, glm::vec3(0.0f));
     }
 
     void Editor::update() {

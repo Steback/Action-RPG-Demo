@@ -12,7 +12,7 @@ namespace core {
 
         Camera();
 
-        explicit Camera(const glm::vec2& angles, const glm::vec3& up, const glm::vec3& target, float velocity, float turnVelocity,
+        explicit Camera(const glm::vec2& angles, const glm::vec3& up, const glm::vec3& target, float speed, float rotateSpeed,
                         float distance, float yFov, float zNear, float zFar);
 
         ~Camera();
@@ -54,8 +54,8 @@ namespace core {
         glm::vec3 m_direction{};
         glm::vec3 m_target{};
         glm::vec3 m_up{};
-        float m_velocity{};
-        float m_turnVelocity{};
+        float m_speed{};
+        float m_rotateSpeed{};
         glm::vec2 m_eulerAngles{};
         float m_yFov{};
         float m_zNear{};

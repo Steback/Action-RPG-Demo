@@ -1,0 +1,16 @@
+{
+    "camera": {
+        "target": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "angles": {
+            "yaw": 0.0,
+            "pitch": 45.0
+        },
+        "speed": 0.5,
+        "rotateSpeed": 10.0,
+        "distance": 2.0
+    }
+}

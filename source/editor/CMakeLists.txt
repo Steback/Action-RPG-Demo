@@ -7,4 +7,6 @@ file(GLOB_RECURSE EDITOR_SOURCE_FILES *.cpp)
 file(GLOB_RECURSE IMGUI_BINDINGS ../../bindings/*.cpp)
 include_directories(../../bindings)
 
+add_compile_definitions(EDITOR_BUILD)
+
 add_executable(Editor main.cpp ${IMGUI_BINDINGS} ${EDITOR_SOURCE_FILES} ${EDITOR_HEADER_FILES})

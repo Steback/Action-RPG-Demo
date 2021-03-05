@@ -34,7 +34,7 @@ namespace core {
 
         void generateMipmaps(const core::Texture& texture, VkFormat format, VkExtent2D size, uint32_t mipLevels);
 
-        void createModel(const std::string& uri, const std::string& name, uint& meshNodeID);
+        void createModel(const std::string& uri, const std::string& name);
 
         core::Model& getModel(const std::string& id);
 

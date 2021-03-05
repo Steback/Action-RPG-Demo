@@ -12,7 +12,8 @@ namespace core {
 
     Model::Model() = default;
 
-    Model::Model(const core::Mesh& mesh, std::vector<Node> nodes) : m_mesh(mesh), m_nodes(std::move(nodes)) {
+    Model::Model(const core::Mesh& mesh, std::vector<Node> nodes, uint meshNodeID)
+            : m_mesh(mesh), m_nodes(std::move(nodes)), m_meshNodeID(meshNodeID) {
 
     }
 
@@ -144,6 +145,10 @@ namespace core {
         }
 
         return core::Mesh(vertices, indices, queue, texturesID, device);
+    }
+
+    Model::Node &Model::getMeshNode() {
+        return m_nodes[m_meshNodeID];
     }
 
 } // namespace core

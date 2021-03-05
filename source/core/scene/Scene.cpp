@@ -1,9 +1,12 @@
 #include "Scene.hpp"
 
+#include <fstream>
+
 #include "GLFW/glfw3.h"
-#include "glm/gtc/matrix_transform.hpp"
+#include "fmt/format.h"
 
 #include "../components/Transform.hpp"
+#include "../components/MeshModel.hpp"
 
 
 namespace core {
@@ -30,11 +33,12 @@ namespace core {
 
     }
 
-    core::Entity& Scene::addEntity(const std::string &name, entt::entity enttID) {
+    core::Entity& Scene::addEntity(const std::string &name, entt::entity enttID, core::EntityType type) {
         core::Entity entity;
         entity.enttID = enttID;
         entity.name = name;
         entity.id = m_entities.size();
+        entity.type = type;
 
         m_entities.push_back(entity);
 
@@ -57,11 +61,50 @@ namespace core {
         return m_camera;
     }
 
-    void Scene::loadScene(const std::string &uri) {
+    void Scene::loadScene(const std::string &uri, core::ResourceManager* resourceManager, entt::registry* registry, bool editorBuild) {
+        json scene;
+        std::ifstream file(uri);
+        file >> scene;
+        file.close();
 
+        auto camera = scene["camera"];
+
+        if (editorBuild) {
+            auto enttID = registry->create();
+            auto entity = addEntity("Camera", enttID, core::CAMERA);
+
+            registry->emplace<core::MeshModel>(enttID, "cube");
+
+            glm::vec3 direction;
+            glm::vec3 target = {camera["target"]["x"].get<float>(), camera["target"]["y"].get<float>(),
+                                camera["target"]["z"].get<float>()};
+            float yaw = glm::radians(camera["angles"]["yaw"].get<float>());
+            float pitch = glm::radians(camera["angles"]["pitch"].get<float>());
+
+            direction.x = glm::cos(yaw) * glm::cos(pitch);
+            direction.y = glm::sin(pitch);
+            direction.z = glm::sin(yaw) * glm::cos(pitch);
+
+            glm::vec3 pos = target + (direction * camera["distance"].get<float>());
+
+            registry->emplace<core::Transform>(enttID, pos,glm::vec3(0.1f, 0.1f, 0.1f),0.0f, glm::vec3(0.0f));
+        } else {
+            glm::vec3 target = {camera["target"]["x"].get<float>(), camera["target"]["y"].get<float>(),
+                                camera["target"]["z"].get<float>()};
+
+            m_camera = core::Camera({camera["angles"]["yaw"].get<float>(), camera["angles"]["pitch"].get<float>()},
+                                    {0.0f, 1.0f, 0.f},
+                                    {camera["target"]["x"].get<float>(), camera["target"]["y"].get<float>(), camera["target"]["z"].get<float>()},
+                                    camera["speed"].get<float>(), camera["rotateSpeed"].get<float>(),
+                                    camera["distance"], 45.0f, 0.01f, 100.f);
+        }
+
+        for (auto& e : scene["entities"]) {
+
+        }
     }
 
-    void Scene::saveScene(const std::string &uri) {
+    void Scene::saveScene(const std::string &uri, core::ResourceManager* resourceManager, entt::registry* registry) {
 
     }
 

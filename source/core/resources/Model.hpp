@@ -28,13 +28,15 @@ namespace core {
     public:
         Model();
 
-        explicit Model(const core::Mesh& mesh, std::vector<Node> nodes);
+        explicit Model(const core::Mesh& mesh, std::vector<Node> nodes, uint meshNodeID);
 
         ~Model();
 
         core::Mesh& getMesh();
 
         Node& getNode(uint id);
+
+        Node& getMeshNode();
 
         void cleanup();
 
@@ -46,8 +48,8 @@ namespace core {
 
     private:
         core::Mesh m_mesh;
-        glm::mat4 m_model{};
         std::vector<Node> m_nodes;
+        uint m_meshNodeID{};
     };
 
 } // namespace core

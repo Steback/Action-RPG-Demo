@@ -464,7 +464,7 @@ namespace core {
                     auto& meshModel = view.get<core::MeshModel>(entity);
                     core::Model& model = m_resourceManager->getModel(meshModel.getModelName());
 
-                    m_mvp.model = model.getNode(meshModel.getMeshNodeID()).mModel * transform.worldTransformMatrix();
+                    m_mvp.model = model.getMeshNode().mModel * transform.worldTransformMatrix();
 
                         VkBuffer vertexBuffer[] = {model.getMesh().getVertexBuffer()};
                         VkDeviceSize offsets[] = {0};
