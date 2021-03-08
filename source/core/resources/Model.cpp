@@ -68,7 +68,7 @@ namespace core {
     }
 
     core::Mesh Model::loadMesh(const vk::Device* device, VkQueue queue, const tinygltf::Mesh& mesh, const tinygltf::Model& model,
-                               const std::string& texturesID) {
+                               uint64_t texturesID) {
         std::vector<core::Vertex> vertices;
         std::vector<uint32_t> indices;
 

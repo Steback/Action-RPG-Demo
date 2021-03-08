@@ -18,7 +18,7 @@ namespace core {
         Mesh();
 
         Mesh(const std::vector<core::Vertex>& vertices,const std::vector<uint32_t>& indices,
-             VkQueue transferQueue, const std::string& textureID, const vk::Device* device);
+             VkQueue transferQueue, uint64_t textureID, const vk::Device* device);
 
         ~Mesh();
 
@@ -32,7 +32,7 @@ namespace core {
 
         [[nodiscard]] VkBuffer getIndexBuffer() const;
 
-        [[nodiscard]] std::string getTextureId() const;
+        [[nodiscard]] uint64_t getTextureId() const;
 
     private:
         void createVertexBuffer(const std::vector<core::Vertex>& vertices, VkQueue transferQueue, const vk::Device* device);
@@ -44,7 +44,7 @@ namespace core {
         int m_indexCount{};
         vk::Buffer m_vertexBuffer;
         vk::Buffer m_indexBuffer;
-        std::string m_textureID{};
+        uint64_t m_textureID{};
     };
 
 } // namespace core

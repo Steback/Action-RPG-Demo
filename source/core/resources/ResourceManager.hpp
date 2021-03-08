@@ -24,7 +24,7 @@ namespace core {
 
         void createTexture(const std::string& uri, const std::string& name);
 
-        core::Texture& getTexture(const std::string& name);
+        core::Texture& getTexture(uint64_t id);
 
         VkDescriptorSetLayout& getTextureDescriptorSetLayout();
 
@@ -36,9 +36,7 @@ namespace core {
 
         void createModel(const std::string& uri, const std::string& name);
 
-        core::Model& getModel(uint id);
-
-        std::vector<core::Model>& getModels();
+        core::Model& getModel(uint64_t id);
 
     private:
         void createDescriptorPool();
@@ -48,8 +46,8 @@ namespace core {
     private:
         vk::Device* m_device{};
         VkQueue m_graphicsQueue{};
-        std::unordered_map<std::string, core::Texture> m_textures;
-        std::vector<core::Model> m_models;
+        std::unordered_map<uint64_t, core::Texture> m_textures;
+        std::unordered_map<uint64_t, core::Model> m_models;
         VkDescriptorPool m_descriptorPool{};
         VkDescriptorSetLayout m_descriptorSetLayout{};
     };

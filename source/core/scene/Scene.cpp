@@ -73,7 +73,7 @@ namespace core {
             auto enttID = registry->create();
             auto entity = addEntity("Camera", enttID, core::CAMERA);
 
-            registry->emplace<core::MeshModel>(enttID, 0);
+            registry->emplace<core::MeshModel>(enttID, core::tools::hashString("cube"));
 
             glm::vec3 direction;
             glm::vec3 target = {camera["target"]["x"].get<float>(), camera["target"]["y"].get<float>(),

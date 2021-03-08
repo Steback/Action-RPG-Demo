@@ -44,7 +44,7 @@ namespace core {
                              Node* parent = nullptr);
 
         static core::Mesh loadMesh(const vk::Device* device, VkQueue queue, const tinygltf::Mesh& mesh, const tinygltf::Model& model,
-                                   const std::string& texturesID);
+                                   uint64_t texturesID);
 
     private:
         core::Mesh m_mesh;

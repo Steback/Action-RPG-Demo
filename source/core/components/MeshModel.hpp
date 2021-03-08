@@ -9,14 +9,14 @@ namespace core {
 
     class MeshModel {
     public:
-        explicit MeshModel(uint modelID);
+        explicit MeshModel(uint64_t modelID);
 
-        uint getModelID();
+        uint64_t getModelID() const;
 
-        void setModelID(uint id);
+        void setModelID(uint64_t id);
 
     private:
-        uint m_modelID;
+        uint64_t m_modelID;
     };
 
 } // namespace core

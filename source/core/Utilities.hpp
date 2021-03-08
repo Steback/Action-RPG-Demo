@@ -31,6 +31,8 @@ namespace core {
 
         stbi_uc* loadTextureFile(const std::string& fileName, int* width, int* height, VkDeviceSize* size);
 
+        uint64_t hashString(const std::string& s);
+
     } // namespace tools
 
 } // namespace core

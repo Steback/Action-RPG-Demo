@@ -20,7 +20,7 @@ namespace core {
     ResourceManager::~ResourceManager() = default;
 
     void ResourceManager::cleanup() {
-        for (auto& model : m_models) model.cleanup();
+        for (auto& model : m_models) model.second.cleanup();
 
         for (auto& texture : m_textures) texture.second.cleanup(m_device->m_logicalDevice);
 
@@ -69,11 +69,11 @@ namespace core {
 
         texture.createDescriptor(m_device->m_logicalDevice, m_descriptorPool, m_descriptorSetLayout);
 
-        m_textures[name] = texture;
+        m_textures[core::tools::hashString(name)] = texture;
     }
 
-    core::Texture &ResourceManager::getTexture(const std::string& name) {
-        return m_textures[name];
+    core::Texture &ResourceManager::getTexture(uint64_t id) {
+        return m_textures[id];
     }
 
     VkDescriptorSetLayout &ResourceManager::getTextureDescriptorSetLayout() {
@@ -232,21 +232,17 @@ namespace core {
             for (auto& mesh : model.meshes) {
                 std::string textureName = (model.images.empty() ? "plain" : model.images[0].name);
 
-                modelMesh = core::Model::loadMesh(m_device, m_graphicsQueue, mesh, model, textureName);
+                modelMesh = core::Model::loadMesh(m_device, m_graphicsQueue, mesh, model, core::tools::hashString(textureName));
             }
 
-            m_models.emplace_back(modelMesh, nodes, meshNodeID);
+            m_models[core::tools::hashString(name)] = core::Model(modelMesh, nodes, meshNodeID);
         } else {
             fmt::print(stderr, "[Model] error: {} \n", error);
         }
     }
 
-    core::Model& ResourceManager::getModel(uint id) {
+    core::Model& ResourceManager::getModel(uint64_t id) {
         return m_models[id];
-    }
-
-    std::vector<core::Model> &ResourceManager::getModels() {
-        return m_models;
     }
 
 } // namespace core

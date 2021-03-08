@@ -132,7 +132,9 @@ namespace editor {
                 if (ImGui::CollapsingHeader("Model")) {
                     auto& meshModel = m_registry.get<core::MeshModel>(entity.enttID);
 
-                    static int currentModel = static_cast<int>(meshModel.getModelID());
+                    ImGui::Text("Model ID: %lu", meshModel.getModelID());
+
+                    static int currentModel = 0;
                     const char* currentModelName = m_modelsNames[currentModel].c_str();
 
                     if (ImGui::BeginCombo("Name", currentModelName)) {
@@ -141,7 +143,7 @@ namespace editor {
 
                             if (ImGui::Selectable(m_modelsNames[i].c_str(), is_selected)) {
                                 currentModel = i;
-                                meshModel.setModelID(static_cast<uint>(currentModel));
+                                meshModel.setModelID(core::tools::hashString(m_modelsNames[currentModel]));
                             }
 
                             if (is_selected) ImGui::SetItemDefaultFocus();
@@ -149,8 +151,6 @@ namespace editor {
 
                         ImGui::EndCombo();
                     }
-
-                    ImGui::Text("Model ID: %u", currentModel);
                 }
             }
         }
@@ -230,7 +230,7 @@ namespace editor {
         auto enttID = m_registry.create();
         auto entity = m_scene->addEntity("Object", enttID, core::PLAYER);
 
-        m_registry.emplace<core::MeshModel>(enttID, 0);
+        m_registry.emplace<core::MeshModel>(enttID, core::tools::hashString("cube"));
         m_registry.emplace<core::Transform>(enttID, m_scene->getCamera().getCenter(), DEFAULT_SIZE, SPEED_ZERO, DEFAULT_ROTATION);
 
         m_addEntity = !m_addEntity;

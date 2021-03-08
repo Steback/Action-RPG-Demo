@@ -39,6 +39,20 @@ namespace core {
            return image;
        }
 
+       uint64_t hashString(const std::string& s) {
+           const uint p = 31;
+           const uint m = 1e9 + 9;
+           uint32_t hashValue = 0;
+           uint32_t pPow = 1;
+
+           for (char c : s) {
+               hashValue = (hashValue + (c - 'a' + 1) * pPow) % m;
+               pPow = (pPow + p) % m;
+           }
+
+           return hashValue;
+       }
+
    } // namespace tools
 
 } // namespace core
