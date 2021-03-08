@@ -28,11 +28,11 @@ namespace core {
     public:
         Model();
 
-        explicit Model(const core::Mesh& mesh, std::vector<Node> nodes, uint meshNodeID);
+        explicit Model(uint64_t meshID, std::vector<Node> nodes, uint meshNodeID);
 
         ~Model();
 
-        core::Mesh& getMesh();
+        uint64_t & getMesh();
 
         Node& getNode(uint id);
 
@@ -47,7 +47,7 @@ namespace core {
                                    uint64_t texturesID);
 
     private:
-        core::Mesh m_mesh;
+        uint64_t m_meshID{};
         std::vector<Node> m_nodes;
         uint m_meshNodeID{};
     };

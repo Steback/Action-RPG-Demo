@@ -466,18 +466,21 @@ namespace core {
 
                     m_mvp.model = model.getMeshNode().mModel * transform.worldTransformMatrix();
 
-                        VkBuffer vertexBuffer[] = {model.getMesh().getVertexBuffer()};
+                        auto& mesh = m_resourceManager->getMesh(model.getMesh());
+
+                        VkBuffer vertexBuffer[] = {mesh.getVertexBuffer()};
                         VkDeviceSize offsets[] = {0};
                         vkCmdBindVertexBuffers(m_commandBuffers[indexImage], 0, 1, vertexBuffer, offsets);
-                        vkCmdBindIndexBuffer(m_commandBuffers[indexImage], model.getMesh().getIndexBuffer(), 0,
+                        vkCmdBindIndexBuffer(m_commandBuffers[indexImage], mesh.getIndexBuffer(), 0,
                                              VK_INDEX_TYPE_UINT32);
 
-                        vkCmdPushConstants(m_commandBuffers[indexImage], m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
+                        vkCmdPushConstants(m_commandBuffers[indexImage], m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
+                                           0,
                                            sizeof(MVP), &m_mvp);
 
                         std::array<VkDescriptorSet, 2> descriptorSetGroup = {
                                 m_descriptorSets[indexImage],
-                                m_resourceManager->getTexture(model.getMesh().getTextureId()).getDescriptorSet()
+                                m_resourceManager->getTexture(mesh.getTextureId()).getDescriptorSet()
                         };
 
                         vkCmdBindDescriptorSets(m_commandBuffers[indexImage], VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -488,7 +491,7 @@ namespace core {
                         vkCmdBindDescriptorSets(m_commandBuffers[indexImage], VK_PIPELINE_BIND_POINT_GRAPHICS,
                                                 m_pipelineLayout, 0, 1, &m_descriptorSets[indexImage], 0, nullptr);
 
-                        vkCmdDrawIndexed(m_commandBuffers[indexImage], model.getMesh().getIndexCount(),
+                        vkCmdDrawIndexed(m_commandBuffers[indexImage], mesh.getIndexCount(),
                                          1, 0, 0, 0);
                 }
 

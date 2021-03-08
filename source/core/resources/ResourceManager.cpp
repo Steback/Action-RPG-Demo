@@ -22,6 +22,8 @@ namespace core {
     void ResourceManager::cleanup() {
         for (auto& model : m_models) model.second.cleanup();
 
+        for (auto& mesh : m_meshes) mesh.second.cleanup();
+
         for (auto& texture : m_textures) texture.second.cleanup(m_device->m_logicalDevice);
 
         vkDestroyDescriptorSetLayout(m_device->m_logicalDevice, m_descriptorSetLayout, nullptr);
@@ -214,7 +216,6 @@ namespace core {
         tinygltf::Model model;
         tinygltf::TinyGLTF loader;
         std::string error, warning;
-        uint meshNodeID;
 
         bool fileLoaded = loader.LoadASCIIFromFile(&model, &error, &warning, MODELS_DIR + uri);
 
@@ -222,7 +223,8 @@ namespace core {
             std::vector<core::Model::Node> nodes;
             std::vector<uint32_t> indices;
             std::vector<core::Vertex> vertices;
-            core::Mesh modelMesh;
+            uint meshNodeID;
+            uint64_t meshID;
 
             for (auto& image : model.images) createTexture(image.uri, image.name);
 
@@ -231,11 +233,12 @@ namespace core {
             // TODO: Update textures names load for X amount of textures
             for (auto& mesh : model.meshes) {
                 std::string textureName = (model.images.empty() ? "plain" : model.images[0].name);
+                meshID = core::tools::hashString(nodes[meshNodeID].name);
 
-                modelMesh = core::Model::loadMesh(m_device, m_graphicsQueue, mesh, model, core::tools::hashString(textureName));
+                m_meshes[meshID] = core::Model::loadMesh(m_device, m_graphicsQueue, mesh, model, core::tools::hashString(textureName));
             }
 
-            m_models[core::tools::hashString(name)] = core::Model(modelMesh, nodes, meshNodeID);
+            m_models[core::tools::hashString(name)] = core::Model(meshID, nodes, meshNodeID);
         } else {
             fmt::print(stderr, "[Model] error: {} \n", error);
         }
@@ -243,6 +246,10 @@ namespace core {
 
     core::Model& ResourceManager::getModel(uint64_t id) {
         return m_models[id];
+    }
+
+    core::Mesh &ResourceManager::getMesh(uint64_t id) {
+        return m_meshes[id];
     }
 
 } // namespace core

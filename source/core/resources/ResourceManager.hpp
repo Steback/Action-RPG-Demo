@@ -38,6 +38,8 @@ namespace core {
 
         core::Model& getModel(uint64_t id);
 
+        core::Mesh& getMesh(uint64_t id);
+
     private:
         void createDescriptorPool();
 
@@ -48,6 +50,7 @@ namespace core {
         VkQueue m_graphicsQueue{};
         std::unordered_map<uint64_t, core::Texture> m_textures;
         std::unordered_map<uint64_t, core::Model> m_models;
+        std::unordered_map<uint64_t, core::Mesh> m_meshes;
         VkDescriptorPool m_descriptorPool{};
         VkDescriptorSetLayout m_descriptorSetLayout{};
     };

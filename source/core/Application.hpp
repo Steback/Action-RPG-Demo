@@ -7,7 +7,6 @@
 #include "GLFW/glfw3.h"
 #include "entt/entt.hpp"
 
-#include "logger/Logger.hpp"
 #include "window/Window.hpp"
 #include "renderer/Renderer.hpp"
 #include "renderer/Device.hpp"

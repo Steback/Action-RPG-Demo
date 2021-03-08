@@ -12,15 +12,15 @@ namespace core {
 
     Model::Model() = default;
 
-    Model::Model(const core::Mesh& mesh, std::vector<Node> nodes, uint meshNodeID)
-            : m_mesh(mesh), m_nodes(std::move(nodes)), m_meshNodeID(meshNodeID) {
+    Model::Model(uint64_t meshID, std::vector<Node> nodes, uint meshNodeID)
+            : m_meshID(meshID), m_nodes(std::move(nodes)), m_meshNodeID(meshNodeID) {
 
     }
 
     Model::~Model() = default;
 
-    core::Mesh& Model::getMesh() {
-        return m_mesh;
+    uint64_t& Model::getMesh() {
+        return m_meshID;
     }
 
     Model::Node &Model::getNode(uint id) {
@@ -28,7 +28,7 @@ namespace core {
     }
 
     void Model::cleanup() {
-        m_mesh.cleanup();
+
     }
 
     void Model::loadNode(const tinygltf::Node& node, const tinygltf::Model& model, uint& meshNodeID, std::vector<Node>& nodes, Node* parent) {
