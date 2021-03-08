@@ -16,6 +16,7 @@ All the dependencies are installed by [Conan](https://conan.io) package manager 
 ### Bindings
 This bindings are tools that add functionality for ImGui.
 * [ImGuizmo](https://github.com/CedricGuillemet/ImGuizmo) 
+* [ImGuiFileDialog](https://github.com/aiekick/ImGuiFileDialog)
 
 ## Credits
 The resources in this section are all I used for learn some of the key concepts in the project development like as Vulkan, Game design, AI, etc.
