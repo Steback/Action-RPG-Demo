@@ -36,7 +36,9 @@ namespace core {
 
         void createModel(const std::string& uri, const std::string& name);
 
-        core::Model& getModel(const std::string& id);
+        core::Model& getModel(uint id);
+
+        std::vector<core::Model>& getModels();
 
     private:
         void createDescriptorPool();
@@ -47,7 +49,7 @@ namespace core {
         vk::Device* m_device{};
         VkQueue m_graphicsQueue{};
         std::unordered_map<std::string, core::Texture> m_textures;
-        std::unordered_map<std::string, core::Model> m_models;
+        std::vector<core::Model> m_models;
         VkDescriptorPool m_descriptorPool{};
         VkDescriptorSetLayout m_descriptorSetLayout{};
     };

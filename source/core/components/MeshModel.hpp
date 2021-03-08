@@ -9,12 +9,14 @@ namespace core {
 
     class MeshModel {
     public:
-        MeshModel(std::string mModelName);
+        explicit MeshModel(uint modelID);
 
-        std::string& getModelName();
+        uint getModelID();
+
+        void setModelID(uint id);
 
     private:
-        std::string m_modelName;
+        uint m_modelID;
     };
 
 } // namespace core

@@ -7,9 +7,6 @@
 #define CORE_DEBUG
 #endif
 
-#include <string>
-
-
 const int MAX_FRAMES_IN_FLIGHT = 1;
 const int MAX_OBJECTS = 20;
 
@@ -18,5 +15,8 @@ const std::string SHADERS_DIR = "../assets/shaders/";
 const std::string FONTS_DIR = "../assets/fonts/";
 const std::string MODELS_DIR = "../assets/models/";
 
+const glm::vec3 DEFAULT_SIZE = {0.1f, 0.1f, 0.1f};
+const float SPEED_ZERO = 0.0f;
+const glm::vec3 DEFAULT_ROTATION = {0.0f, 0.0f, 0.0f};
 
 #endif //PROTOTYPE_ACTION_RPG_CONSTANTS_HPP

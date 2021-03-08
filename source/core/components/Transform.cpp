@@ -11,7 +11,7 @@ namespace core {
     Transform::Transform() = default;
 
     Transform::Transform(const glm::vec3 &position, const glm::vec3 &size, float velocity, const glm::vec3& rotation)
-        : m_position(position), m_size(size), m_velocity(velocity), m_rotation(rotation), m_worldTransform(1.0f) {
+        : m_position(position), m_size(size), m_speed(velocity), m_rotation(rotation) {
 
     }
 
@@ -45,12 +45,12 @@ namespace core {
         m_size = size;
     }
 
-    float& Transform::getVelocity() {
-        return m_velocity;
+    float& Transform::getSpeed() {
+        return m_speed;
     }
 
-    void Transform::setVelocity(float velocity) {
-        m_velocity = velocity;
+    void Transform::setSpeed(float speed) {
+        m_speed = speed;
     }
 
     glm::vec3& Transform::getRotation() {
@@ -59,10 +59,6 @@ namespace core {
 
     void Transform::setRotation(glm::vec3 rotation) {
         m_rotation = rotation;
-    }
-
-    glm::mat4 &Transform::getTransform() {
-        return m_worldTransform;
     }
 
 }

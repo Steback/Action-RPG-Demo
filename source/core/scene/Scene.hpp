@@ -18,8 +18,8 @@ using json = nlohmann::json;
 namespace core {
 
     enum EntityType {
-        CAMERA = 1,
-        PLAYER = 2
+        CAMERA = 0,
+        PLAYER = 1
     };
 
     struct Entity {

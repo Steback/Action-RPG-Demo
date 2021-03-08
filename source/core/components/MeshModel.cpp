@@ -3,10 +3,14 @@
 
 namespace core {
 
-    MeshModel::MeshModel(std::string modelName) : m_modelName(std::move(modelName)) {}
+    MeshModel::MeshModel(uint modelID) : m_modelID(modelID) {}
 
-    std::string &MeshModel::getModelName() {
-        return m_modelName;
+    uint MeshModel::getModelID() {
+        return m_modelID;
+    }
+
+    void MeshModel::setModelID(uint id) {
+        m_modelID = id;
     }
 
 } // namespace core

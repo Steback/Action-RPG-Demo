@@ -2,9 +2,9 @@
 #define PROTOTYPE_ACTION_RPG_EDITOR_HPP
 
 
-
 #include "imgui.h"
 #include "ImGuizmo.h"
+#include "ImGuiFileDialog.h"
 
 #include "Application.hpp"
 
@@ -25,6 +25,7 @@ namespace editor {
 
         void cleanup() override;
 
+    private:
         void menuBar();
 
         void entitiesPanel();
@@ -35,11 +36,19 @@ namespace editor {
 
         void drawGizmo();
 
+        void addEntity();
+
+        void addModel();
+
     private:
         size_t entitySelected = -1;
         bool m_gizmoDraw = true;
         bool m_cameraControls = false;
         ImGuizmo::OPERATION m_currentOperation;
+        bool m_addEntity = false;
+        bool m_imguiDemo = false;
+        bool m_addModel = false;
+        std::vector<std::string> m_modelsNames;
     };
 
 } // namespace editor

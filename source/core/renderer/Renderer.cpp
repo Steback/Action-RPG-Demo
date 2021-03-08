@@ -462,7 +462,7 @@ namespace core {
                 for (auto& entity : view) {
                     auto& transform = view.get<core::Transform>(entity);
                     auto& meshModel = view.get<core::MeshModel>(entity);
-                    core::Model& model = m_resourceManager->getModel(meshModel.getModelName());
+                    core::Model& model = m_resourceManager->getModel(meshModel.getModelID());
 
                     m_mvp.model = model.getMeshNode().mModel * transform.worldTransformMatrix();
 

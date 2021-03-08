@@ -26,22 +26,19 @@ namespace core {
 
         void setSize(const glm::vec3 &size);
 
-        [[nodiscard]] float& getVelocity();
+        [[nodiscard]] float& getSpeed();
 
-        void setVelocity(float velocity);
+        void setSpeed(float speed);
 
         [[nodiscard]] glm::vec3& getRotation();
 
         void setRotation(glm::vec3 rotation);
 
-        glm::mat4& getTransform();
-
     private:
-        glm::mat4 m_worldTransform{};
         glm::vec3 m_position{};
         glm::vec3 m_size{};
         glm::vec3 m_rotation{};
-        float m_velocity{};
+        float m_speed{};
     };
 
 }

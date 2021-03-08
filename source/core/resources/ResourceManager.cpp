@@ -20,7 +20,7 @@ namespace core {
     ResourceManager::~ResourceManager() = default;
 
     void ResourceManager::cleanup() {
-        for (auto& model : m_models) model.second.cleanup();
+        for (auto& model : m_models) model.cleanup();
 
         for (auto& texture : m_textures) texture.second.cleanup(m_device->m_logicalDevice);
 
@@ -235,14 +235,18 @@ namespace core {
                 modelMesh = core::Model::loadMesh(m_device, m_graphicsQueue, mesh, model, textureName);
             }
 
-            m_models[name] = core::Model(modelMesh, nodes, meshNodeID);
+            m_models.emplace_back(modelMesh, nodes, meshNodeID);
         } else {
             fmt::print(stderr, "[Model] error: {} \n", error);
         }
     }
 
-    core::Model& ResourceManager::getModel(const std::string& id) {
+    core::Model& ResourceManager::getModel(uint id) {
         return m_models[id];
+    }
+
+    std::vector<core::Model> &ResourceManager::getModels() {
+        return m_models;
     }
 
 } // namespace core

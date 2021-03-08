@@ -73,7 +73,7 @@ namespace core {
             auto enttID = registry->create();
             auto entity = addEntity("Camera", enttID, core::CAMERA);
 
-            registry->emplace<core::MeshModel>(enttID, "cube");
+            registry->emplace<core::MeshModel>(enttID, 0);
 
             glm::vec3 direction;
             glm::vec3 target = {camera["target"]["x"].get<float>(), camera["target"]["y"].get<float>(),
@@ -87,7 +87,7 @@ namespace core {
 
             glm::vec3 pos = target + (direction * camera["distance"].get<float>());
 
-            registry->emplace<core::Transform>(enttID, pos,glm::vec3(0.1f, 0.1f, 0.1f),0.0f, glm::vec3(0.0f));
+            registry->emplace<core::Transform>(enttID, pos, DEFAULT_SIZE, SPEED_ZERO, DEFAULT_ROTATION);
         } else {
             glm::vec3 target = {camera["target"]["x"].get<float>(), camera["target"]["y"].get<float>(),
                                 camera["target"]["z"].get<float>()};
