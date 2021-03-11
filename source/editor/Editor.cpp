@@ -239,7 +239,7 @@ namespace editor {
 
     void Editor::addModel() {
         if (m_addModel)
-            ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose File", ".gltf", ".");
+            ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose File", ".gltf", "../assets/");
 
         if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) {
             if (ImGuiFileDialog::Instance()->IsOk()) {

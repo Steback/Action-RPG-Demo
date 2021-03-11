@@ -14,7 +14,9 @@ venv/
 
 
 ### Binaries ###
-bin/
+bin/Editor
+bin/shaders/
+bin/imgui.ini
 
 ### Assets ###
 assets/textures
