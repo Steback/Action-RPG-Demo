@@ -180,7 +180,8 @@ namespace editor {
     void Editor::cameraMovement() {
         auto& camera = m_scene->getCamera();
 
-        camera.setZoom(m_deltaTime, m_window->getScrollOffset(), m_window->isScrolling());
+        if (!m_addModel)
+            camera.setZoom(m_deltaTime, m_window->getScrollOffset(), m_window->isScrolling());
 
         if (m_window->mouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT) && m_window->keyPressed(GLFW_KEY_LEFT_ALT)) {
             camera.rotate(m_deltaTime, m_window->getCursorPos());

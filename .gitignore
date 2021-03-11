@@ -1,6 +1,7 @@
 ### CMake
 build/
 cmake-build-debug/
+cmake-build-release/
 
 ### IDEs
 .idea/
@@ -14,3 +15,7 @@ venv/
 
 ### Binaries ###
 bin/
+
+### Assets ###
+assets/textures
+assets/models

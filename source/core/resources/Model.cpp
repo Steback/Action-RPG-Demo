@@ -123,21 +123,28 @@ namespace core {
                         for (size_t index = 0; index < accessor.count; ++index) {
                             indices.push_back(buf[index]);
                         }
+
+                        delete[] buf;
+                        break;
                     }
                     case TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT: {
                         auto* buf = new uint16_t[accessor.count];
-                        memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset], accessor.count * sizeof(uint16_t));
-                        for (size_t index = 0; index < accessor.count; index++) {
-                            indices.push_back(buf[index]);
-                        }
+
+                        std::memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset], accessor.count * sizeof(uint16_t));
+
+                        for (size_t index = 0; index < accessor.count; index++) indices.push_back(buf[index]);
+
+                        delete[] buf;
                         break;
                     }
                     case TINYGLTF_PARAMETER_TYPE_UNSIGNED_BYTE: {
                         auto* buf = new uint8_t[accessor.count];
+
                         memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset], accessor.count * sizeof(uint8_t));
-                        for (size_t index = 0; index < accessor.count; index++) {
-                            indices.push_back(buf[index]);
-                        }
+
+                        for (size_t index = 0; index < accessor.count; index++) indices.push_back(buf[index]);
+
+                        delete[] buf;
                         break;
                     }
                 }
