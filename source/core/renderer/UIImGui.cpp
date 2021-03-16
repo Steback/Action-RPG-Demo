@@ -93,8 +93,7 @@ namespace core {
         VkCommandBufferBeginInfo cmdBufferBegin = vk::initializers::commandBufferBeginInfo();
         cmdBufferBegin.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-        vk::tools::validation(vkBeginCommandBuffer(m_commandBuffers[imageIndex], &cmdBufferBegin),
-                              "Unable to start recording UI command buffer!");
+        VK_CHECK_RESULT(vkBeginCommandBuffer(m_commandBuffers[imageIndex], &cmdBufferBegin));
 
         VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
 
@@ -114,8 +113,7 @@ namespace core {
         // End and submit render pass
         vkCmdEndRenderPass(m_commandBuffers[imageIndex]);
 
-        vk::tools::validation(vkEndCommandBuffer(m_commandBuffers[imageIndex]),
-                              "Failed to record command buffers");
+        VK_CHECK_RESULT(vkEndCommandBuffer(m_commandBuffers[imageIndex]));
     }
 
     void UIImGui::createRenderPass(VkFormat swapChainFormat) {
@@ -154,8 +152,7 @@ namespace core {
         renderPassInfo.dependencyCount = 1;
         renderPassInfo.pDependencies = &subpassDependency;
 
-        vk::tools::validation(vkCreateRenderPass(m_device->m_logicalDevice, &renderPassInfo, nullptr, &m_renderPass),
-                              "Unable to create UI render pass");
+        VK_CHECK_RESULT(vkCreateRenderPass(m_device->m_logicalDevice, &renderPassInfo, nullptr, &m_renderPass));
     }
 
     void UIImGui::createFrameBuffers(vk::SwapChain& swapChain) {
@@ -173,8 +170,7 @@ namespace core {
         for (uint32_t i = 0; i < swapChain.getImageCount(); ++i) {
             attachment[0] = swapChain.getImageView(i);
 
-            vk::tools::validation(vkCreateFramebuffer(m_device->m_logicalDevice, &info, nullptr, &m_framebuffers[i]),
-                                  "Unable to create UI framebuffers");
+            VK_CHECK_RESULT(vkCreateFramebuffer(m_device->m_logicalDevice, &info, nullptr, &m_framebuffers[i]));
         }
     }
 
@@ -212,8 +208,7 @@ namespace core {
         pool_info.poolSizeCount = static_cast<uint32_t>(std::size(pool_sizes));
         pool_info.pPoolSizes = pool_sizes;
 
-        vk::tools::validation(vkCreateDescriptorPool(m_device->m_logicalDevice, &pool_info, nullptr, &m_descriptorPool),
-                              "Cannot allocate UI descriptor pool");
+        VK_CHECK_RESULT(vkCreateDescriptorPool(m_device->m_logicalDevice, &pool_info, nullptr, &m_descriptorPool));
     }
 
 } // namespace core

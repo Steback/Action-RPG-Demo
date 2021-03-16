@@ -2,6 +2,9 @@
 
 #include "Tools.hpp"
 
+#ifdef CORE_DEBUG
+#include "Debug.hpp"
+#endif
 
 namespace vk {
 
@@ -15,34 +18,34 @@ namespace vk {
         VkInstanceCreateInfo createInfo{
                 .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
                 .pApplicationInfo = &appInfo,
-                .enabledLayerCount = enableValidationLayers ? static_cast<uint32_t>(validationLayers.size()) : 0,
-                .ppEnabledLayerNames = enableValidationLayers ? validationLayers.data() : nullptr,
                 .enabledExtensionCount = static_cast<uint32_t>(extensions.size()),
                 .ppEnabledExtensionNames = extensions.data(),
         };
 
-        if (enableValidationLayers) {
-            VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-            populateDebugMessengerCreateInfo(debugCreateInfo);
+#ifdef CORE_DEBUG
+        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+        createInfo.ppEnabledLayerNames = validationLayers.data();
 
-            createInfo.pNext = &debugCreateInfo;
-        }
+        VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+        populateDebugMessengerCreateInfo(debugCreateInfo);
 
-        vk::tools::validation(vkCreateInstance(&createInfo, nullptr, &m_instance),
-                              "Failed to create instance");
+        createInfo.pNext = &debugCreateInfo;
+#endif
 
-        if (enableValidationLayers) {
-            if (!checkValidationLayerSupport(validationLayers))
-                spdlog::throw_spdlog_ex("[Renderer] Validation layers requested, but not available");
+        VK_CHECK_RESULT(vkCreateInstance(&createInfo, nullptr, &m_instance));
 
-            setupDebugMessenger();
-        }
+#ifdef CORE_DEBUG
+        if (!checkValidationLayerSupport(validationLayers))
+            throw std::runtime_error("[Renderer] Validation layers requested, but not available");
+
+        setupDebugMessenger();
+#endif
     }
 
     void Instance::destroy() {
-        if (enableValidationLayers) {
-            destroyDebugUtilsMessengerEXT(m_instance, debugMessenger, nullptr);
-        }
+#ifdef CORE_DEBUG
+        destroyDebugUtilsMessengerEXT(m_instance, debugMessenger, nullptr);
+#endif
 
         vkDestroyInstance(m_instance, nullptr);
     }
@@ -72,20 +75,20 @@ namespace vk {
     }
 
     void Instance::createSurface(GLFWwindow* window, VkSurfaceKHR& surface) {
-        vk::tools::validation(glfwCreateWindowSurface(m_instance, window, nullptr, &surface),
-                              "Failed to create window surface");
+        VK_CHECK_RESULT(glfwCreateWindowSurface(m_instance, window, nullptr, &surface));
     }
 
     void Instance::destroySurface(VkSurfaceKHR &surface) {
         vkDestroySurfaceKHR(m_instance, surface, nullptr);
     }
 
+#ifdef CORE_DEBUG
     void Instance::setupDebugMessenger() {
         VkDebugUtilsMessengerCreateInfoEXT createInfo;
         populateDebugMessengerCreateInfo(createInfo);
 
-        vk::tools::validation(createDebugUtilsMessengerEXT(m_instance, &createInfo, nullptr, &debugMessenger),
-                              "Failed to set up debug messenger");
+        VK_CHECK_RESULT(createDebugUtilsMessengerEXT(m_instance, &createInfo, nullptr, &debugMessenger));
     }
+#endif
 
 } // End namespace vk

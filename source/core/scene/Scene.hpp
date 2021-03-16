@@ -22,11 +22,17 @@ namespace core {
         PLAYER = 1
     };
 
+    enum ComponentFlags {
+        TRANSFORM = 0x01,
+        MODEL = 0x02
+    };
+
     struct Entity {
         entt::entity enttID;
         uint32_t id;
         std::string name;
         EntityType type;
+        uint32_t components;
     };
 
     class Scene {

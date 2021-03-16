@@ -1,6 +1,12 @@
 #ifndef PROTOTYPE_ACTION_RPG_CONSTANTS_HPP
 #define PROTOTYPE_ACTION_RPG_CONSTANTS_HPP
 
+
+#include <string>
+
+#include <glm/glm.hpp>
+
+
 #ifdef NDEBUG
 #define CORE_RELEASE
 #else

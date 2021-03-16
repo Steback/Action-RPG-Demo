@@ -5,10 +5,22 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include <iostream>
 
 #include "vulkan/vulkan.h"
+#include "spdlog/spdlog.h"
 
 #include "../Utilities.hpp"
+
+
+#define VK_CHECK_RESULT(f) {																			\
+	VkResult res = (f);																					\
+                                                                                                        \
+	if (res != VK_SUCCESS) {																			\
+	    fmt::print("VkResult is \"{}\" in {} at line {} \n", vk::tools::errorString(res), __FILE__, __LINE__); \
+		assert(res == VK_SUCCESS);																		\
+	}																									\
+}
 
 
 namespace vk {
@@ -21,9 +33,7 @@ namespace vk {
 
     namespace tools {
 
-        inline void validation(VkResult result, const std::string& error) {
-            if (result != VK_SUCCESS) core::throw_ex(error);
-        }
+        std::string errorString(VkResult errorCode);
 
         std::vector<const char*> getRequiredExtensions();
 

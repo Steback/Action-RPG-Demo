@@ -28,7 +28,7 @@ namespace core {
 
         void loop();
 
-        void destroy();
+        void shutdown();
 
         virtual void init() = 0;
 

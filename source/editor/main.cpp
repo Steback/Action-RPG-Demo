@@ -1,5 +1,7 @@
 #include <memory>
 
+#include "spdlog/spdlog.h"
+
 #include "Editor.hpp"
 
 int main() {

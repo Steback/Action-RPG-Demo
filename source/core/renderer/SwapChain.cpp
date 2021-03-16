@@ -58,8 +58,7 @@ namespace vk {
             createInfo.pQueueFamilyIndices = nullptr;
         }
 
-        vk::tools::validation(vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapChain),
-                   "Failed to create swap chain");
+        VK_CHECK_RESULT(vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapChain));
 
         vkGetSwapchainImagesKHR(m_device, m_swapChain, &m_imageCount, nullptr);
         m_images.resize(m_imageCount);
@@ -92,8 +91,7 @@ namespace vk {
 
             colorAttachmentView.image = m_buffers[i].image;
 
-            vk::tools::validation(vkCreateImageView(m_device, &colorAttachmentView, nullptr, &m_buffers[i].view),
-                                  "Failed to create image views");
+            VK_CHECK_RESULT(vkCreateImageView(m_device, &colorAttachmentView, nullptr, &m_buffers[i].view));
         }
     }
 

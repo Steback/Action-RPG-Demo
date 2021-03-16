@@ -19,8 +19,7 @@ namespace vk {
         allocInfo.allocationSize = size;
         allocInfo.memoryTypeIndex = memoryTypeIndex;
 
-        vk::tools::validation(vkAllocateMemory(logicalDevice, &allocInfo, nullptr, &m_memory),
-                              "Failed to allocate image memory");
+        VK_CHECK_RESULT(vkAllocateMemory(logicalDevice, &allocInfo, nullptr, &m_memory));
 
         vkBindImageMemory(logicalDevice, m_image, m_memory, 0);
 
@@ -63,8 +62,7 @@ namespace vk {
         m_mipLevels = createInfo.mipLevels;
         m_extent = createInfo.extent;
 
-        vk::tools::validation(vkCreateImage(logicalDevice, &createInfo, nullptr, &m_image),
-                              "Failed to create image");
+        VK_CHECK_RESULT(vkCreateImage(logicalDevice, &createInfo, nullptr, &m_image));
     }
 
     void Image::createImageView(VkDevice logicalDevice, VkImageAspectFlagBits aspectFlags) {
@@ -78,8 +76,7 @@ namespace vk {
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 1;
 
-        vk::tools::validation(vkCreateImageView(logicalDevice, &viewInfo, nullptr, &m_view),
-                              "Failed to create image view");
+        VK_CHECK_RESULT(vkCreateImageView(logicalDevice, &viewInfo, nullptr, &m_view));
     }
 
 } // namespace vk

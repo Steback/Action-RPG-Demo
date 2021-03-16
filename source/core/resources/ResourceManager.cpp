@@ -191,8 +191,7 @@ namespace core {
         samplerPoolCreateInfo.poolSizeCount = 1;
         samplerPoolCreateInfo.pPoolSizes = &samplerPoolSizer;
 
-        vk::tools::validation(vkCreateDescriptorPool(m_device->m_logicalDevice, &samplerPoolCreateInfo, nullptr, &m_descriptorPool),
-                              "Failed to create a Descriptor Pool");
+        VK_CHECK_RESULT(vkCreateDescriptorPool(m_device->m_logicalDevice, &samplerPoolCreateInfo, nullptr, &m_descriptorPool));
     }
 
     void ResourceManager::createDescriptorSetLayout() {
@@ -207,28 +206,24 @@ namespace core {
         samplerLayoutInfo.bindingCount = 1;
         samplerLayoutInfo.pBindings = &samplerLayoutBinding;
 
-        vk::tools::validation(vkCreateDescriptorSetLayout(m_device->m_logicalDevice, &samplerLayoutInfo, nullptr, &m_descriptorSetLayout),
-                              "Failed to create descriptor set layout");
+        VK_CHECK_RESULT(vkCreateDescriptorSetLayout(m_device->m_logicalDevice, &samplerLayoutInfo, nullptr, &m_descriptorSetLayout));
     }
 
-    // TODO: Check create model
     void ResourceManager::createModel(const std::string &uri, const std::string& name) {
-        tinygltf::Model model;
+        tinygltf::Model inputModel;
         tinygltf::TinyGLTF loader;
         std::string error, warning;
 
-        bool fileLoaded = loader.LoadASCIIFromFile(&model, &error, &warning, MODELS_DIR + uri);
+        bool fileLoaded = loader.LoadASCIIFromFile(&inputModel, &error, &warning, MODELS_DIR + uri);
 
         if (fileLoaded) {
-            std::vector<core::Model::Node> nodes;
-            std::vector<uint32_t> indices;
-            std::vector<core::Vertex> vertices;
+            uint64_t modelName = core::tools::hashString(name);
+            m_models[modelName] = core::Model();
 
-            for (auto& image : model.images) createTexture(image.uri, image.name);
+            for (auto& image : inputModel.images) createTexture(image.uri, image.name);
 
-            for (auto& nodeID : model.scenes[0].nodes) loadNode(model.nodes[nodeID], model, nodes);
+            for (auto& nodeID : inputModel.scenes[0].nodes) loadNode(inputModel.nodes[nodeID], inputModel, m_models[modelName].getNodes());
 
-            m_models[core::tools::hashString(name)] = core::Model(nodes);
         } else {
             fmt::print(stderr, "[Model] error: {} \n", error);
         }
@@ -246,7 +241,6 @@ namespace core {
                                    Model::Node *parent) {
         glm::mat4 nodeMatrix(1.0f);
         Model::Node node{};
-        node.id = nodes.size();
         node.name = inputNode.name;
 
         if (inputNode.translation.size() == 3)
@@ -259,6 +253,12 @@ namespace core {
             nodeMatrix = glm::scale(nodeMatrix, glm::make_vec3(reinterpret_cast<const float*>(inputNode.scale.data())));
 
         node.matrix = nodeMatrix;
+
+        if (!inputNode.children.empty()) {
+            for (size_t i : inputNode.children) {
+                loadNode(inputModel.nodes[i], inputModel, nodes, &node);
+            }
+        }
 
         if (inputNode.mesh > -1) {
             const tinygltf::Mesh& mesh = inputModel.meshes[inputNode.mesh];
@@ -273,18 +273,11 @@ namespace core {
         }
 
         if (parent) {
-            parent->children.push_back(node.id);
-            node.parent = parent->id;
+            node.parent = parent;
+            parent->children.push_back(node);
         } else {
-            node.parent = -1;
-        }
-
-        nodes.push_back(node);
-
-        if (!inputNode.children.empty()) {
-            for (size_t i : inputNode.children) {
-                loadNode(inputModel.nodes[i], inputModel, nodes, &nodes[node.id]);
-            }
+            node.parent = nullptr;
+            nodes.push_back(node);
         }
     }
 

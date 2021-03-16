@@ -133,8 +133,7 @@ namespace core {
 
         vkResetFences(m_logicalDevice, 1, &m_fences[m_currentFrame]);
 
-        vk::tools::validation(vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_fences[m_currentFrame]),
-                              "Failed to submit transform command buffer");
+        VK_CHECK_RESULT(vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_fences[m_currentFrame]));
 
         VkSwapchainKHR swapChains[] = { m_swapChain.getSwapChain() };
 
@@ -225,8 +224,7 @@ namespace core {
         renderPassInfo.dependencyCount = 1;
         renderPassInfo.pDependencies = &dependency;
 
-        vk::tools::validation(vkCreateRenderPass(m_logicalDevice, &renderPassInfo, nullptr, &m_renderPass),
-                              "Failed to create render pass");
+        VK_CHECK_RESULT(vkCreateRenderPass(m_logicalDevice, &renderPassInfo, nullptr, &m_renderPass));
     }
 
     void Renderer::createGraphicsPipeline() {
@@ -334,8 +332,7 @@ namespace core {
         pipelineLayoutInfo.pushConstantRangeCount = 1;
         pipelineLayoutInfo.pPushConstantRanges = &m_mvpRange;
 
-        vk::tools::validation(vkCreatePipelineLayout(m_logicalDevice, &pipelineLayoutInfo, nullptr, &m_pipelineLayout),
-                              "Failed to create pipeline layout");
+        VK_CHECK_RESULT(vkCreatePipelineLayout(m_logicalDevice, &pipelineLayoutInfo, nullptr, &m_pipelineLayout));
 
         VkPipelineDepthStencilStateCreateInfo depthStencil = vk::initializers::pipelineDepthStencilStateCreateInfo();
         depthStencil.depthTestEnable = VK_TRUE;
@@ -365,8 +362,7 @@ namespace core {
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.basePipelineIndex = -1;
 
-        vk::tools::validation(vkCreateGraphicsPipelines(m_logicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_graphicsPipeline),
-                              "Failed to create graphics pipeline");
+        VK_CHECK_RESULT(vkCreateGraphicsPipelines(m_logicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_graphicsPipeline));
 
         vkDestroyShaderModule(m_logicalDevice, vertexShaderModule, nullptr);
         vkDestroyShaderModule(m_logicalDevice, fragmentShaderModule, nullptr);
@@ -394,8 +390,7 @@ namespace core {
             framebufferInfo.height = m_swapChain.getExtent().height;
             framebufferInfo.layers = 1;
 
-            vk::tools::validation(vkCreateFramebuffer(m_logicalDevice, &framebufferInfo, nullptr, &m_framebuffers[i]),
-                                  "Failed to create framebuffer");
+            VK_CHECK_RESULT(vkCreateFramebuffer(m_logicalDevice, &framebufferInfo, nullptr, &m_framebuffers[i]));
         }
     }
 
@@ -421,14 +416,11 @@ namespace core {
         fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
-            vk::tools::validation(vkCreateSemaphore(m_logicalDevice, &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]),
-                                  "Failed to create semaphores");
+            VK_CHECK_RESULT(vkCreateSemaphore(m_logicalDevice, &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]));
 
-            vk::tools::validation(vkCreateSemaphore(m_logicalDevice, &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]),
-                                  "Failed to create semaphores");
+            VK_CHECK_RESULT(vkCreateSemaphore(m_logicalDevice, &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]));
 
-            vk::tools::validation(vkCreateFence(m_logicalDevice, &fenceInfo, nullptr, &m_fences[i]),
-                                  "Failed to create a fence");
+            VK_CHECK_RESULT(vkCreateFence(m_logicalDevice, &fenceInfo, nullptr, &m_fences[i]));
         }
     }
 
@@ -443,8 +435,7 @@ namespace core {
         VkCommandBufferBeginInfo beginInfo = vk::initializers::commandBufferBeginInfo();
         beginInfo.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-        vk::tools::validation(vkBeginCommandBuffer(m_commandBuffers[indexImage], &beginInfo),
-                              "Failed to begin recording command buffer");
+        VK_CHECK_RESULT(vkBeginCommandBuffer(m_commandBuffers[indexImage], &beginInfo));
         {
             renderPassInfo.renderPass = m_renderPass;
             renderPassInfo.framebuffer = m_framebuffers[indexImage];
@@ -464,15 +455,13 @@ namespace core {
                     auto& meshModel = view.get<core::MeshModel>(entity);
                     core::Model& model = m_resourceManager->getModel(meshModel.getModelID());
 
-
                     for (auto& node : model.getNodes()) {
                         glm::mat4 nodeMatrix = node.matrix;
-                        int parentID = node.parent;
+                        core::Model::Node* parent = node.parent;
 
-                        while (parentID > -1) {
-                            auto& parent = model.getNode(parentID);
-                            nodeMatrix = parent.matrix * nodeMatrix;
-                            parentID = parent.parent;
+                        while (parent) {
+                            nodeMatrix = parent->matrix * nodeMatrix;
+                            parent = parent->parent;
                         }
 
                         m_mvp.model = nodeMatrix * transform.worldTransformMatrix();
@@ -522,8 +511,7 @@ namespace core {
             }
             vkCmdEndRenderPass(m_commandBuffers[indexImage]);
         }
-        vk::tools::validation(vkEndCommandBuffer(m_commandBuffers[indexImage]),
-                              "Failed to record command buffer");
+        VK_CHECK_RESULT(vkEndCommandBuffer(m_commandBuffers[indexImage]));
     }
 
     void Renderer::recreateSwapchain() {
@@ -594,8 +582,7 @@ namespace core {
         uboLayoutInfo.bindingCount = 1;
         uboLayoutInfo.pBindings = &uboLayoutBinding;
 
-        vk::tools::validation(vkCreateDescriptorSetLayout(m_logicalDevice, &uboLayoutInfo, nullptr, &m_descriptorSetLayout),
-                              "Failed to create descriptor set layout");
+        VK_CHECK_RESULT(vkCreateDescriptorSetLayout(m_logicalDevice, &uboLayoutInfo, nullptr, &m_descriptorSetLayout));
     }
 
     void Renderer::createDescriptorPool() {
@@ -609,8 +596,7 @@ namespace core {
         descriptorPoolCreateInfo.maxSets = m_swapChain.getImageCount();
         descriptorPoolCreateInfo.flags = 0;
 
-        vk::tools::validation(vkCreateDescriptorPool(m_logicalDevice, &descriptorPoolCreateInfo, nullptr, &m_descriptorPool),
-                              "Failed to create descriptor pool");
+        VK_CHECK_RESULT(vkCreateDescriptorPool(m_logicalDevice, &descriptorPoolCreateInfo, nullptr, &m_descriptorPool));
     }
 
     void Renderer::createDescriptorSets() {
@@ -622,8 +608,8 @@ namespace core {
         allocInfo.pSetLayouts = layouts.data();
 
         m_descriptorSets.resize(m_swapChain.getImageCount());
-        vk::tools::validation(vkAllocateDescriptorSets(m_logicalDevice, &allocInfo, m_descriptorSets.data()),
-                              "Failed to allocate descriptor sets");
+
+        VK_CHECK_RESULT(vkAllocateDescriptorSets(m_logicalDevice, &allocInfo, m_descriptorSets.data()));
     }
 
     void Renderer::createDepthResources() {
@@ -723,14 +709,12 @@ namespace core {
         pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
         pipelineLayoutCreateInfo.pPushConstantRanges = &m_mvpRange;
 
-        vk::tools::validation(vkCreatePipelineLayout(m_logicalDevice, &pipelineLayoutCreateInfo, nullptr, &m_gridPipelineLayout),
-                              "Failed to create grid pipeline layout");
+        VK_CHECK_RESULT(vkCreatePipelineLayout(m_logicalDevice, &pipelineLayoutCreateInfo, nullptr, &m_gridPipelineLayout));
 
         createInfo.pStages = shaderStages.data();
         createInfo.layout = m_gridPipelineLayout;
 
-        vk::tools::validation(vkCreateGraphicsPipelines(m_logicalDevice, nullptr, 1, &createInfo, nullptr, &m_gridPipeline),
-                              "Failed to create grid pipeline");
+        VK_CHECK_RESULT(vkCreateGraphicsPipelines(m_logicalDevice, nullptr, 1, &createInfo, nullptr, &m_gridPipeline));
 
         vkDestroyShaderModule(m_logicalDevice, vertShaderModule, nullptr);
         vkDestroyShaderModule(m_logicalDevice, fragShaderModule, nullptr);

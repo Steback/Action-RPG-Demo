@@ -2,7 +2,7 @@
 
 #include "Debug.hpp"
 #include "Tools.hpp"
-
+#include "../Constants.hpp"
 
 namespace vk {
 
@@ -106,7 +106,7 @@ namespace vk {
     }
 
     void Device::createLogicalDevice(VkPhysicalDeviceFeatures enabledFeatures, const std::vector<const char *>& enabledExtensions,
-                                const std::vector<const char *>& validationLayers, VkQueueFlags requestedQueueTypes) {
+                                     VkQueueFlags requestedQueueTypes) {
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
 
         // Get queue family indices for the requested queue family types
@@ -164,9 +164,12 @@ namespace vk {
         VkDeviceCreateInfo deviceCreateInfo = vk::initializers::deviceCreateInfo();
         deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
         deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
-        deviceCreateInfo.enabledLayerCount = enableValidationLayers ? static_cast<uint32_t>(validationLayers.size()) : 0;
-        deviceCreateInfo.ppEnabledLayerNames = enableValidationLayers ? validationLayers.data() : nullptr;
         deviceCreateInfo.pEnabledFeatures = &enabledFeatures;
+
+#ifdef CORE_DEBUG
+        deviceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+        deviceCreateInfo.ppEnabledLayerNames = validationLayers.data();
+#endif
 
         if (!enabledExtensions.empty()) {
             for (const char* enabledExtension : enabledExtensions) {
@@ -181,8 +184,7 @@ namespace vk {
 
         m_enabledFeatures = enabledFeatures;
 
-        vk::tools::validation(vkCreateDevice(m_physicalDevice, &deviceCreateInfo, nullptr, &m_logicalDevice),
-                              "Failed to create logical device");
+        VK_CHECK_RESULT(vkCreateDevice(m_physicalDevice, &deviceCreateInfo, nullptr, &m_logicalDevice));
 
         // Create a default command pool for graphics command buffers
         m_commandPool = createCommandPool(m_queueFamilyIndices.graphics);
@@ -194,8 +196,8 @@ namespace vk {
         cmdPoolInfo.flags = createFlags;
 
         VkCommandPool cmdPool;
-        vk::tools::validation(vkCreateCommandPool(m_logicalDevice, &cmdPoolInfo, nullptr, &cmdPool),
-                              "Failed to create command pool");
+
+        VK_CHECK_RESULT(vkCreateCommandPool(m_logicalDevice, &cmdPoolInfo, nullptr, &cmdPool));
 
         return cmdPool;
     }
@@ -204,16 +206,14 @@ namespace vk {
         VkCommandBufferAllocateInfo cmdBufAllocateInfo = vk::initializers::commandBufferAllocateInfo(pool, level, 1);
         VkCommandBuffer cmdBuffer;
 
-        vk::tools::validation(vkAllocateCommandBuffers(m_logicalDevice, &cmdBufAllocateInfo, &cmdBuffer),
-                              "Failed to allocate command buffer");
+        VK_CHECK_RESULT(vkAllocateCommandBuffers(m_logicalDevice, &cmdBufAllocateInfo, &cmdBuffer));
 
         // If requested, also start recording for the new command buffer
         if (begin) {
             VkCommandBufferBeginInfo cmdBufInfo = vk::initializers::commandBufferBeginInfo();
             cmdBufInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-            vk::tools::validation(vkBeginCommandBuffer(cmdBuffer, &cmdBufInfo),
-                                  "Failed to begin recording command buffer");
+            VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBuffer, &cmdBufInfo));
         }
 
         return cmdBuffer;
@@ -226,8 +226,7 @@ namespace vk {
     void Device::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, VkCommandPool pool, bool free) const {
         if (commandBuffer == VK_NULL_HANDLE) return;
 
-        vk::tools::validation(vkEndCommandBuffer(commandBuffer),
-                              "Failed to end command buffer");
+        VK_CHECK_RESULT(vkEndCommandBuffer(commandBuffer));
 
         VkSubmitInfo submitInfo = vk::initializers::submitInfo();
         submitInfo.commandBufferCount = 1;
@@ -237,16 +236,13 @@ namespace vk {
         VkFenceCreateInfo fenceInfo = vk::initializers::fenceCreateInfo();
 
         VkFence fence;
-        vk::tools::validation(vkCreateFence(m_logicalDevice, &fenceInfo, nullptr, &fence),
-                              "Failed to create fence");
+        VK_CHECK_RESULT(vkCreateFence(m_logicalDevice, &fenceInfo, nullptr, &fence));
 
         // Submit to the queue
-        vk::tools::validation(vkQueueSubmit(queue, 1, &submitInfo, fence),
-                              "Failed to summit queue");
+        VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submitInfo, fence));
 
         // Wait for the fence to signal that command buffer has finished executing
-        vk::tools::validation(vkWaitForFences(m_logicalDevice, 1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max()),
-                              "Failed to wait for fence");
+        VK_CHECK_RESULT(vkWaitForFences(m_logicalDevice, 1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max()));
 
         vkDestroyFence(m_logicalDevice, fence, nullptr);
 
@@ -263,8 +259,7 @@ namespace vk {
 
         // Create the buffer handle
         VkBufferCreateInfo bufferCreateInfo = vk::initializers::bufferCreateInfo(usageFlags, size);
-        vk::tools::validation(vkCreateBuffer(m_logicalDevice, &bufferCreateInfo, nullptr, &buffer->m_buffer),
-                              "Failed to create buffer");
+        VK_CHECK_RESULT(vkCreateBuffer(m_logicalDevice, &bufferCreateInfo, nullptr, &buffer->m_buffer));
 
         // Create the memory backing up the buffer handle
         VkMemoryRequirements memReqs;
@@ -282,8 +277,7 @@ namespace vk {
             memAlloc.pNext = &allocFlagsInfo;
         }
 
-        vk::tools::validation(vkAllocateMemory(m_logicalDevice, &memAlloc, nullptr, &buffer->m_memory),
-                              "Failed to allocate buffer memory");
+        VK_CHECK_RESULT(vkAllocateMemory(m_logicalDevice, &memAlloc, nullptr, &buffer->m_memory));
 
         buffer->m_alignment = memReqs.alignment;
         buffer->m_size = size;
@@ -292,8 +286,7 @@ namespace vk {
 
         // If a pointer to the buffer data has been passed, map the buffer and copy over the data
         if (data != nullptr) {
-            vk::tools::validation(buffer->map(),
-                                  "Failed to map buffer");
+            VK_CHECK_RESULT(buffer->map());
 
             memcpy(buffer->m_mapped, data, size);
 

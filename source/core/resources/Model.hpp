@@ -19,12 +19,11 @@ namespace core {
     class Model {
     public:
         struct Node {
-            uint id;
             std::string name;
             glm::mat4 matrix;
-            std::vector<uint> children;
+            std::vector<Node> children;
             uint64_t mesh;
-            int parent;
+            Node* parent;
         };
 
     public:

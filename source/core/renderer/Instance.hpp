@@ -1,11 +1,12 @@
 #ifndef PROTOTYPE_ACTION_RPG_INSTANCE_HPP
 #define PROTOTYPE_ACTION_RPG_INSTANCE_HPP
 
+#include <vector>
 
 #include "vulkan/vulkan.h"
 #include "GLFW/glfw3.h"
 
-#include "Debug.hpp"
+#include "../Constants.hpp"
 
 
 namespace vk {
@@ -30,11 +31,15 @@ namespace vk {
         void destroySurface(VkSurfaceKHR& surface);
 
     private:
+#ifdef CORE_DEBUG
         void setupDebugMessenger();
+#endif
 
     private:
         VkInstance m_instance{};
+#ifdef CORE_DEBUG
         VkDebugUtilsMessengerEXT debugMessenger{};
+#endif
     };
 
 } // End namespace vk

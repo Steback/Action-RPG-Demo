@@ -30,7 +30,7 @@ namespace core {
         m_device = new vk::Device(physicalDevice);
 
         VkPhysicalDeviceFeatures deviceFeatures{};
-        m_device->createLogicalDevice(deviceFeatures, enabledExtensions, vk::validationLayers);
+        m_device->createLogicalDevice(deviceFeatures, enabledExtensions);
 
         m_renderer = std::make_unique<core::Renderer>(m_window, *m_instance, appName, m_device, m_surface);
         m_resourceManager = new core::ResourceManager(m_device, m_renderer->getGraphicsQueue());
@@ -47,10 +47,10 @@ namespace core {
     void Application::run() {
         init();
         loop();
-        destroy();
+        shutdown();
     }
 
-    void Application::destroy() {
+    void Application::shutdown() {
         vkDeviceWaitIdle(m_device->m_logicalDevice);
 
         cleanup();

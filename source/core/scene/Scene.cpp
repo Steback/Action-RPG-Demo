@@ -16,7 +16,6 @@ namespace core {
     Scene::~Scene() = default;
 
     void Scene::update(entt::registry& registry, float deltaTime) {
-
         auto view = registry.view<core::Transform>();
 
         for (auto& entity : view) {
@@ -39,6 +38,7 @@ namespace core {
         entity.name = name;
         entity.id = m_entities.size();
         entity.type = type;
+        entity.components = 0;
 
         m_entities.push_back(entity);
 
@@ -88,6 +88,8 @@ namespace core {
             glm::vec3 pos = target + (direction * camera["distance"].get<float>());
 
             registry->emplace<core::Transform>(enttID, pos, DEFAULT_SIZE, SPEED_ZERO, DEFAULT_ROTATION);
+
+            entity.components |= ComponentFlags::MODEL | ComponentFlags::TRANSFORM;
         } else {
             glm::vec3 target = {camera["target"]["x"].get<float>(), camera["target"]["y"].get<float>(),
                                 camera["target"]["z"].get<float>()};

@@ -13,12 +13,6 @@
 
 namespace vk {
 
-#ifdef NDEBUG
-    const bool enableValidationLayers = false;
-#else
-    const bool enableValidationLayers = true;
-#endif
-
     const std::vector<const char*> validationLayers = {
             "VK_LAYER_KHRONOS_validation"
     };
@@ -54,7 +48,7 @@ namespace vk {
             const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
             void* pUserData) {
         if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-            spdlog::error("[Validation layer] {}", pCallbackData->pMessage);
+            spdlog::error("{}", pCallbackData->pMessage);
         }
 
         return VK_FALSE;

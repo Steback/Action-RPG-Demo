@@ -111,8 +111,7 @@ namespace core {
         samplerInfo.minLod = 0.0f;
         samplerInfo.maxLod = static_cast<float>(mipLevels);
 
-        vk::tools::validation(vkCreateSampler(logicalDevice, &samplerInfo, nullptr, &m_sampler),
-                              "Failed to create texture sampler");
+        VK_CHECK_RESULT(vkCreateSampler(logicalDevice, &samplerInfo, nullptr, &m_sampler))
     }
 
 } // namespace core

@@ -127,9 +127,9 @@ namespace core {
         MVP m_mvp{};
 
         // Editor grid
-        bool m_drawGrid;
-        VkPipeline m_gridPipeline;
-        VkPipelineLayout m_gridPipelineLayout;
+        bool m_drawGrid{};
+        VkPipeline m_gridPipeline{};
+        VkPipelineLayout m_gridPipelineLayout{};
     };
 
 } // End namespace core
