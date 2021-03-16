@@ -17,7 +17,6 @@ namespace editor {
     Editor::~Editor() = default;
 
     void Editor::init() {
-        m_resourceManager->createTexture("plain.png", "plain");
         m_resourceManager->createModel("cube.gltf", "cube");
         m_modelsNames.emplace_back("cube");
 

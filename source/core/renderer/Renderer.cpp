@@ -464,35 +464,49 @@ namespace core {
                     auto& meshModel = view.get<core::MeshModel>(entity);
                     core::Model& model = m_resourceManager->getModel(meshModel.getModelID());
 
-                    m_mvp.model = model.getMeshNode().mModel * transform.worldTransformMatrix();
 
-                        auto& mesh = m_resourceManager->getMesh(model.getMesh());
+                    for (auto& node : model.getNodes()) {
+                        glm::mat4 nodeMatrix = node.matrix;
+                        int parentID = node.parent;
 
-                        VkBuffer vertexBuffer[] = {mesh.getVertexBuffer()};
-                        VkDeviceSize offsets[] = {0};
-                        vkCmdBindVertexBuffers(m_commandBuffers[indexImage], 0, 1, vertexBuffer, offsets);
-                        vkCmdBindIndexBuffer(m_commandBuffers[indexImage], mesh.getIndexBuffer(), 0,
-                                             VK_INDEX_TYPE_UINT32);
+                        while (parentID > -1) {
+                            auto& parent = model.getNode(parentID);
+                            nodeMatrix = parent.matrix * nodeMatrix;
+                            parentID = parent.parent;
+                        }
 
-                        vkCmdPushConstants(m_commandBuffers[indexImage], m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
-                                           0,
-                                           sizeof(MVP), &m_mvp);
+                        m_mvp.model = nodeMatrix * transform.worldTransformMatrix();
 
-                        std::array<VkDescriptorSet, 2> descriptorSetGroup = {
-                                m_descriptorSets[indexImage],
-                                m_resourceManager->getTexture(mesh.getTextureId()).getDescriptorSet()
-                        };
+                        if (node.mesh > 0) {
+                            auto& mesh = m_resourceManager->getMesh(node.mesh);
 
-                        vkCmdBindDescriptorSets(m_commandBuffers[indexImage], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                                m_pipelineLayout,
-                                                0, static_cast<uint32_t>(descriptorSetGroup.size()),
-                                                descriptorSetGroup.data(), 0, nullptr);
+                            VkBuffer vertexBuffer[] = {mesh.getVertexBuffer()};
+                            VkDeviceSize offsets[] = {0};
+                            vkCmdBindVertexBuffers(m_commandBuffers[indexImage], 0, 1, vertexBuffer, offsets);
+                            vkCmdBindIndexBuffer(m_commandBuffers[indexImage], mesh.getIndexBuffer(), 0,
+                                                 VK_INDEX_TYPE_UINT32);
 
-                        vkCmdBindDescriptorSets(m_commandBuffers[indexImage], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                                m_pipelineLayout, 0, 1, &m_descriptorSets[indexImage], 0, nullptr);
+                            vkCmdPushConstants(m_commandBuffers[indexImage], m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
+                                               0,
+                                               sizeof(MVP), &m_mvp);
 
-                        vkCmdDrawIndexed(m_commandBuffers[indexImage], mesh.getIndexCount(),
-                                         1, 0, 0, 0);
+                            std::array<VkDescriptorSet, 2> descriptorSetGroup = {
+                                    m_descriptorSets[indexImage],
+                                    m_resourceManager->getTexture(mesh.getTextureId()).getDescriptorSet()
+                            };
+
+                            vkCmdBindDescriptorSets(m_commandBuffers[indexImage], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                    m_pipelineLayout,
+                                                    0, static_cast<uint32_t>(descriptorSetGroup.size()),
+                                                    descriptorSetGroup.data(), 0, nullptr);
+
+                            vkCmdBindDescriptorSets(m_commandBuffers[indexImage], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                    m_pipelineLayout, 0, 1, &m_descriptorSets[indexImage], 0, nullptr);
+
+                            vkCmdDrawIndexed(m_commandBuffers[indexImage], mesh.getIndexCount(),
+                                             1, 0, 0, 0);
+                        }
+                    }
                 }
 
                 if (m_drawGrid) {

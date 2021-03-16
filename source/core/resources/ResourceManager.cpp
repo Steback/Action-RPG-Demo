@@ -223,22 +223,12 @@ namespace core {
             std::vector<core::Model::Node> nodes;
             std::vector<uint32_t> indices;
             std::vector<core::Vertex> vertices;
-            uint meshNodeID;
-            uint64_t meshID;
 
             for (auto& image : model.images) createTexture(image.uri, image.name);
 
-            for (auto& nodeID : model.scenes[0].nodes) core::Model::loadNode(model.nodes[nodeID], model, meshNodeID, nodes);
+            for (auto& nodeID : model.scenes[0].nodes) loadNode(model.nodes[nodeID], model, nodes);
 
-            // TODO: Update textures names load for X amount of textures
-            for (auto& mesh : model.meshes) {
-                std::string textureName = (model.images.empty() ? "plain" : model.images[0].name);
-                meshID = core::tools::hashString(nodes[meshNodeID].name);
-
-                m_meshes[meshID] = core::Model::loadMesh(m_device, m_graphicsQueue, mesh, model, core::tools::hashString(textureName));
-            }
-
-            m_models[core::tools::hashString(name)] = core::Model(meshID, nodes, meshNodeID);
+            m_models[core::tools::hashString(name)] = core::Model(nodes);
         } else {
             fmt::print(stderr, "[Model] error: {} \n", error);
         }
@@ -250,6 +240,138 @@ namespace core {
 
     core::Mesh &ResourceManager::getMesh(uint64_t id) {
         return m_meshes[id];
+    }
+
+    void ResourceManager::loadNode(const tinygltf::Node &inputNode, const tinygltf::Model &inputModel, std::vector<Model::Node> &nodes,
+                                   Model::Node *parent) {
+        glm::mat4 nodeMatrix(1.0f);
+        Model::Node node{};
+        node.id = nodes.size();
+        node.name = inputNode.name;
+
+        if (inputNode.translation.size() == 3)
+            nodeMatrix = glm::translate(nodeMatrix, glm::make_vec3(reinterpret_cast<const float*>(inputNode.translation.data())));
+
+        if (inputNode.rotation.size() == 4)
+            nodeMatrix *= glm::mat4(glm::quat(glm::make_quat(inputNode.rotation.data())));
+
+        if (inputNode.scale.size() == 3)
+            nodeMatrix = glm::scale(nodeMatrix, glm::make_vec3(reinterpret_cast<const float*>(inputNode.scale.data())));
+
+        node.matrix = nodeMatrix;
+
+        if (inputNode.mesh > -1) {
+            const tinygltf::Mesh& mesh = inputModel.meshes[inputNode.mesh];
+            const tinygltf::Material material = inputModel.materials[mesh.primitives[0].material];
+            const tinygltf::Texture texture = inputModel.textures[material.pbrMetallicRoughness.baseColorTexture.index];
+            const tinygltf::Image image = inputModel.images[texture.source];
+            uint64_t textureID = core::tools::hashString(image.name);
+            uint64_t meshID = core::tools::hashString(node.name);
+
+            m_meshes[meshID] = loadMesh(mesh, inputModel, textureID);
+            node.mesh = meshID;
+        }
+
+        if (parent) {
+            parent->children.push_back(node.id);
+            node.parent = parent->id;
+        } else {
+            node.parent = -1;
+        }
+
+        nodes.push_back(node);
+
+        if (!inputNode.children.empty()) {
+            for (size_t i : inputNode.children) {
+                loadNode(inputModel.nodes[i], inputModel, nodes, &nodes[node.id]);
+            }
+        }
+    }
+
+    core::Mesh ResourceManager::loadMesh(const tinygltf::Mesh &mesh, const tinygltf::Model &model, uint64_t texturesID) {
+        std::vector<core::Vertex> vertices;
+        std::vector<uint32_t> indices;
+
+        for (auto primitive : mesh.primitives) {
+            uint32_t indexCount = 0;
+
+            // Vertices
+            {
+                const float* positionBuffer = nullptr;
+                const float* normalsBuffer = nullptr;
+                const float* texCoordsBuffer = nullptr;
+                size_t vertexCount = 0;
+
+                if (primitive.attributes.find("POSITION") != primitive.attributes.end()) {
+                    const tinygltf::Accessor& accessor = model.accessors[primitive.attributes.find("POSITION")->second];
+                    const tinygltf::BufferView& view = model.bufferViews[accessor.bufferView];
+
+                    positionBuffer = reinterpret_cast<const float*>(&(model.buffers[view.buffer].data[accessor.byteOffset + view.byteOffset]));
+                    vertexCount = accessor.count;
+                }
+
+                if (primitive.attributes.find("TEXCOORD_0") != primitive.attributes.end()) {
+                    const tinygltf::Accessor& accessor = model.accessors[primitive.attributes.find("TEXCOORD_0")->second];
+                    const tinygltf::BufferView& view = model.bufferViews[accessor.bufferView];
+
+                    texCoordsBuffer = reinterpret_cast<const float*>(&(model.buffers[view.buffer].data[accessor.byteOffset + view.byteOffset]));
+                }
+
+                for (size_t v = 0; v < vertexCount; ++v) {
+                    core::Vertex vertex{};
+                    vertex.position = glm::make_vec3(&positionBuffer[v * 3]);
+                    vertex.texCoord = texCoordsBuffer ? glm::make_vec2(&texCoordsBuffer[v * 2]) : glm::vec2(0.0f);
+                    vertex.color = glm::vec3(1.0f);
+
+                    vertices.push_back(vertex);
+                }
+            }
+
+            // Indices
+            {
+                const tinygltf::Accessor& accessor = model.accessors[primitive.indices];
+                const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
+                const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
+
+                indexCount += static_cast<uint32_t>(accessor.count);
+
+                switch (accessor.componentType) {
+                    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT: {
+                        auto* buf = new uint32_t[accessor.count];
+                        std::memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset], accessor.count * sizeof(uint32_t));
+
+                        for (size_t index = 0; index < accessor.count; ++index) {
+                            indices.push_back(buf[index]);
+                        }
+
+                        delete[] buf;
+                        break;
+                    }
+                    case TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT: {
+                        auto* buf = new uint16_t[accessor.count];
+
+                        std::memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset], accessor.count * sizeof(uint16_t));
+
+                        for (size_t index = 0; index < accessor.count; index++) indices.push_back(buf[index]);
+
+                        delete[] buf;
+                        break;
+                    }
+                    case TINYGLTF_PARAMETER_TYPE_UNSIGNED_BYTE: {
+                        auto* buf = new uint8_t[accessor.count];
+
+                        memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset], accessor.count * sizeof(uint8_t));
+
+                        for (size_t index = 0; index < accessor.count; index++) indices.push_back(buf[index]);
+
+                        delete[] buf;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return core::Mesh(vertices, indices, m_graphicsQueue, texturesID, m_device);
     }
 
 } // namespace core

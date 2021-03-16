@@ -21,35 +21,27 @@ namespace core {
         struct Node {
             uint id;
             std::string name;
-            glm::mat4 mModel;
+            glm::mat4 matrix;
             std::vector<uint> children;
+            uint64_t mesh;
+            int parent;
         };
 
     public:
         Model();
 
-        explicit Model(uint64_t meshID, std::vector<Node> nodes, uint meshNodeID);
+        explicit Model(std::vector<Node> nodes);
 
         ~Model();
 
-        uint64_t & getMesh();
-
         Node& getNode(uint id);
 
-        Node& getMeshNode();
+        std::vector<Node>& getNodes();
 
         void cleanup();
 
-        static void loadNode(const tinygltf::Node& node, const tinygltf::Model& model, uint& meshNodeID, std::vector<Node>& nodes,
-                             Node* parent = nullptr);
-
-        static core::Mesh loadMesh(const vk::Device* device, VkQueue queue, const tinygltf::Mesh& mesh, const tinygltf::Model& model,
-                                   uint64_t texturesID);
-
     private:
-        uint64_t m_meshID{};
         std::vector<Node> m_nodes;
-        uint m_meshNodeID{};
     };
 
 } // namespace core

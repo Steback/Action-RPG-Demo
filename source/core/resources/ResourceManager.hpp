@@ -45,6 +45,11 @@ namespace core {
 
         void createDescriptorSetLayout();
 
+         void loadNode(const tinygltf::Node& inputNode, const tinygltf::Model& inputModel, std::vector<Model::Node>& nodes,
+                       Model::Node* parent = nullptr);
+
+         core::Mesh loadMesh(const tinygltf::Mesh& mesh, const tinygltf::Model& model, uint64_t texturesID);
+
     private:
         vk::Device* m_device{};
         VkQueue m_graphicsQueue{};
