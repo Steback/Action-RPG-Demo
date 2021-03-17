@@ -40,15 +40,12 @@ namespace core {
 
         core::Mesh& getMesh(uint64_t id);
 
+        void loadMesh(uint64_t meshID, const tinygltf::Mesh& mesh, const tinygltf::Model& model, uint64_t texturesID);
+
     private:
         void createDescriptorPool();
 
         void createDescriptorSetLayout();
-
-         void loadNode(const tinygltf::Node& inputNode, const tinygltf::Model& inputModel, std::vector<Model::Node>& nodes,
-                       Model::Node* parent = nullptr);
-
-         core::Mesh loadMesh(const tinygltf::Mesh& mesh, const tinygltf::Model& model, uint64_t texturesID);
 
     private:
         vk::Device* m_device{};

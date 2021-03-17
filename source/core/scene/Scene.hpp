@@ -41,13 +41,13 @@ namespace core {
 
         ~Scene();
 
-        void update(entt::registry& registry, float deltaTime);
+        void update(float deltaTime);
 
         void render();
 
         void cleanup();
 
-        core::Entity& addEntity(const std::string& name, entt::entity enttID, core::EntityType type);
+        core::Entity& addEntity(const std::string& name, core::EntityType type);
 
         core::Entity& getEntity(size_t ID);
 
@@ -57,13 +57,25 @@ namespace core {
 
         core::Camera& getCamera();
 
-        void loadScene(const std::string& uri, core::ResourceManager* resourceManager, entt::registry* registry, bool editorBuild = false);
+        void loadScene(const std::string& uri, bool editorBuild = false);
 
-        void saveScene(const std::string& uri, core::ResourceManager* resourceManager, entt::registry* registry);
+        void saveScene(const std::string& uri);
+
+        entt::registry& registry();
+
+        template<typename T>
+        T& getComponent(uint32_t id) {
+            return m_registry.get<T>(m_entities[id].enttID);
+        }
+
+    private:
+        void drawNode(const core::Model::Node& node, core::Model& model);
 
     private:
         std::vector<core::Entity> m_entities;
         core::Camera m_camera{};
+        entt::entity m_currentEntity{};
+        entt::registry m_registry;
     };
 
 }

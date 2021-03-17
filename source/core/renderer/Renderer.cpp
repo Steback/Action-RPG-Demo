@@ -6,12 +6,7 @@
 
 #include "Initializers.hpp"
 #include "Tools.hpp"
-#include "../Constants.hpp"
-#include "../Utilities.hpp"
-#include "../components/Transform.hpp"
-#include "../components/MeshModel.hpp"
-#include "../resources/Model.hpp"
-
+#include "../Application.hpp"
 
 namespace core {
 
@@ -47,8 +42,7 @@ namespace core {
 
     Renderer::~Renderer() = default;
 
-    void Renderer::init(core::ResourceManager* resourceManager, bool drawGrid) {
-        m_resourceManager = resourceManager;
+    void Renderer::init(bool drawGrid) {
         m_drawGrid = drawGrid;
 
         createCommandPool();
@@ -87,37 +81,14 @@ namespace core {
         spdlog::info("[Renderer] Cleaned");
     }
 
-    void Renderer::draw(entt::registry& registry) {
-        drawFrame(registry);
-    }
-
-    void Renderer::drawFrame(entt::registry& registry) {
-        vkWaitForFences(m_logicalDevice, 1, &m_fences[m_currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
-
-        uint32_t indexImage;
-        VkResult result = m_swapChain.acquireNextImage(m_imageAvailableSemaphores[m_currentFrame], &indexImage);
-
-        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-            recreateSwapchain();
-            return;
-        } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-            throw_ex("Failed to acquire swap chain image");
-        }
-
-        if (m_imageFences[indexImage] != VK_NULL_HANDLE) {
-            vkWaitForFences(m_logicalDevice, 1, &m_imageFences[indexImage], VK_TRUE, std::numeric_limits<uint64_t>::max());
-        }
-
-        m_imageFences[indexImage] = m_fences[m_currentFrame];
-
-        recordCommands(indexImage, registry);
-        m_ui.recordCommands(indexImage, m_swapChain.getExtent());
+    void Renderer::drawFrame() {
+        m_ui.recordCommands(m_indexImage, m_swapChain.getExtent());
 
         VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphores[m_currentFrame] };
         VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
         std::array<VkCommandBuffer, 2> cmdBuffers = {
-                m_commandBuffers[indexImage],
-                m_ui.getCommandBuffer(indexImage)
+                m_commandBuffers[m_indexImage],
+                m_ui.getCommandBuffer(m_indexImage)
         };
 
         VkSubmitInfo submitInfo = vk::initializers::submitInfo();
@@ -133,7 +104,7 @@ namespace core {
 
         vkResetFences(m_logicalDevice, 1, &m_fences[m_currentFrame]);
 
-        VK_CHECK_RESULT(vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_fences[m_currentFrame]));
+        VK_CHECK_RESULT(vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, m_fences[m_currentFrame]))
 
         VkSwapchainKHR swapChains[] = { m_swapChain.getSwapChain() };
 
@@ -142,10 +113,10 @@ namespace core {
         presentInfo.pWaitSemaphores = signalSemaphores;
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapChains;
-        presentInfo.pImageIndices = &indexImage;
+        presentInfo.pImageIndices = &m_indexImage;
         presentInfo.pResults = nullptr;
 
-        result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
+        VkResult result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_window->resize()) {
             m_window->resize() = false;
@@ -224,7 +195,7 @@ namespace core {
         renderPassInfo.dependencyCount = 1;
         renderPassInfo.pDependencies = &dependency;
 
-        VK_CHECK_RESULT(vkCreateRenderPass(m_logicalDevice, &renderPassInfo, nullptr, &m_renderPass));
+        VK_CHECK_RESULT(vkCreateRenderPass(m_logicalDevice, &renderPassInfo, nullptr, &m_renderPass))
     }
 
     void Renderer::createGraphicsPipeline() {
@@ -323,7 +294,7 @@ namespace core {
 
         std::array<VkDescriptorSetLayout, 2> layouts = {
                 m_descriptorSetLayout,
-                m_resourceManager->getTextureDescriptorSetLayout()
+                core::Application::resourceManager->getTextureDescriptorSetLayout()
         };
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo = vk::initializers::pipelineLayoutCreateInfo();
@@ -332,7 +303,7 @@ namespace core {
         pipelineLayoutInfo.pushConstantRangeCount = 1;
         pipelineLayoutInfo.pPushConstantRanges = &m_mvpRange;
 
-        VK_CHECK_RESULT(vkCreatePipelineLayout(m_logicalDevice, &pipelineLayoutInfo, nullptr, &m_pipelineLayout));
+        VK_CHECK_RESULT(vkCreatePipelineLayout(m_logicalDevice, &pipelineLayoutInfo, nullptr, &m_pipelineLayout))
 
         VkPipelineDepthStencilStateCreateInfo depthStencil = vk::initializers::pipelineDepthStencilStateCreateInfo();
         depthStencil.depthTestEnable = VK_TRUE;
@@ -362,7 +333,7 @@ namespace core {
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.basePipelineIndex = -1;
 
-        VK_CHECK_RESULT(vkCreateGraphicsPipelines(m_logicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_graphicsPipeline));
+        VK_CHECK_RESULT(vkCreateGraphicsPipelines(m_logicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_graphicsPipeline))
 
         vkDestroyShaderModule(m_logicalDevice, vertexShaderModule, nullptr);
         vkDestroyShaderModule(m_logicalDevice, fragmentShaderModule, nullptr);
@@ -390,7 +361,7 @@ namespace core {
             framebufferInfo.height = m_swapChain.getExtent().height;
             framebufferInfo.layers = 1;
 
-            VK_CHECK_RESULT(vkCreateFramebuffer(m_logicalDevice, &framebufferInfo, nullptr, &m_framebuffers[i]));
+            VK_CHECK_RESULT(vkCreateFramebuffer(m_logicalDevice, &framebufferInfo, nullptr, &m_framebuffers[i]))
         }
     }
 
@@ -416,102 +387,12 @@ namespace core {
         fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
-            VK_CHECK_RESULT(vkCreateSemaphore(m_logicalDevice, &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]));
+            VK_CHECK_RESULT(vkCreateSemaphore(m_logicalDevice, &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]))
 
-            VK_CHECK_RESULT(vkCreateSemaphore(m_logicalDevice, &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]));
+            VK_CHECK_RESULT(vkCreateSemaphore(m_logicalDevice, &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]))
 
-            VK_CHECK_RESULT(vkCreateFence(m_logicalDevice, &fenceInfo, nullptr, &m_fences[i]));
+            VK_CHECK_RESULT(vkCreateFence(m_logicalDevice, &fenceInfo, nullptr, &m_fences[i]))
         }
-    }
-
-    void Renderer::recordCommands(uint32_t indexImage, entt::registry& registry) {
-        std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = {0.24f, 0.24f, 0.24f, 1.0f};
-        clearValues[1].depthStencil = {1.0f, 0};
-
-        VkRenderPassBeginInfo renderPassInfo = vk::initializers::renderPassBeginInfo();
-        auto view = registry.view<core::MeshModel, core::Transform>();
-
-        VkCommandBufferBeginInfo beginInfo = vk::initializers::commandBufferBeginInfo();
-        beginInfo.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-        VK_CHECK_RESULT(vkBeginCommandBuffer(m_commandBuffers[indexImage], &beginInfo));
-        {
-            renderPassInfo.renderPass = m_renderPass;
-            renderPassInfo.framebuffer = m_framebuffers[indexImage];
-            renderPassInfo.renderArea.offset = {0, 0};
-            renderPassInfo.renderArea.extent = m_swapChain.getExtent();
-            renderPassInfo.renderArea.extent.width = m_swapChain.getExtent().width;
-            renderPassInfo.renderArea.extent.height = m_swapChain.getExtent().height;
-            renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-            renderPassInfo.pClearValues = clearValues.data();
-
-            vkCmdBeginRenderPass(m_commandBuffers[indexImage], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-            {
-                vkCmdBindPipeline(m_commandBuffers[indexImage], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
-
-                for (auto& entity : view) {
-                    auto& transform = view.get<core::Transform>(entity);
-                    auto& meshModel = view.get<core::MeshModel>(entity);
-                    core::Model& model = m_resourceManager->getModel(meshModel.getModelID());
-
-                    for (auto& node : model.getNodes()) {
-                        glm::mat4 nodeMatrix = node.matrix;
-                        core::Model::Node* parent = node.parent;
-
-                        while (parent) {
-                            nodeMatrix = parent->matrix * nodeMatrix;
-                            parent = parent->parent;
-                        }
-
-                        m_mvp.model = nodeMatrix * transform.worldTransformMatrix();
-
-                        if (node.mesh > 0) {
-                            auto& mesh = m_resourceManager->getMesh(node.mesh);
-
-                            VkBuffer vertexBuffer[] = {mesh.getVertexBuffer()};
-                            VkDeviceSize offsets[] = {0};
-                            vkCmdBindVertexBuffers(m_commandBuffers[indexImage], 0, 1, vertexBuffer, offsets);
-                            vkCmdBindIndexBuffer(m_commandBuffers[indexImage], mesh.getIndexBuffer(), 0,
-                                                 VK_INDEX_TYPE_UINT32);
-
-                            vkCmdPushConstants(m_commandBuffers[indexImage], m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
-                                               0,
-                                               sizeof(MVP), &m_mvp);
-
-                            std::array<VkDescriptorSet, 2> descriptorSetGroup = {
-                                    m_descriptorSets[indexImage],
-                                    m_resourceManager->getTexture(mesh.getTextureId()).getDescriptorSet()
-                            };
-
-                            vkCmdBindDescriptorSets(m_commandBuffers[indexImage], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                                    m_pipelineLayout,
-                                                    0, static_cast<uint32_t>(descriptorSetGroup.size()),
-                                                    descriptorSetGroup.data(), 0, nullptr);
-
-                            vkCmdBindDescriptorSets(m_commandBuffers[indexImage], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                                    m_pipelineLayout, 0, 1, &m_descriptorSets[indexImage], 0, nullptr);
-
-                            vkCmdDrawIndexed(m_commandBuffers[indexImage], mesh.getIndexCount(),
-                                             1, 0, 0, 0);
-                        }
-                    }
-                }
-
-                if (m_drawGrid) {
-                    vkCmdBindPipeline(m_commandBuffers[indexImage], VK_PIPELINE_BIND_POINT_GRAPHICS, m_gridPipeline);
-
-                    m_mvp.model = glm::mat4(1.0f);
-
-                    vkCmdPushConstants(m_commandBuffers[indexImage], m_gridPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
-                                       sizeof(MVP), &m_mvp);
-
-                    vkCmdDraw(m_commandBuffers[indexImage], 6, 1, 0, 0);
-                }
-            }
-            vkCmdEndRenderPass(m_commandBuffers[indexImage]);
-        }
-        VK_CHECK_RESULT(vkEndCommandBuffer(m_commandBuffers[indexImage]));
     }
 
     void Renderer::recreateSwapchain() {
@@ -539,7 +420,7 @@ namespace core {
         }
 
         m_ui.resize(m_swapChain);
-        m_resourceManager->recreateResources();
+        core::Application::resourceManager->recreateResources();
     }
 
     void Renderer::cleanSwapChain() {
@@ -567,7 +448,7 @@ namespace core {
         m_swapChain.cleanup();
 
         vkDestroyDescriptorPool(m_logicalDevice, m_descriptorPool, nullptr);
-        m_resourceManager->cleanupResources();
+        core::Application::resourceManager->cleanupResources();
     }
 
     void Renderer:: createDescriptorSetLayout() {
@@ -582,7 +463,7 @@ namespace core {
         uboLayoutInfo.bindingCount = 1;
         uboLayoutInfo.pBindings = &uboLayoutBinding;
 
-        VK_CHECK_RESULT(vkCreateDescriptorSetLayout(m_logicalDevice, &uboLayoutInfo, nullptr, &m_descriptorSetLayout));
+        VK_CHECK_RESULT(vkCreateDescriptorSetLayout(m_logicalDevice, &uboLayoutInfo, nullptr, &m_descriptorSetLayout))
     }
 
     void Renderer::createDescriptorPool() {
@@ -596,7 +477,7 @@ namespace core {
         descriptorPoolCreateInfo.maxSets = m_swapChain.getImageCount();
         descriptorPoolCreateInfo.flags = 0;
 
-        VK_CHECK_RESULT(vkCreateDescriptorPool(m_logicalDevice, &descriptorPoolCreateInfo, nullptr, &m_descriptorPool));
+        VK_CHECK_RESULT(vkCreateDescriptorPool(m_logicalDevice, &descriptorPoolCreateInfo, nullptr, &m_descriptorPool))
     }
 
     void Renderer::createDescriptorSets() {
@@ -609,7 +490,7 @@ namespace core {
 
         m_descriptorSets.resize(m_swapChain.getImageCount());
 
-        VK_CHECK_RESULT(vkAllocateDescriptorSets(m_logicalDevice, &allocInfo, m_descriptorSets.data()));
+        VK_CHECK_RESULT(vkAllocateDescriptorSets(m_logicalDevice, &allocInfo, m_descriptorSets.data()))
     }
 
     void Renderer::createDepthResources() {
@@ -709,12 +590,12 @@ namespace core {
         pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
         pipelineLayoutCreateInfo.pPushConstantRanges = &m_mvpRange;
 
-        VK_CHECK_RESULT(vkCreatePipelineLayout(m_logicalDevice, &pipelineLayoutCreateInfo, nullptr, &m_gridPipelineLayout));
+        VK_CHECK_RESULT(vkCreatePipelineLayout(m_logicalDevice, &pipelineLayoutCreateInfo, nullptr, &m_gridPipelineLayout))
 
         createInfo.pStages = shaderStages.data();
         createInfo.layout = m_gridPipelineLayout;
 
-        VK_CHECK_RESULT(vkCreateGraphicsPipelines(m_logicalDevice, nullptr, 1, &createInfo, nullptr, &m_gridPipeline));
+        VK_CHECK_RESULT(vkCreateGraphicsPipelines(m_logicalDevice, nullptr, 1, &createInfo, nullptr, &m_gridPipeline))
 
         vkDestroyShaderModule(m_logicalDevice, vertShaderModule, nullptr);
         vkDestroyShaderModule(m_logicalDevice, fragShaderModule, nullptr);
@@ -725,12 +606,101 @@ namespace core {
         m_mvp.proj = proj;
     }
 
-    VkPhysicalDevice &Renderer::getPhysicalDevice() {
-        return m_physicalDevice;
-    }
-
     VkQueue &Renderer::getGraphicsQueue() {
         return m_graphicsQueue;
+    }
+
+    void Renderer::acquireNextImage() {
+        vkWaitForFences(m_logicalDevice, 1, &m_fences[m_currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
+
+        VkResult result = m_swapChain.acquireNextImage(m_imageAvailableSemaphores[m_currentFrame], &m_indexImage);
+
+        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+            recreateSwapchain();
+            return;
+        } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+            throw_ex("Failed to acquire swap chain image");
+        }
+
+        if (m_imageFences[m_indexImage] != VK_NULL_HANDLE) {
+            vkWaitForFences(m_logicalDevice, 1, &m_imageFences[m_indexImage], VK_TRUE, std::numeric_limits<uint64_t>::max());
+        }
+
+        m_imageFences[m_indexImage] = m_fences[m_currentFrame];
+    }
+
+    void Renderer::renderMesh(const Mesh &mesh, const glm::mat4& matrix) {
+        m_mvp.model = matrix;
+
+        VkBuffer vertexBuffer[] = {mesh.getVertexBuffer()};
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(m_commandBuffers[m_indexImage], 0, 1, vertexBuffer, offsets);
+        vkCmdBindIndexBuffer(m_commandBuffers[m_indexImage], mesh.getIndexBuffer(), 0,
+                             VK_INDEX_TYPE_UINT32);
+
+        vkCmdPushConstants(m_commandBuffers[m_indexImage], m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
+                           0, sizeof(MVP), &m_mvp);
+
+        std::array<VkDescriptorSet, 2> descriptorSetGroup = {
+                m_descriptorSets[m_indexImage],
+                core::Application::resourceManager->getTexture(mesh.getTextureId()).getDescriptorSet()
+        };
+
+        vkCmdBindDescriptorSets(m_commandBuffers[m_indexImage], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                m_pipelineLayout,
+                                0, static_cast<uint32_t>(descriptorSetGroup.size()),
+                                descriptorSetGroup.data(), 0, nullptr);
+
+        vkCmdBindDescriptorSets(m_commandBuffers[m_indexImage], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                m_pipelineLayout, 0, 1, &m_descriptorSets[m_indexImage], 0, nullptr);
+
+        vkCmdDrawIndexed(m_commandBuffers[m_indexImage], mesh.getIndexCount(),
+                         1, 0, 0, 0);
+    }
+
+    void Renderer::beginRenderPass() {
+        std::array<VkClearValue, 2> clearValues{};
+        clearValues[0].color = {0.24f, 0.24f, 0.24f, 1.0f};
+        clearValues[1].depthStencil = {1.0f, 0};
+
+        VkRenderPassBeginInfo renderPassInfo = vk::initializers::renderPassBeginInfo();
+
+        VkCommandBufferBeginInfo beginInfo = vk::initializers::commandBufferBeginInfo();
+        beginInfo.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+        VK_CHECK_RESULT(vkBeginCommandBuffer(m_commandBuffers[m_indexImage], &beginInfo))
+        renderPassInfo.renderPass = m_renderPass;
+        renderPassInfo.framebuffer = m_framebuffers[m_indexImage];
+        renderPassInfo.renderArea.offset = {0, 0};
+        renderPassInfo.renderArea.extent = m_swapChain.getExtent();
+        renderPassInfo.renderArea.extent.width = m_swapChain.getExtent().width;
+        renderPassInfo.renderArea.extent.height = m_swapChain.getExtent().height;
+        renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+        renderPassInfo.pClearValues = clearValues.data();
+
+        vkCmdBeginRenderPass(m_commandBuffers[m_indexImage], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    }
+
+    void Renderer::endRenderPass() {
+        vkCmdEndRenderPass(m_commandBuffers[m_indexImage]);
+        VK_CHECK_RESULT(vkEndCommandBuffer(m_commandBuffers[m_indexImage]))
+    }
+
+    void Renderer::setPipeline() {
+        vkCmdBindPipeline(m_commandBuffers[m_indexImage], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
+    }
+
+    void Renderer::drawGrid() {
+        if (m_drawGrid) {
+            vkCmdBindPipeline(m_commandBuffers[m_indexImage], VK_PIPELINE_BIND_POINT_GRAPHICS, m_gridPipeline);
+
+            m_mvp.model = glm::mat4(1.0f);
+
+            vkCmdPushConstants(m_commandBuffers[m_indexImage], m_gridPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
+                               sizeof(MVP), &m_mvp);
+
+            vkCmdDraw(m_commandBuffers[m_indexImage], 6, 1, 0, 0);
+        }
     }
 
 } // End namespace core

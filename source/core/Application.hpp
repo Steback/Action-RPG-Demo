@@ -28,6 +28,8 @@ namespace core {
 
         void loop();
 
+        void render();
+
         void shutdown();
 
         virtual void init() = 0;
@@ -38,15 +40,16 @@ namespace core {
 
         virtual void cleanup() = 0;
 
+    public:
+        static std::unique_ptr<core::Renderer> renderer;
+        static core::ResourceManager* resourceManager;
+
     protected:
         std::unique_ptr<core::Window> m_window;
-        std::unique_ptr<core::Renderer> m_renderer;
-        core::ResourceManager* m_resourceManager;
         std::unique_ptr<core::Scene> m_scene;
         vk::Device* m_device{};
         vk::Instance m_instance;
         VkSurfaceKHR m_surface{};
-        entt::registry m_registry;
         float m_lastTime{}, m_deltaTime{};
     };
 

@@ -191,7 +191,7 @@ namespace core {
         samplerPoolCreateInfo.poolSizeCount = 1;
         samplerPoolCreateInfo.pPoolSizes = &samplerPoolSizer;
 
-        VK_CHECK_RESULT(vkCreateDescriptorPool(m_device->m_logicalDevice, &samplerPoolCreateInfo, nullptr, &m_descriptorPool));
+        VK_CHECK_RESULT(vkCreateDescriptorPool(m_device->m_logicalDevice, &samplerPoolCreateInfo, nullptr, &m_descriptorPool))
     }
 
     void ResourceManager::createDescriptorSetLayout() {
@@ -206,7 +206,7 @@ namespace core {
         samplerLayoutInfo.bindingCount = 1;
         samplerLayoutInfo.pBindings = &samplerLayoutBinding;
 
-        VK_CHECK_RESULT(vkCreateDescriptorSetLayout(m_device->m_logicalDevice, &samplerLayoutInfo, nullptr, &m_descriptorSetLayout));
+        VK_CHECK_RESULT(vkCreateDescriptorSetLayout(m_device->m_logicalDevice, &samplerLayoutInfo, nullptr, &m_descriptorSetLayout))
     }
 
     void ResourceManager::createModel(const std::string &uri, const std::string& name) {
@@ -222,7 +222,7 @@ namespace core {
 
             for (auto& image : inputModel.images) createTexture(image.uri, image.name);
 
-            for (auto& nodeID : inputModel.scenes[0].nodes) loadNode(inputModel.nodes[nodeID], inputModel, m_models[modelName].getNodes());
+            for (auto& nodeID : inputModel.scenes[0].nodes) m_models[modelName].loadNode(inputModel.nodes[nodeID], inputModel);
 
         } else {
             fmt::print(stderr, "[Model] error: {} \n", error);
@@ -237,51 +237,7 @@ namespace core {
         return m_meshes[id];
     }
 
-    void ResourceManager::loadNode(const tinygltf::Node &inputNode, const tinygltf::Model &inputModel, std::vector<Model::Node> &nodes,
-                                   Model::Node *parent) {
-        glm::mat4 nodeMatrix(1.0f);
-        Model::Node node{};
-        node.name = inputNode.name;
-
-        if (inputNode.translation.size() == 3)
-            nodeMatrix = glm::translate(nodeMatrix, glm::make_vec3(reinterpret_cast<const float*>(inputNode.translation.data())));
-
-        if (inputNode.rotation.size() == 4)
-            nodeMatrix *= glm::mat4(glm::quat(glm::make_quat(inputNode.rotation.data())));
-
-        if (inputNode.scale.size() == 3)
-            nodeMatrix = glm::scale(nodeMatrix, glm::make_vec3(reinterpret_cast<const float*>(inputNode.scale.data())));
-
-        node.matrix = nodeMatrix;
-
-        if (!inputNode.children.empty()) {
-            for (size_t i : inputNode.children) {
-                loadNode(inputModel.nodes[i], inputModel, nodes, &node);
-            }
-        }
-
-        if (inputNode.mesh > -1) {
-            const tinygltf::Mesh& mesh = inputModel.meshes[inputNode.mesh];
-            const tinygltf::Material material = inputModel.materials[mesh.primitives[0].material];
-            const tinygltf::Texture texture = inputModel.textures[material.pbrMetallicRoughness.baseColorTexture.index];
-            const tinygltf::Image image = inputModel.images[texture.source];
-            uint64_t textureID = core::tools::hashString(image.name);
-            uint64_t meshID = core::tools::hashString(node.name);
-
-            m_meshes[meshID] = loadMesh(mesh, inputModel, textureID);
-            node.mesh = meshID;
-        }
-
-        if (parent) {
-            node.parent = parent;
-            parent->children.push_back(node);
-        } else {
-            node.parent = nullptr;
-            nodes.push_back(node);
-        }
-    }
-
-    core::Mesh ResourceManager::loadMesh(const tinygltf::Mesh &mesh, const tinygltf::Model &model, uint64_t texturesID) {
+    void ResourceManager::loadMesh(uint64_t meshID, const tinygltf::Mesh &mesh, const tinygltf::Model &model, uint64_t texturesID) {
         std::vector<core::Vertex> vertices;
         std::vector<uint32_t> indices;
 
@@ -364,7 +320,7 @@ namespace core {
             }
         }
 
-        return core::Mesh(vertices, indices, m_graphicsQueue, texturesID, m_device);
+        m_meshes[meshID] = core::Mesh(vertices, indices, m_graphicsQueue, texturesID, m_device);
     }
 
 } // namespace core

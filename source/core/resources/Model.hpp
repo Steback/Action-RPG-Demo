@@ -19,6 +19,7 @@ namespace core {
     class Model {
     public:
         struct Node {
+            uint id;
             std::string name;
             glm::mat4 matrix;
             std::vector<Node> children;
@@ -38,6 +39,10 @@ namespace core {
         std::vector<Node>& getNodes();
 
         void cleanup();
+
+        void loadNode(const tinygltf::Node& inputNode, const tinygltf::Model& inputModel, core::Model::Node* parent = nullptr);
+
+        void loadChildren(const tinygltf::Node& inputNode, const tinygltf::Model& inputModel, core::Model::Node* parent);
 
     private:
         std::vector<Node> m_nodes;

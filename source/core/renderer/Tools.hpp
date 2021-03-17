@@ -13,11 +13,11 @@
 #include "../Utilities.hpp"
 
 
-#define VK_CHECK_RESULT(f) {																			\
+#define VK_CHECK_RESULT(f) { \
 	VkResult res = (f);																					\
                                                                                                         \
 	if (res != VK_SUCCESS) {																			\
-	    fmt::print("VkResult is \"{}\" in {} at line {} \n", vk::tools::errorString(res), __FILE__, __LINE__); \
+	    spdlog::error("VkResult is \"{}\" in {} at line {} \n", vk::tools::errorString(res), __FILE__, __LINE__); \
 		assert(res == VK_SUCCESS);																		\
 	}																									\
 }

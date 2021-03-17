@@ -28,13 +28,11 @@ namespace core {
 
         ~Renderer();
 
-        void init(core::ResourceManager* resourceManager, bool drawGrid = false);
+        void init(bool drawGrid = false);
 
         void cleanup();
 
-        void draw(entt::registry& registry);
-
-        void drawFrame(entt::registry& registry);
+        void drawFrame();
 
         void createRenderPass();
 
@@ -45,8 +43,6 @@ namespace core {
         void createCommandPool();
 
         void createSyncObjects();
-
-        void recordCommands(uint32_t indexImage, entt::registry& registry);
 
         void recreateSwapchain();
 
@@ -68,9 +64,19 @@ namespace core {
 
         void updateVP(const glm::mat4& view, const glm::mat4& proj);
 
-        VkPhysicalDevice& getPhysicalDevice();
-
         VkQueue& getGraphicsQueue();
+
+        void acquireNextImage();
+
+        void renderMesh(const core::Mesh& mesh, const glm::mat4& matrix);
+
+        void beginRenderPass();
+
+        void endRenderPass();
+
+        void setPipeline();
+
+        void drawGrid();
 
     private:
         std::unique_ptr<Window>& m_window;
@@ -103,6 +109,7 @@ namespace core {
         std::vector<VkFence> m_imageFences;
 
         size_t m_currentFrame = 0;
+        uint32_t m_indexImage{};
 
         VkPushConstantRange m_mvpRange{};
 
@@ -114,7 +121,6 @@ namespace core {
         core::UIImGui m_ui;
 
         // Textures
-        core::ResourceManager* m_resourceManager{};
         VkSampleCountFlagBits m_msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
         // Multisampling anti-aliasing

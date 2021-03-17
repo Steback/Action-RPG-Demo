@@ -17,10 +17,10 @@ namespace editor {
     Editor::~Editor() = default;
 
     void Editor::init() {
-        m_resourceManager->createModel("cube.gltf", "cube");
+        resourceManager->createModel("cube.gltf", "cube");
         m_modelsNames.emplace_back("cube");
 
-        m_scene->loadScene("../data/basicScene.json", m_resourceManager, &m_registry, true);
+        m_scene->loadScene("../data/basicScene.json", true);
 
         m_scene->getCamera() = core::Camera({45.0f, 45.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, 0.5f, 10.0f, 3.0f, 45.0f,
                                             0.01f, 100.0f);
@@ -29,7 +29,7 @@ namespace editor {
     void Editor::update() {
         cameraMovement();
 
-        m_renderer->updateVP(m_scene->getCamera().getView(), m_scene->getCamera().getProjection(m_window->aspect()));
+        renderer->updateVP(m_scene->getCamera().getView(), m_scene->getCamera().getProjection(m_window->aspect()));
     }
 
     void Editor::draw() {
@@ -119,36 +119,40 @@ namespace editor {
                 std::vector<const char*> entityTypes = {"CAMERA", "PLAYER"};
                 ImGui::Combo("Type", reinterpret_cast<int*>(&entity.type), entityTypes.data(), entityTypes.size());
 
-                if (ImGui::CollapsingHeader("Transform")) {
-                    auto& transform = m_registry.get<core::Transform>(entity.enttID);
+                if (entity.components & core::TRANSFORM) {
+                    if (ImGui::CollapsingHeader("Transform")) {
+                        auto& transform = m_scene->getComponent<core::Transform>(entity.id);
 
-                    ImGui::InputFloat3("Position", glm::value_ptr(transform.getPosition()));
-                    ImGui::InputFloat3("Size", glm::value_ptr(transform.getSize()));
-                    ImGui::InputFloat3("Rotation", glm::value_ptr(transform.getRotation()));
-                    ImGui::InputFloat("Velocity", &transform.getSpeed());
+                        ImGui::InputFloat3("Position", glm::value_ptr(transform.getPosition()));
+                        ImGui::InputFloat3("Size", glm::value_ptr(transform.getSize()));
+                        ImGui::InputFloat3("Rotation", glm::value_ptr(transform.getRotation()));
+                        ImGui::InputFloat("Velocity", &transform.getSpeed());
+                    }
                 }
 
-                if (ImGui::CollapsingHeader("Model")) {
-                    auto& meshModel = m_registry.get<core::MeshModel>(entity.enttID);
+                if (entity.components & core::MODEL) {
+                    if (ImGui::CollapsingHeader("Model")) {
+                        auto& meshModel = m_scene->getComponent<core::MeshModel>(entity.id);
 
-                    ImGui::Text("Model ID: %lu", meshModel.getModelID());
+                        ImGui::Text("Model ID: %lu", meshModel.getModelID());
 
-                    static int currentModel = 0;
-                    const char* currentModelName = m_modelsNames[currentModel].c_str();
+                        static int currentModel = 0;
+                        const char* currentModelName = m_modelsNames[currentModel].c_str();
 
-                    if (ImGui::BeginCombo("Name", currentModelName)) {
-                        for (int i = 0; i < m_modelsNames.size(); ++i) {
-                            const bool is_selected = (currentModel == i);
+                        if (ImGui::BeginCombo("Name", currentModelName)) {
+                            for (int i = 0; i < m_modelsNames.size(); ++i) {
+                                const bool is_selected = (currentModel == i);
 
-                            if (ImGui::Selectable(m_modelsNames[i].c_str(), is_selected)) {
-                                currentModel = i;
-                                meshModel.setModelID(core::tools::hashString(m_modelsNames[currentModel]));
+                                if (ImGui::Selectable(m_modelsNames[i].c_str(), is_selected)) {
+                                    currentModel = i;
+                                    meshModel.setModelID(core::tools::hashString(m_modelsNames[currentModel]));
+                                }
+
+                                if (is_selected) ImGui::SetItemDefaultFocus();
                             }
 
-                            if (is_selected) ImGui::SetItemDefaultFocus();
+                            ImGui::EndCombo();
                         }
-
-                        ImGui::EndCombo();
                     }
                 }
             }
@@ -221,17 +225,17 @@ namespace editor {
                 m_window->setKeyValue(GLFW_KEY_S, false);
             }
 
-            auto& transform = m_registry.get<core::Transform>(m_scene->getEntity(entitySelected).enttID);
+            auto& transform = m_scene->getComponent<core::Transform>(entitySelected);
             editor::gizmo::transform(transform, m_currentOperation, m_scene->getCamera().getView(), projMatrix);
         }
     }
 
     void Editor::addEntity() {
-        auto enttID = m_registry.create();
-        auto entity = m_scene->addEntity("Object", enttID, core::PLAYER);
+        auto& entity = m_scene->addEntity("Object", core::PLAYER);
 
-        m_registry.emplace<core::MeshModel>(enttID, core::tools::hashString("cube"));
-        m_registry.emplace<core::Transform>(enttID, m_scene->getCamera().getCenter(), DEFAULT_SIZE, SPEED_ZERO, DEFAULT_ROTATION);
+        m_scene->registry().emplace<core::MeshModel>(entity.enttID, core::tools::hashString("cube"));
+        m_scene->registry().emplace<core::Transform>(entity.enttID, m_scene->getCamera().getCenter(), DEFAULT_SIZE, SPEED_ZERO, DEFAULT_ROTATION);
+        entity.components = core::MODEL | core::TRANSFORM;
 
         m_addEntity = !m_addEntity;
     }
@@ -250,7 +254,7 @@ namespace editor {
                 idx = fileName.rfind('.');
                 std::string modelName = fileName.substr(0, idx);
 
-                m_resourceManager->createModel(fileName, modelName);
+                resourceManager->createModel(fileName, modelName);
                 m_modelsNames.emplace_back(modelName);
             }
 
