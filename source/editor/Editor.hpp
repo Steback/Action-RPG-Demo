@@ -40,6 +40,10 @@ namespace editor {
 
         void addModel();
 
+        void modelsPanel();
+
+        void loadNode(core::Model::Node& node);
+
     private:
         size_t entitySelected = -1;
         bool m_gizmoDraw = true;
@@ -48,6 +52,8 @@ namespace editor {
         bool m_addEntity = false;
         bool m_imguiDemo = false;
         bool m_addModel = false;
+        bool m_modelsPanel = false;
+        bool m_widowOpen = false;
         std::vector<std::string> m_modelsNames;
     };
 

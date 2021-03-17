@@ -35,7 +35,10 @@ namespace editor {
     void Editor::draw() {
         core::UIImGui::newFrame();
 
-        if (m_imguiDemo) ImGui::ShowDemoWindow(&m_imguiDemo);
+        if (m_imguiDemo) {
+            ImGui::ShowDemoWindow(&m_imguiDemo);
+            m_widowOpen = !m_widowOpen;
+        }
 
         menuBar();
         entitiesPanel();
@@ -45,6 +48,8 @@ namespace editor {
         if (m_addEntity) addEntity();
 
         if (m_addModel) addModel();
+
+        if (m_modelsPanel) modelsPanel();
 
         drawGizmo();
 
@@ -72,14 +77,15 @@ namespace editor {
             }
 
             if (ImGui::BeginMenu("Assets")) {
-                if (ImGui::MenuItem("Add Model")) m_addModel = !m_addModel;
+                if (ImGui::MenuItem("Add Model")) m_widowOpen = m_addModel = !m_addModel;
+                if (ImGui::MenuItem("Models")) m_widowOpen = m_modelsPanel = !m_modelsPanel;
 
                 ImGui::EndMenu();
             }
 
             if (ImGui::BeginMenu("Tools")) {
                 if (ImGui::MenuItem("Camera Controls", nullptr)) m_cameraControls = !m_cameraControls;
-                if (ImGui::MenuItem("ImGui Demo", nullptr)) m_imguiDemo = !m_imguiDemo;
+                if (ImGui::MenuItem("ImGui Demo", nullptr)) m_widowOpen = m_imguiDemo = !m_imguiDemo;
 
                 ImGui::EndMenu();
             }
@@ -183,7 +189,7 @@ namespace editor {
     void Editor::cameraMovement() {
         auto& camera = m_scene->getCamera();
 
-        if (!m_addModel)
+        if (!m_widowOpen)
             camera.setZoom(m_deltaTime, m_window->getScrollOffset(), m_window->isScrolling());
 
         if (m_window->mouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT) && m_window->keyPressed(GLFW_KEY_LEFT_ALT)) {
@@ -259,7 +265,54 @@ namespace editor {
             }
 
             ImGuiFileDialog::Instance()->Close();
-            m_addModel = !m_addModel;
+            m_widowOpen = m_addModel = !m_addModel;
+        }
+    }
+
+    void Editor::modelsPanel() {
+        ImGui::SetNextWindowSize({-1, 700.0f});
+        ImGui::Begin("Models Panel", &m_modelsPanel);
+        {
+            for (auto& modelName : m_modelsNames) {
+                if (ImGui::CollapsingHeader(modelName.c_str())) {
+                    auto& model = resourceManager->getModel(core::tools::hashString(modelName));
+
+                    for (auto& node : model.getNodes()) {
+                        loadNode(node);
+                    }
+                }
+            }
+        }
+        ImGui::End();
+
+        m_widowOpen = m_modelsPanel;
+    }
+
+    void Editor::loadNode(core::Model::Node& node) {
+        if (ImGui::TreeNode(node.name.c_str())) {
+            ImGui::Text("ID: %u", node.id);
+
+            if (ImGui::CollapsingHeader("Data")) {
+                std::string matrix;
+                for (int i = 0; i < 4; ++i) {
+                    matrix.append("| ");
+
+                    for (int j = 0; j < 4; ++j) {
+                        matrix.append(std::to_string(node.matrix[i][j]) + ' ');
+                    }
+
+                    matrix.append("|\n");
+                }
+                ImGui::Text("Matrix: \n%s", matrix.c_str());
+
+                ImGui::Text("Mesh ID: %lu", node.mesh);
+            }
+
+            for (auto& child : node.children) {
+                loadNode(child);
+            }
+
+            ImGui::TreePop();
         }
     }
 

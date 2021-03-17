@@ -14,7 +14,7 @@
 #endif
 
 const int MAX_FRAMES_IN_FLIGHT = 1;
-const int MAX_OBJECTS = 20;
+const int MAX_OBJECTS = 100;
 
 const std::string TEXTURES_DIR = "../assets/textures/";
 const std::string SHADERS_DIR = "../assets/shaders/";
