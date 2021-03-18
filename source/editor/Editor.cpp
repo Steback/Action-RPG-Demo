@@ -8,6 +8,7 @@
 #include "renderer/UIImGui.hpp"
 #include "Gizmos.hpp"
 
+
 namespace editor {
 
     Editor::Editor() : core::Application("Editor", true), m_currentOperation(ImGuizmo::OPERATION::TRANSLATE) {
@@ -22,7 +23,7 @@ namespace editor {
 
         m_scene->loadScene("../data/basicScene.json", true);
 
-        m_scene->getCamera() = core::Camera({45.0f, 45.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, 0.5f, 10.0f, 3.0f, 45.0f,
+        m_scene->getCamera() = core::Camera({45.0f, 45.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, 0.5f, 10.0f, 10.0f, 45.0f,
                                             0.01f, 100.0f);
     }
 
@@ -50,6 +51,8 @@ namespace editor {
         if (m_addModel) addModel();
 
         if (m_modelsPanel) modelsPanel();
+
+        if (m_meshesPanel) meshesPanel();
 
         drawGizmo();
 
@@ -79,6 +82,7 @@ namespace editor {
             if (ImGui::BeginMenu("Assets")) {
                 if (ImGui::MenuItem("Add Model")) m_widowOpen = m_addModel = !m_addModel;
                 if (ImGui::MenuItem("Models")) m_widowOpen = m_modelsPanel = !m_modelsPanel;
+                if (ImGui::MenuItem("Mesehs")) m_widowOpen = m_meshesPanel = !m_meshesPanel;
 
                 ImGui::EndMenu();
             }
@@ -131,7 +135,11 @@ namespace editor {
 
                         ImGui::InputFloat3("Position", glm::value_ptr(transform.getPosition()));
                         ImGui::InputFloat3("Size", glm::value_ptr(transform.getSize()));
-                        ImGui::InputFloat3("Rotation", glm::value_ptr(transform.getRotation()));
+
+                        glm::vec3 angles = glm::degrees(transform.getRotation());
+                        ImGui::InputFloat3("Rotation", glm::value_ptr(angles));
+                        transform.getRotation() = glm::radians(angles);
+
                         ImGui::InputFloat("Velocity", &transform.getSpeed());
                     }
                 }
@@ -305,7 +313,13 @@ namespace editor {
                 }
                 ImGui::Text("Matrix: \n%s", matrix.c_str());
 
-                ImGui::Text("Mesh ID: %lu", node.mesh);
+#ifdef CORE_DEBUG
+                ImGui::Text("Position X: %f Y: %f Z: %f", node.position.x, node.position.y, node.position.z);
+                ImGui::Text("Angles X: %f Y: %f Z: %f", node.rotation.x, node.rotation.y, node.rotation.z);
+                ImGui::Text("Size X: %f Y: %f Z: %f", node.size.x, node.size.y, node.size.z);
+#endif
+
+                ImGui::Text("Mesh ID: %s", node.mesh.c_str());
             }
 
             for (auto& child : node.children) {
@@ -314,6 +328,19 @@ namespace editor {
 
             ImGui::TreePop();
         }
+    }
+
+    void Editor::meshesPanel() {
+        ImGui::SetNextWindowSize({-1, -1});
+        ImGui::Begin("Meshes", &m_meshesPanel);
+        {
+            for (auto& mesh : resourceManager->getMeshes()) {
+                ImGui::Text("%s", mesh.first.c_str());
+            }
+        }
+        ImGui::End();
+
+        m_widowOpen = m_meshesPanel;
     }
 
 } // namespace editor

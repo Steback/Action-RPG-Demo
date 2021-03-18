@@ -4,7 +4,7 @@
 
 #include <string>
 
-#include <glm/glm.hpp>
+#include "glm/glm.hpp"
 
 
 #ifdef NDEBUG
@@ -21,7 +21,7 @@ const std::string SHADERS_DIR = "../assets/shaders/";
 const std::string FONTS_DIR = "../assets/fonts/";
 const std::string MODELS_DIR = "../assets/models/";
 
-const glm::vec3 DEFAULT_SIZE = {0.1f, 0.1f, 0.1f};
+const glm::vec3 DEFAULT_SIZE = {1.0f, 1.0f, 1.0f};
 const float SPEED_ZERO = 0.0f;
 const glm::vec3 DEFAULT_ROTATION = {0.0f, 0.0f, 0.0f};
 

@@ -7,9 +7,11 @@
 
 #include "vulkan/vulkan.h"
 #include "glm/glm.hpp"
+#include "glm/gtx/quaternion.hpp"
 #define TINYGLTF_NO_STB_IMAGE_WRITE
 #include "tiny_gltf.h"
 
+#include "../Constants.hpp"
 #include "../mesh/Mesh.hpp"
 #include "../renderer/Device.hpp"
 
@@ -23,8 +25,13 @@ namespace core {
             std::string name;
             glm::mat4 matrix;
             std::vector<Node> children;
-            uint64_t mesh;
+            std::string mesh;
             Node* parent;
+#ifdef CORE_DEBUG
+            glm::vec3 position;
+            glm::vec3 rotation;
+            glm::vec3 size;
+#endif
         };
 
     public:

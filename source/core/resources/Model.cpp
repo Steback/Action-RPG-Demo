@@ -1,10 +1,12 @@
 #include "Model.hpp"
 
 #include <utility>
+#include <glm/gtx/matrix_decompose.inl>
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
+#include "fmt/format.h"
 
 #include "../Utilities.hpp"
 #include "../Application.hpp"
@@ -34,20 +36,42 @@ namespace core {
     }
 
     void Model::loadNode(const tinygltf::Node &inputNode, const tinygltf::Model &inputModel, core::Model::Node* parent) {
-        glm::mat4 nodeMatrix(1.0f);
+        glm::mat4 matrix(1.0f);
         Model::Node node{};
         node.name = inputNode.name;
 
-        if (inputNode.translation.size() == 3)
-            nodeMatrix = glm::translate(nodeMatrix, glm::make_vec3(reinterpret_cast<const float*>(inputNode.translation.data())));
+        if (inputNode.translation.size() == 3) {
+            glm::vec3 translation = glm::make_vec3(inputNode.translation.data());
 
-        if (inputNode.rotation.size() == 4)
-            nodeMatrix *= glm::mat4(glm::quat(glm::make_quat(inputNode.rotation.data())));
+            matrix = glm::translate(matrix, translation);
+        }
 
-        if (inputNode.scale.size() == 3)
-            nodeMatrix = glm::scale(nodeMatrix, glm::make_vec3(reinterpret_cast<const float*>(inputNode.scale.data())));
+        if (inputNode.rotation.size() == 4) {
+            glm::quat rotation = glm::make_quat(inputNode.rotation.data());
 
-        node.matrix = nodeMatrix;
+            matrix *= glm::mat4(rotation);
+        }
+
+        if (inputNode.scale.size() == 3) {
+            glm::vec3 scale = glm::make_vec3(inputNode.scale.data());
+
+            matrix = glm::scale(matrix, scale);
+        }
+
+        node.matrix = matrix;
+
+#ifdef CORE_DEBUG
+        if (parent) matrix = parent->matrix * matrix;
+        glm::vec3 tempTranslate, tempScale, tempSkew;
+        glm::vec4 tempPerspective;
+        glm::quat tempOrientation;
+
+        glm::decompose(matrix, tempScale, tempOrientation, tempTranslate, tempSkew, tempPerspective);
+
+        node.position = tempTranslate;
+        node.rotation = glm::eulerAngles(tempOrientation);
+        node.size = tempScale;
+#endif
 
         if (inputNode.mesh > -1) {
             const tinygltf::Mesh& mesh = inputModel.meshes[inputNode.mesh];
@@ -57,13 +81,13 @@ namespace core {
             uint64_t textureID = core::tools::hashString(image.name);
             uint64_t meshID = core::tools::hashString(node.name);
 
-            core::Application::resourceManager->loadMesh(meshID, mesh, inputModel, textureID);
-            node.mesh = meshID;
+            node.mesh = core::Application::resourceManager->loadMesh(node.name, mesh, inputModel, textureID);
         }
 
         if (parent) {
             node.id = parent->children.size();
             node.parent = parent;
+            node.matrix = parent->matrix * node.matrix;
             parent->children.push_back(node);
 
             loadChildren(inputNode, inputModel, &parent->children[node.id]);

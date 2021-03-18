@@ -42,6 +42,8 @@ namespace editor {
 
         void modelsPanel();
 
+        void meshesPanel();
+
         void loadNode(core::Model::Node& node);
 
     private:
@@ -54,6 +56,7 @@ namespace editor {
         bool m_addModel = false;
         bool m_modelsPanel = false;
         bool m_widowOpen = false;
+        bool m_meshesPanel = false;
         std::vector<std::string> m_modelsNames;
     };
 

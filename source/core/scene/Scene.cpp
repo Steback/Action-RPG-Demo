@@ -4,9 +4,9 @@
 
 #include "GLFW/glfw3.h"
 #include "fmt/format.h"
+#include "imgui.h"
 
 #include "../Application.hpp"
-#include "../components/Transform.hpp"
 #include "../components/MeshModel.hpp"
 
 
@@ -97,7 +97,7 @@ namespace core {
 
             glm::vec3 pos = target + (direction * camera["distance"].get<float>());
 
-            m_registry.emplace<core::Transform>(entity.enttID, pos, DEFAULT_SIZE, SPEED_ZERO, DEFAULT_ROTATION);
+            m_registry.emplace<core::Transform>(entity.enttID, pos, DEFAULT_SIZE * 0.1f, SPEED_ZERO, DEFAULT_ROTATION);
 
             entity.components = ComponentFlags::MODEL | ComponentFlags::TRANSFORM;
         } else {
@@ -118,17 +118,10 @@ namespace core {
     }
 
     void Scene::drawNode(const Model::Node &node, core::Model& model) {
-        if (node.mesh > 0) {
-            glm::mat4 nodeMatrix = node.matrix;
-            core::Model::Node* parent = node.parent;
+        if (!node.mesh.empty()) {
             auto& transform = m_registry.get<core::Transform>(m_currentEntity);
 
-            while (parent) {
-                nodeMatrix = parent->matrix * nodeMatrix;
-                parent = parent->parent;
-            }
-
-            core::Application::renderer->renderMesh(core::Application::resourceManager->getMesh(node.mesh), nodeMatrix * transform.worldTransformMatrix());
+            core::Application::renderer->renderMesh(core::Application::resourceManager->getMesh(node.mesh), transform.worldTransformMatrix() * node.matrix);
         }
 
         for (auto& child : node.children) {

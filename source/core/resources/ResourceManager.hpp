@@ -38,9 +38,11 @@ namespace core {
 
         core::Model& getModel(uint64_t id);
 
-        core::Mesh& getMesh(uint64_t id);
+        core::Mesh& getMesh(const std::string& id);
 
-        void loadMesh(uint64_t meshID, const tinygltf::Mesh& mesh, const tinygltf::Model& model, uint64_t texturesID);
+        std::string loadMesh(const std::string& name, const tinygltf::Mesh& mesh, const tinygltf::Model& model, uint64_t texturesID);
+
+        std::unordered_map<std::string, core::Mesh>& getMeshes();
 
     private:
         void createDescriptorPool();
@@ -52,7 +54,7 @@ namespace core {
         VkQueue m_graphicsQueue{};
         std::unordered_map<uint64_t, core::Texture> m_textures;
         std::unordered_map<uint64_t, core::Model> m_models;
-        std::unordered_map<uint64_t, core::Mesh> m_meshes;
+        std::unordered_map<std::string, core::Mesh> m_meshes;
         VkDescriptorPool m_descriptorPool{};
         VkDescriptorSetLayout m_descriptorSetLayout{};
     };

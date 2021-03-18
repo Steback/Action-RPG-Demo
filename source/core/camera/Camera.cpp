@@ -37,7 +37,7 @@ namespace core {
 
     void Camera::setZoom(float deltaTime, glm::vec2 &offset, bool& scrolling) {
         if (scrolling) {
-            m_yFov -= offset.y * (m_speed * 20) * deltaTime;
+            m_yFov -= offset.y * (m_speed * 100) * deltaTime;
 
             scrolling = false;
         }
