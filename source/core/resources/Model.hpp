@@ -18,6 +18,17 @@
 
 namespace core {
 
+    const std::vector<std::string> m_conflictsNodes = {
+            "Bow",
+            "fould_A",
+            "fould_B",
+            "helmet_A",
+            "helmet_B",
+            "helmet_C",
+            "hood_A",
+            "skeleton_mesh"
+    };
+
     class Model {
     public:
         struct Node {
@@ -27,11 +38,6 @@ namespace core {
             std::vector<Node> children;
             std::string mesh;
             Node* parent;
-#ifdef CORE_DEBUG
-            glm::vec3 position;
-            glm::vec3 rotation;
-            glm::vec3 size;
-#endif
         };
 
     public:

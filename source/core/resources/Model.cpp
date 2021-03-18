@@ -60,19 +60,6 @@ namespace core {
 
         node.matrix = matrix;
 
-#ifdef CORE_DEBUG
-        if (parent) matrix = parent->matrix * matrix;
-        glm::vec3 tempTranslate, tempScale, tempSkew;
-        glm::vec4 tempPerspective;
-        glm::quat tempOrientation;
-
-        glm::decompose(matrix, tempScale, tempOrientation, tempTranslate, tempSkew, tempPerspective);
-
-        node.position = tempTranslate;
-        node.rotation = glm::eulerAngles(tempOrientation);
-        node.size = tempScale;
-#endif
-
         if (inputNode.mesh > -1) {
             const tinygltf::Mesh& mesh = inputModel.meshes[inputNode.mesh];
             const tinygltf::Material material = inputModel.materials[mesh.primitives[0].material];
@@ -87,7 +74,12 @@ namespace core {
         if (parent) {
             node.id = parent->children.size();
             node.parent = parent;
-            node.matrix = parent->matrix * node.matrix;
+
+            // TODO: Find a better solution for matrix attributes bug
+            auto it = std::find(m_conflictsNodes.begin(), m_conflictsNodes.end(), node.name);
+
+            if (it == m_conflictsNodes.end()) node.matrix = parent->matrix * node.matrix;
+
             parent->children.push_back(node);
 
             loadChildren(inputNode, inputModel, &parent->children[node.id]);

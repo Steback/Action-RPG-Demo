@@ -313,12 +313,6 @@ namespace editor {
                 }
                 ImGui::Text("Matrix: \n%s", matrix.c_str());
 
-#ifdef CORE_DEBUG
-                ImGui::Text("Position X: %f Y: %f Z: %f", node.position.x, node.position.y, node.position.z);
-                ImGui::Text("Angles X: %f Y: %f Z: %f", node.rotation.x, node.rotation.y, node.rotation.z);
-                ImGui::Text("Size X: %f Y: %f Z: %f", node.size.x, node.size.y, node.size.z);
-#endif
-
                 ImGui::Text("Mesh ID: %s", node.mesh.c_str());
             }
 
