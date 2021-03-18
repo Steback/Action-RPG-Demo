@@ -233,11 +233,11 @@ namespace core {
         return m_models[id];
     }
 
-    core::Mesh &ResourceManager::getMesh(const std::string& id) {
+    core::Mesh &ResourceManager::getMesh(uint64_t id) {
         return m_meshes[id];
     }
 
-    std::string ResourceManager::loadMesh(const std::string& name, const tinygltf::Mesh &mesh, const tinygltf::Model &model, uint64_t texturesID) {
+    uint64_t ResourceManager::loadMesh(const std::string& name, const tinygltf::Mesh &mesh, const tinygltf::Model &model, uint64_t texturesID) {
         std::vector<core::Vertex> vertices;
         std::vector<uint32_t> indices;
 
@@ -320,13 +320,10 @@ namespace core {
             }
         }
 
-        m_meshes[name] = core::Mesh(vertices, indices, m_graphicsQueue, texturesID, m_device);
+        uint64_t meshID = core::tools::hashString(name);
+        m_meshes[meshID] = core::Mesh(vertices, indices, m_graphicsQueue, texturesID, m_device);
 
-        return name;
-    }
-
-    std::unordered_map<std::string, core::Mesh> &ResourceManager::getMeshes() {
-        return m_meshes;
+        return meshID;
     }
 
 } // namespace core

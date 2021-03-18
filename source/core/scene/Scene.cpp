@@ -118,7 +118,7 @@ namespace core {
     }
 
     void Scene::drawNode(const Model::Node &node, core::Model& model) {
-        if (!node.mesh.empty()) {
+        if (node.mesh > 0) {
             auto& transform = m_registry.get<core::Transform>(m_currentEntity);
 
             core::Application::renderer->renderMesh(core::Application::resourceManager->getMesh(node.mesh), transform.worldTransformMatrix() * node.matrix);

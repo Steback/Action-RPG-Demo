@@ -66,7 +66,6 @@ namespace core {
             const tinygltf::Texture texture = inputModel.textures[material.pbrMetallicRoughness.baseColorTexture.index];
             const tinygltf::Image image = inputModel.images[texture.source];
             uint64_t textureID = core::tools::hashString(image.name);
-            uint64_t meshID = core::tools::hashString(node.name);
 
             node.mesh = core::Application::resourceManager->loadMesh(node.name, mesh, inputModel, textureID);
         }

@@ -23,6 +23,10 @@ namespace editor {
 
         m_scene->loadScene("../data/basicScene.json", true);
 
+        for (auto& entity : m_scene->getEntities()) {
+            m_entitiesInfo.push_back({entity.id, entity.name, 0});
+        }
+
         m_scene->getCamera() = core::Camera({45.0f, 45.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, 0.5f, 10.0f, 10.0f, 45.0f,
                                             0.01f, 100.0f);
     }
@@ -52,8 +56,6 @@ namespace editor {
 
         if (m_modelsPanel) modelsPanel();
 
-        if (m_meshesPanel) meshesPanel();
-
         drawGizmo();
 
         core::UIImGui::render();
@@ -82,7 +84,6 @@ namespace editor {
             if (ImGui::BeginMenu("Assets")) {
                 if (ImGui::MenuItem("Add Model")) m_widowOpen = m_addModel = !m_addModel;
                 if (ImGui::MenuItem("Models")) m_widowOpen = m_modelsPanel = !m_modelsPanel;
-                if (ImGui::MenuItem("Mesehs")) m_widowOpen = m_meshesPanel = !m_meshesPanel;
 
                 ImGui::EndMenu();
             }
@@ -103,13 +104,12 @@ namespace editor {
         ImGui::SetNextWindowSize({350.0f, ((io.DisplaySize.y * 0.5f) - 22)});
         ImGui::Begin("Entities", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
         {
-            for (size_t i = 0; i < m_scene->getEntitiesCount(); ++i) {
-                auto entity = m_scene->getEntity(i);
+            for (size_t i = 0; i < m_entitiesInfo.size(); ++i) {
                 char buf[32];
 
-                sprintf(buf, "%s", entity.name.c_str());
+                sprintf(buf, "%s", m_entitiesInfo[i].name.c_str());
 
-                if (ImGui::Selectable(buf, entitySelected == i)) entitySelected = i;
+                if (ImGui::Selectable(buf, m_entitySelected == i)) m_entitySelected = i;
             }
 
         }
@@ -119,12 +119,13 @@ namespace editor {
         ImGui::SetNextWindowSize({350.0f, io.DisplaySize.y * 0.5f});
         ImGui::Begin("Entity Properties", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
         {
-            if (entitySelected != -1) {
-                auto& entity = m_scene->getEntity(entitySelected);
+            if (m_entitySelected != -1) {
+                auto& entity = m_scene->getEntity(m_entitySelected);
 
                 ImGui::Text("Entity ID: %i", entity.id);
 
                 ImGui::InputText("Entity name", entity.name.data(), 30);
+                m_entitiesInfo[m_entitySelected].name = entity.name;
 
                 std::vector<const char*> entityTypes = {"CAMERA", "PLAYER"};
                 ImGui::Combo("Type", reinterpret_cast<int*>(&entity.type), entityTypes.data(), entityTypes.size());
@@ -150,15 +151,14 @@ namespace editor {
 
                         ImGui::Text("Model ID: %lu", meshModel.getModelID());
 
-                        static int currentModel = 0;
-                        const char* currentModelName = m_modelsNames[currentModel].c_str();
+                        int currentModel = m_entitiesInfo[m_entitySelected].model;
 
-                        if (ImGui::BeginCombo("Name", currentModelName)) {
+                        if (ImGui::BeginCombo("Name", m_modelsNames[currentModel].c_str())) {
                             for (int i = 0; i < m_modelsNames.size(); ++i) {
                                 const bool is_selected = (currentModel == i);
 
                                 if (ImGui::Selectable(m_modelsNames[i].c_str(), is_selected)) {
-                                    currentModel = i;
+                                    m_entitiesInfo[m_entitySelected].model = currentModel = i;
                                     meshModel.setModelID(core::tools::hashString(m_modelsNames[currentModel]));
                                 }
 
@@ -166,6 +166,14 @@ namespace editor {
                             }
 
                             ImGui::EndCombo();
+                        }
+
+                        if (ImGui::CollapsingHeader(m_modelsNames[m_entitiesInfo[m_entitySelected].model].c_str())) {
+                            auto& model = resourceManager->getModel(meshModel.getModelID());
+
+                            for (auto& node : model.getNodes()) {
+                                loadNode(node);
+                            }
                         }
                     }
                 }
@@ -223,7 +231,7 @@ namespace editor {
 
         glm::mat4 projMatrix = m_scene->getCamera().getProjection(m_window->aspect(), false);
 
-        if (entitySelected != -1) {
+        if (m_entitySelected != -1) {
             if (m_gizmoDraw) ImGuizmo::Enable(m_gizmoDraw);
 
             m_gizmoDraw = false;
@@ -239,7 +247,7 @@ namespace editor {
                 m_window->setKeyValue(GLFW_KEY_S, false);
             }
 
-            auto& transform = m_scene->getComponent<core::Transform>(entitySelected);
+            auto& transform = m_scene->getComponent<core::Transform>(m_entitySelected);
             editor::gizmo::transform(transform, m_currentOperation, m_scene->getCamera().getView(), projMatrix);
         }
     }
@@ -251,6 +259,7 @@ namespace editor {
         m_scene->registry().emplace<core::Transform>(entity.enttID, m_scene->getCamera().getCenter(), DEFAULT_SIZE, SPEED_ZERO, DEFAULT_ROTATION);
         entity.components = core::MODEL | core::TRANSFORM;
 
+        m_entitiesInfo.push_back({entity.id, entity.name, 0});
         m_addEntity = !m_addEntity;
     }
 
@@ -313,7 +322,7 @@ namespace editor {
                 }
                 ImGui::Text("Matrix: \n%s", matrix.c_str());
 
-                ImGui::Text("Mesh ID: %s", node.mesh.c_str());
+                ImGui::Text("Mesh ID: %lu", node.mesh);
             }
 
             for (auto& child : node.children) {
@@ -322,19 +331,6 @@ namespace editor {
 
             ImGui::TreePop();
         }
-    }
-
-    void Editor::meshesPanel() {
-        ImGui::SetNextWindowSize({-1, -1});
-        ImGui::Begin("Meshes", &m_meshesPanel);
-        {
-            for (auto& mesh : resourceManager->getMeshes()) {
-                ImGui::Text("%s", mesh.first.c_str());
-            }
-        }
-        ImGui::End();
-
-        m_widowOpen = m_meshesPanel;
     }
 
 } // namespace editor

@@ -11,6 +11,12 @@
 
 namespace editor {
 
+    struct EntityInfo {
+        uint32_t entityID;
+        std::string name;
+        int model;
+    };
+
     class Editor : public core::Application {
     public:
         Editor();
@@ -42,12 +48,10 @@ namespace editor {
 
         void modelsPanel();
 
-        void meshesPanel();
-
         void loadNode(core::Model::Node& node);
 
     private:
-        size_t entitySelected = -1;
+        size_t m_entitySelected = -1;
         bool m_gizmoDraw = true;
         bool m_cameraControls = false;
         ImGuizmo::OPERATION m_currentOperation;
@@ -56,8 +60,8 @@ namespace editor {
         bool m_addModel = false;
         bool m_modelsPanel = false;
         bool m_widowOpen = false;
-        bool m_meshesPanel = false;
         std::vector<std::string> m_modelsNames;
+        std::vector<EntityInfo> m_entitiesInfo;
     };
 
 } // namespace editor

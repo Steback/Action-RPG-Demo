@@ -36,7 +36,7 @@ namespace core {
             std::string name;
             glm::mat4 matrix;
             std::vector<Node> children;
-            std::string mesh;
+            uint64_t mesh;
             Node* parent;
         };
 
