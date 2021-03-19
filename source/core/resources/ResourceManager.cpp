@@ -287,6 +287,7 @@ namespace core {
                 switch (accessor.componentType) {
                     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT: {
                         auto* buf = new uint32_t[accessor.count];
+
                         std::memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset], accessor.count * sizeof(uint32_t));
 
                         for (size_t index = 0; index < accessor.count; ++index) {
@@ -309,7 +310,7 @@ namespace core {
                     case TINYGLTF_PARAMETER_TYPE_UNSIGNED_BYTE: {
                         auto* buf = new uint8_t[accessor.count];
 
-                        memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset], accessor.count * sizeof(uint8_t));
+                        std::memcpy(buf, &buffer.data[accessor.byteOffset + bufferView.byteOffset], accessor.count * sizeof(uint8_t));
 
                         for (size_t index = 0; index < accessor.count; index++) indices.push_back(buf[index]);
 

@@ -46,8 +46,6 @@ namespace editor {
 
         void addModel();
 
-        void modelsPanel();
-
         void loadNode(core::Model::Node& node);
 
     private:
@@ -58,7 +56,6 @@ namespace editor {
         bool m_addEntity = false;
         bool m_imguiDemo = false;
         bool m_addModel = false;
-        bool m_modelsPanel = false;
         bool m_widowOpen = false;
         std::vector<std::string> m_modelsNames;
         std::vector<EntityInfo> m_entitiesInfo;

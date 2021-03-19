@@ -54,8 +54,6 @@ namespace editor {
 
         if (m_addModel) addModel();
 
-        if (m_modelsPanel) modelsPanel();
-
         drawGizmo();
 
         core::UIImGui::render();
@@ -83,7 +81,6 @@ namespace editor {
 
             if (ImGui::BeginMenu("Assets")) {
                 if (ImGui::MenuItem("Add Model")) m_widowOpen = m_addModel = !m_addModel;
-                if (ImGui::MenuItem("Models")) m_widowOpen = m_modelsPanel = !m_modelsPanel;
 
                 ImGui::EndMenu();
             }
@@ -284,25 +281,6 @@ namespace editor {
             ImGuiFileDialog::Instance()->Close();
             m_widowOpen = m_addModel = !m_addModel;
         }
-    }
-
-    void Editor::modelsPanel() {
-        ImGui::SetNextWindowSize({-1, 700.0f});
-        ImGui::Begin("Models Panel", &m_modelsPanel);
-        {
-            for (auto& modelName : m_modelsNames) {
-                if (ImGui::CollapsingHeader(modelName.c_str())) {
-                    auto& model = resourceManager->getModel(core::tools::hashString(modelName));
-
-                    for (auto& node : model.getNodes()) {
-                        loadNode(node);
-                    }
-                }
-            }
-        }
-        ImGui::End();
-
-        m_widowOpen = m_modelsPanel;
     }
 
     void Editor::loadNode(core::Model::Node& node) {
