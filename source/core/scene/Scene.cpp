@@ -2,7 +2,6 @@
 
 #include <fstream>
 
-#include "GLFW/glfw3.h"
 #include "fmt/format.h"
 #include "imgui.h"
 
@@ -120,12 +119,19 @@ namespace core {
     void Scene::drawNode(const Model::Node &node, core::Model& model) {
         if (node.mesh > 0) {
             auto& transform = m_registry.get<core::Transform>(m_currentEntity);
+            glm::mat4 modelMatrix;
 
-            core::Application::renderer->renderMesh(core::Application::resourceManager->getMesh(node.mesh), transform.worldTransformMatrix() * node.matrix);
+            if (model.getBaseMesh().id == node.id) {
+                modelMatrix = transform.worldTransformMatrix();
+            } else {
+                modelMatrix = transform.worldTransformMatrix() * node.matrix;
+            }
+
+            core::Application::renderer->renderMesh(core::Application::resourceManager->getMesh(node.mesh), modelMatrix);
         }
 
         for (auto& child : node.children) {
-            drawNode(child, model);
+            drawNode(model.getNode(child), model);
         }
     }
 

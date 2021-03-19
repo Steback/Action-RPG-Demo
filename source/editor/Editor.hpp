@@ -46,7 +46,7 @@ namespace editor {
 
         void addModel();
 
-        void loadNode(core::Model::Node& node);
+        void loadNode(core::Model::Node& node, core::Model& model);
 
     private:
         size_t m_entitySelected = -1;

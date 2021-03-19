@@ -27,6 +27,10 @@ namespace core {
         return m_nodes[id];
     }
 
+    Model::Node &Model::getBaseMesh() {
+        return m_nodes[m_baseMesh];
+    }
+
     std::vector<Model::Node>& Model::getNodes() {
         return m_nodes;
     }
@@ -35,9 +39,10 @@ namespace core {
 
     }
 
-    void Model::loadNode(const tinygltf::Node &inputNode, const tinygltf::Model &inputModel, core::Model::Node* parent) {
+    void Model::loadNode(const tinygltf::Node &inputNode, const tinygltf::Model &inputModel, int parentID) {
         glm::mat4 matrix(1.0f);
         Model::Node node{};
+        node.id = m_nodes.size();
         node.name = inputNode.name;
 
         if (inputNode.translation.size() == 3) {
@@ -67,34 +72,29 @@ namespace core {
             const tinygltf::Image image = inputModel.images[texture.source];
             uint64_t textureID = core::tools::hashString(image.name);
 
+            if (inputNode.mesh == inputModel.meshes.size() - 1) m_baseMesh = node.id;
+
             node.mesh = core::Application::resourceManager->loadMesh(node.name, mesh, inputModel, textureID);
         }
 
-        if (parent) {
-            node.id = parent->children.size();
-            node.parent = parent;
+        if (parentID != -1) {
+            auto& parent = m_nodes[parentID];
+            node.parent = parent.id;
 
             // TODO: Find a better solution for matrix attributes bug
             auto it = std::find(m_conflictsNodes.begin(), m_conflictsNodes.end(), node.name);
+            if (it == m_conflictsNodes.end()) node.matrix = parent.matrix * node.matrix;
 
-            if (it == m_conflictsNodes.end()) node.matrix = parent->matrix * node.matrix;
-
-            parent->children.push_back(node);
-
-            loadChildren(inputNode, inputModel, &parent->children[node.id]);
+            parent.children.push_back(node.id);
         } else {
-            node.id = m_nodes.size();
-            node.parent = nullptr;
-            m_nodes.push_back(node);
-
-            loadChildren(inputNode, inputModel, &m_nodes[node.id]);
+            node.parent = -1;
         }
-    }
 
-    void Model::loadChildren(const tinygltf::Node& inputNode, const tinygltf::Model& inputModel, core::Model::Node* parent) {
+        m_nodes.push_back(node);
+
         if (!inputNode.children.empty()) {
             for (size_t i : inputNode.children) {
-                loadNode(inputModel.nodes[i], inputModel, parent);
+                loadNode(inputModel.nodes[i], inputModel, node.id);
             }
         }
     }

@@ -3,6 +3,7 @@
 #include "imgui.h"
 #include "glm/gtc/type_ptr.hpp"
 #include "fmt/format.h"
+#include <glm/gtx/matrix_decompose.inl>
 
 #include "components/MeshModel.hpp"
 #include "renderer/UIImGui.hpp"
@@ -118,6 +119,7 @@ namespace editor {
         {
             if (m_entitySelected != -1) {
                 auto& entity = m_scene->getEntity(m_entitySelected);
+                auto& transform = m_scene->getComponent<core::Transform>(entity.id);
 
                 ImGui::Text("Entity ID: %i", entity.id);
 
@@ -129,7 +131,6 @@ namespace editor {
 
                 if (entity.components & core::TRANSFORM) {
                     if (ImGui::CollapsingHeader("Transform")) {
-                        auto& transform = m_scene->getComponent<core::Transform>(entity.id);
 
                         ImGui::InputFloat3("Position", glm::value_ptr(transform.getPosition()));
                         ImGui::InputFloat3("Size", glm::value_ptr(transform.getSize()));
@@ -156,7 +157,20 @@ namespace editor {
 
                                 if (ImGui::Selectable(m_modelsNames[i].c_str(), is_selected)) {
                                     m_entitiesInfo[m_entitySelected].model = currentModel = i;
-                                    meshModel.setModelID(core::tools::hashString(m_modelsNames[currentModel]));
+                                    uint64_t modelID = core::tools::hashString(m_modelsNames[currentModel]);
+                                    meshModel.setModelID(modelID);
+
+                                    auto& model = resourceManager->getModel(modelID);
+                                    auto& node = model.getBaseMesh();
+
+                                    glm::vec3 tempTranslate, tempScale, tempSkew;
+                                    glm::vec4 tempPerspective;
+                                    glm::quat tempOrientation;
+
+                                    glm::decompose(node.matrix, tempScale, tempOrientation, tempTranslate, tempSkew, tempPerspective);
+
+                                    transform.getPosition() += tempTranslate;
+                                    transform.getRotation() += glm::eulerAngles(tempOrientation);
                                 }
 
                                 if (is_selected) ImGui::SetItemDefaultFocus();
@@ -168,9 +182,7 @@ namespace editor {
                         if (ImGui::CollapsingHeader(m_modelsNames[m_entitiesInfo[m_entitySelected].model].c_str())) {
                             auto& model = resourceManager->getModel(meshModel.getModelID());
 
-                            for (auto& node : model.getNodes()) {
-                                loadNode(node);
-                            }
+                            loadNode(model.getNode(0), model);
                         }
                     }
                 }
@@ -251,8 +263,9 @@ namespace editor {
 
     void Editor::addEntity() {
         auto& entity = m_scene->addEntity("Object", core::PLAYER);
+        uint64_t modelID = core::tools::hashString("cube");
 
-        m_scene->registry().emplace<core::MeshModel>(entity.enttID, core::tools::hashString("cube"));
+        m_scene->registry().emplace<core::MeshModel>(entity.enttID, modelID);
         m_scene->registry().emplace<core::Transform>(entity.enttID, m_scene->getCamera().getCenter(), DEFAULT_SIZE, SPEED_ZERO, DEFAULT_ROTATION);
         entity.components = core::MODEL | core::TRANSFORM;
 
@@ -283,7 +296,7 @@ namespace editor {
         }
     }
 
-    void Editor::loadNode(core::Model::Node& node) {
+    void Editor::loadNode(core::Model::Node& node, core::Model& model) {
         if (ImGui::TreeNode(node.name.c_str())) {
             ImGui::Text("ID: %u", node.id);
 
@@ -304,7 +317,7 @@ namespace editor {
             }
 
             for (auto& child : node.children) {
-                loadNode(child);
+                loadNode(model.getNode(child), model);
             }
 
             ImGui::TreePop();

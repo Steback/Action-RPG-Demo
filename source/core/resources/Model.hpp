@@ -35,9 +35,9 @@ namespace core {
             uint id;
             std::string name;
             glm::mat4 matrix;
-            std::vector<Node> children;
+            std::vector<int> children;
             uint64_t mesh;
-            Node* parent;
+            int parent;
         };
 
     public:
@@ -49,16 +49,17 @@ namespace core {
 
         Node& getNode(uint id);
 
+        Node& getBaseMesh();
+
         std::vector<Node>& getNodes();
 
         void cleanup();
 
-        void loadNode(const tinygltf::Node& inputNode, const tinygltf::Model& inputModel, core::Model::Node* parent = nullptr);
-
-        void loadChildren(const tinygltf::Node& inputNode, const tinygltf::Model& inputModel, core::Model::Node* parent);
+        void loadNode(const tinygltf::Node& inputNode, const tinygltf::Model& inputModel, int parentID = -1);
 
     private:
         std::vector<Node> m_nodes;
+        int m_baseMesh;
     };
 
 } // namespace core
