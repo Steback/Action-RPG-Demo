@@ -16,8 +16,12 @@ namespace core {
 
     Model::Model() = default;
 
-    Model::Model(std::vector<Node> nodes)
-            : m_nodes(std::move(nodes)) {
+    Model::Model(std::string name) : m_name(std::move(name)) {
+
+    }
+
+    Model::Model(std::vector<Node> nodes, std::string name)
+            : m_nodes(std::move(nodes)), m_name(std::move(name)) {
 
     }
 
@@ -97,6 +101,10 @@ namespace core {
                 loadNode(inputModel.nodes[i], inputModel, node.id);
             }
         }
+    }
+
+    std::string &Model::getName() {
+        return m_name;
     }
 
 } // namespace core

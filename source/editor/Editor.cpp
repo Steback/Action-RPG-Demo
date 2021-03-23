@@ -25,7 +25,14 @@ namespace editor {
         m_scene->loadScene("../data/basicScene.json", true);
 
         for (auto& entity : m_scene->getEntities()) {
-            m_entitiesInfo.push_back({entity.id, entity.name, 0});
+            auto& model = m_scene->getComponent<core::MeshModel>(entity.id);
+            int modelID;
+
+            for (int i = 0; i < m_modelsNames.size(); ++i) {
+                if (m_modelsNames[i] == resourceManager->getModel(model.getModelID()).getName()) modelID = i;
+            }
+
+            m_entitiesInfo.push_back({entity.id, entity.name, modelID});
         }
 
         m_scene->getCamera() = core::Camera({45.0f, 45.0f}, {0.0f, 0.0f, 0.0f}, 0.5f, 10.0f, 10.0f);
@@ -58,6 +65,8 @@ namespace editor {
 
         if (m_saveScene) saveScene();
 
+        if (m_loadScene) loadScene();
+
         drawGizmo();
 
         core::UIImGui::render();
@@ -72,7 +81,7 @@ namespace editor {
             if (ImGui::BeginMenu("File")) {
                 ImGui::MenuItem("New");
                 if (ImGui::MenuItem("Save")) m_widowOpen = m_saveScene = !m_saveScene;
-                ImGui::MenuItem("Open");
+                if (ImGui::MenuItem("Open")) m_widowOpen = m_loadScene = !m_loadScene;
 
                 ImGui::EndMenu();
             }
@@ -106,11 +115,7 @@ namespace editor {
         ImGui::Begin("Entities", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
         {
             for (size_t i = 0; i < m_entitiesInfo.size(); ++i) {
-                char buf[32];
-
-                sprintf(buf, "%s", m_entitiesInfo[i].name.c_str());
-
-                if (ImGui::Selectable(buf, m_entitySelected == i)) m_entitySelected = i;
+                if (ImGui::Selectable(m_entitiesInfo[i].name.c_str(), m_entitySelected == i)) m_entitySelected = i;
             }
 
         }
@@ -126,8 +131,9 @@ namespace editor {
 
                 ImGui::Text("Entity ID: %i", entity.id);
 
-                ImGui::InputText("Entity name", entity.name.data(), 30);
-                m_entitiesInfo[m_entitySelected].name = entity.name;
+                char* name = const_cast<char *>(entity.name.c_str());
+                ImGui::InputText("Entity name", name, 30);
+                m_entitiesInfo[m_entitySelected].name = entity.name = name;
 
                 ImGui::Text("Flags %lu", entity.flags);
 
@@ -304,7 +310,6 @@ namespace editor {
         if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) {
             if (ImGuiFileDialog::Instance()->IsOk()) {
                 std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
-                std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
                 int idx = filePathName.rfind('/');
                 std::string fileName = filePathName.substr(idx + 1, filePathName.size());
 
@@ -350,18 +355,55 @@ namespace editor {
 
     void Editor::saveScene() {
         if (m_saveScene)
-            ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose a Directory", nullptr, "../data/");
+            ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose a Directory", ".json", "../data/");
 
         if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) {
             if (ImGuiFileDialog::Instance()->IsOk()) {
-                std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
-                filePath.append(".json");
+                std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
 
-                m_scene->saveScene(filePath, true);
+                m_scene->saveScene(filePathName, true);
             }
 
             ImGuiFileDialog::Instance()->Close();
             m_widowOpen = m_saveScene = !m_saveScene;
+        }
+    }
+
+    void Editor::loadScene() {
+        if (m_loadScene)
+            ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose a Directory", ".json", "../data/");
+
+
+        if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) {
+            if (ImGuiFileDialog::Instance()->IsOk()) {
+                std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+
+                int idx = filePathName.rfind('/');
+                std::string fileName = filePathName.substr(idx + 1, filePathName.size());
+
+                m_entitiesInfo.clear();
+
+                idx = fileName.rfind('.');
+                m_sceneName  = fileName.substr(0, idx);
+
+                m_sceneLoaded = true;
+
+                m_scene->loadScene(filePathName, true);
+
+                for (auto& entity : m_scene->getEntities()) {
+                    auto& model = m_scene->getComponent<core::MeshModel>(entity.id);
+                    int modelID;
+
+                    for (int i = 0; i < m_modelsNames.size(); ++i) {
+                        if (m_modelsNames[i] == resourceManager->getModel(model.getModelID()).getName()) modelID = i;
+                    }
+
+                    m_entitiesInfo.push_back({entity.id, entity.name, modelID});
+                }
+            }
+
+            ImGuiFileDialog::Instance()->Close();
+            m_widowOpen = m_loadScene = !m_loadScene;
         }
     }
 

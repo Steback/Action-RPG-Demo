@@ -2,7 +2,7 @@
     "camera": {
         "angles": {
             "pitch": 45.0,
-            "yaw": 0.0
+            "yaw": 90.0
         },
         "distance": 10.0,
         "rotateSpeed": 10.0,
@@ -16,12 +16,12 @@
     "entities": [
         {
             "model": {
-                "name": 1271
+                "name": "skeletons"
             },
-            "name": "Object",
+            "name": "Skeletons",
             "transform": {
                 "position": [
-                    0.0,
+                    -3.0,
                     0.0,
                     0.0
                 ],
@@ -29,6 +29,30 @@
                     0.0,
                     0.0,
                     0.0
+                ],
+                "size": [
+                    1.0,
+                    1.0,
+                    1.0
+                ],
+                "speed": 0.0
+            }
+        },
+        {
+            "model": {
+                "name": "hero"
+            },
+            "name": "Hero",
+            "transform": {
+                "position": [
+                    0.0,
+                    0.0,
+                    -1.8044039507003617e-07
+                ],
+                "rotation": [
+                    3.1415927410125732,
+                    3.1415927410125732,
+                    3.1415927410125732
                 ],
                 "size": [
                     1.0,

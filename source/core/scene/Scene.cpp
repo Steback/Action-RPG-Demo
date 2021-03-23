@@ -28,8 +28,7 @@ namespace core {
                 transform.getPosition() = camera.getCenter() + (camera.getDirection() * camera.getDistance());
                 camera.getEye() = transform.getPosition();
             } else {
-                auto& transform = m_registry.get<core::Transform>(entity.enttID);
-                transform.update(deltaTime);
+//                m_registry.get<core::Transform>(entity.enttID).update(deltaTime);
             }
         }
     }
@@ -49,7 +48,11 @@ namespace core {
     }
 
     void Scene::cleanup() {
+        for (auto& entity : m_entities) {
+            m_registry.destroy(entity.enttID);
+        }
 
+        m_entities.clear();
     }
 
     core::Entity& Scene::addEntity(const std::string &name, uint32_t flags) {
@@ -82,6 +85,8 @@ namespace core {
     }
 
     void Scene::loadScene(const std::string &uri, bool editorBuild) {
+        cleanup();
+
         json scene;
         std::ifstream file(uri);
         file >> scene;
@@ -118,7 +123,26 @@ namespace core {
         }
 
         for (auto& e : scene["entities"]) {
+            auto& entity = addEntity(e["name"], EntityFlags::OBJECT);
 
+            if (!e["transform"].empty()) {
+                auto& transform = e["transform"];
+
+                m_registry.emplace<core::Transform>(entity.enttID,
+                                                    glm::vec3(transform["position"][0].get<float>(), transform["position"][1].get<float>(), transform["position"][2].get<float>()),
+                                                    glm::vec3(transform["size"][0].get<float>(), transform["size"][1].get<float>(), transform["size"][2].get<float>()),
+                                                    transform["speed"].get<float>(),
+                                                    glm::vec3(transform["rotation"][0].get<float>(), transform["rotation"][1].get<float>(), transform["rotation"][2].get<float>()));
+            }
+
+            if (!e["model"].empty()) {
+                auto& model = e["model"];
+
+                core::Application::resourceManager->createModel(model["name"].get<std::string>() + ".gltf", model["name"]);
+                m_registry.emplace<core::MeshModel>(entity.enttID, core::tools::hashString(model["name"].get<std::string>()));
+            }
+
+            entity.components = ComponentFlags::TRANSFORM | ComponentFlags::MODEL;
         }
     }
 
@@ -153,7 +177,7 @@ namespace core {
         scene["entities"] = {};
 
         for (auto& entity : m_entities) {
-            if (entity.components & core::TRANSFORM && !(entity.components & core::CAMERA)) {
+            if (!(entity.flags & EntityFlags::CAMERA)) {
                 size_t entitiesCount = scene["entities"].size();
 
                 scene["entities"].push_back({
@@ -190,7 +214,7 @@ namespace core {
                     auto& model = m_registry.get<core::MeshModel>(entity.enttID);
 
                     scene["entities"][entitiesCount]["model"] = {
-                            {"name", model.getModelID()}
+                            {"name", core::Application::resourceManager->getModel(model.getModelID()).getName()}
                     };
                 }
             }

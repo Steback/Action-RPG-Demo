@@ -43,7 +43,9 @@ namespace core {
     public:
         Model();
 
-        explicit Model(std::vector<Node> nodes);
+        Model(std::string  name);
+
+        explicit Model(std::vector<Node> nodes, std::string  name);
 
         ~Model();
 
@@ -57,9 +59,12 @@ namespace core {
 
         void loadNode(const tinygltf::Node& inputNode, const tinygltf::Model& inputModel, int parentID = -1);
 
+        std::string& getName();
+
     private:
         std::vector<Node> m_nodes;
-        int m_baseMesh;
+        int m_baseMesh{};
+        std::string m_name{};
     };
 
 } // namespace core

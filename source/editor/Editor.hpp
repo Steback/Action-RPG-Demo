@@ -50,6 +50,8 @@ namespace editor {
 
         void saveScene();
 
+        void loadScene();
+
     private:
         size_t m_entitySelected = -1;
         bool m_gizmoDraw = true;
@@ -60,8 +62,11 @@ namespace editor {
         bool m_addModel = false;
         bool m_widowOpen = false;
         bool m_saveScene = false;
+        bool m_loadScene = false;
         std::vector<std::string> m_modelsNames;
         std::vector<EntityInfo> m_entitiesInfo;
+        std::string m_sceneName{};
+        bool m_sceneLoaded =  false;
     };
 
 } // namespace editor

@@ -218,7 +218,7 @@ namespace core {
 
         if (fileLoaded) {
             uint64_t modelName = core::tools::hashString(name);
-            m_models[modelName] = core::Model();
+            m_models[modelName] = core::Model(name);
 
             for (auto& image : inputModel.images) createTexture(image.uri, image.name);
 
