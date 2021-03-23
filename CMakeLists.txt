@@ -13,8 +13,10 @@ conan_basic_setup(NO_OUTPUT_DIRS)
 # Source code and link
 add_subdirectory(source/core)
 add_subdirectory(source/editor)
+add_subdirectory(source/game)
 
 target_link_libraries(Editor core ${CONAN_LIBS} ${VALIDATION_LAYERS})
+target_link_libraries(Game core ${CONAN_LIBS} ${VALIDATION_LAYERS})
 
 ### COMPILE SHADERS ###
 set(SHADERS_COMPILE_SCRIPT ${PROJECT_SOURCE_DIR}/scripts/shadersCompile.py)

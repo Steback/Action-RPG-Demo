@@ -17,6 +17,7 @@ venv/
 bin/Editor
 bin/shaders/
 bin/imgui.ini
+bin/Game
 
 ### Assets ###
 assets/textures
