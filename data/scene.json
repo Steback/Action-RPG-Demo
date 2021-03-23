@@ -1,0 +1,42 @@
+{
+    "camera": {
+        "angles": {
+            "pitch": 45.0,
+            "yaw": 0.0
+        },
+        "distance": 10.0,
+        "rotateSpeed": 10.0,
+        "speed": 0.5,
+        "target": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        }
+    },
+    "entities": [
+        {
+            "model": {
+                "name": 1271
+            },
+            "name": "Object",
+            "transform": {
+                "position": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "size": [
+                    1.0,
+                    1.0,
+                    1.0
+                ],
+                "speed": 0.0
+            }
+        }
+    ]
+}

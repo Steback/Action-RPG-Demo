@@ -11,28 +11,33 @@
 #include "../camera/Camera.hpp"
 #include "../resources/ResourceManager.hpp"
 #include "../Constants.hpp"
+#include "../components/Transform.hpp"
+#include "../components/MeshModel.hpp"
 
 using json = nlohmann::json;
 
 
 namespace core {
 
-    enum EntityType {
-        CAMERA = 0,
-        PLAYER = 1
+    enum EntityFlags {
+        OBJECT = 1 << 0,
+        PLAYER = 1 << 1,
+        ENEMY = 1 << 2,
+        CAMERA = 1 << 3,
+        BUILDING = 1 << 4
     };
 
     enum ComponentFlags {
-        TRANSFORM = 0x01,
-        MODEL = 0x02
+        TRANSFORM = 1 << 0,
+        MODEL = 1 << 1,
     };
 
     struct Entity {
         entt::entity enttID;
         uint32_t id;
         std::string name;
-        EntityType type;
         uint32_t components;
+        uint64_t flags;
     };
 
     class Scene {
@@ -47,7 +52,7 @@ namespace core {
 
         void cleanup();
 
-        core::Entity& addEntity(const std::string& name, core::EntityType type);
+        core::Entity& addEntity(const std::string& name, uint32_t flags);
 
         core::Entity& getEntity(size_t ID);
 
@@ -59,7 +64,7 @@ namespace core {
 
         void loadScene(const std::string& uri, bool editorBuild = false);
 
-        void saveScene(const std::string& uri);
+        void saveScene(const std::string& uri, bool editorBuild = false);
 
         entt::registry& registry();
 

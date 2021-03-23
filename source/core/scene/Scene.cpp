@@ -1,12 +1,12 @@
 #include "Scene.hpp"
 
 #include <fstream>
+#include <iomanip>
 
 #include "fmt/format.h"
 #include "imgui.h"
 
 #include "../Application.hpp"
-#include "../components/MeshModel.hpp"
 
 
 namespace core {
@@ -16,11 +16,21 @@ namespace core {
     Scene::~Scene() = default;
 
     void Scene::update(float deltaTime) {
-        auto view = m_registry.view<core::Transform>();
+        for (auto& entity : m_entities) {
+            if (entity.flags & EntityFlags::CAMERA) {
+                auto& camera = m_registry.get<core::Camera>(entity.enttID);
+                auto& transform = m_registry.get<core::Transform>(entity.enttID);
 
-        for (auto& entity : view) {
-            auto& transform = view.get<core::Transform>(entity);
-            transform.update(deltaTime);
+                glm::vec2 angles = camera.getEulerAngles();
+
+                camera.setDirection(angles.x, angles.y);
+
+                transform.getPosition() = camera.getCenter() + (camera.getDirection() * camera.getDistance());
+                camera.getEye() = transform.getPosition();
+            } else {
+                auto& transform = m_registry.get<core::Transform>(entity.enttID);
+                transform.update(deltaTime);
+            }
         }
     }
 
@@ -42,13 +52,13 @@ namespace core {
 
     }
 
-    core::Entity& Scene::addEntity(const std::string &name, core::EntityType type) {
+    core::Entity& Scene::addEntity(const std::string &name, uint32_t flags) {
         core::Entity entity;
         entity.enttID = m_registry.create();
         entity.name = name;
         entity.id = m_entities.size();
-        entity.type = type;
         entity.components = 0;
+        entity.flags = flags;
 
         m_entities.push_back(entity);
 
@@ -81,30 +91,30 @@ namespace core {
         glm::vec3 target = {camera["target"]["x"].get<float>(), camera["target"]["y"].get<float>(), camera["target"]["z"].get<float>()};
 
         if (editorBuild) {
-            auto& entity = addEntity("Camera", core::CAMERA);
+            auto& entity = addEntity("Camera", EntityFlags::OBJECT | EntityFlags::CAMERA);
 
             m_registry.emplace<core::MeshModel>(entity.enttID, core::tools::hashString("cube"));
 
             glm::vec3 direction;
-
             float yaw = glm::radians(camera["angles"]["yaw"].get<float>());
             float pitch = glm::radians(camera["angles"]["pitch"].get<float>());
+            float distance = camera["distance"];
 
             direction.x = glm::cos(yaw) * glm::cos(pitch);
             direction.y = glm::sin(pitch);
             direction.z = glm::sin(yaw) * glm::cos(pitch);
 
-            glm::vec3 pos = target + (direction * camera["distance"].get<float>());
+            glm::vec3 pos = target + (direction * distance);
+            auto speed = camera["speed"].get<float>();
 
-            m_registry.emplace<core::Transform>(entity.enttID, pos, DEFAULT_SIZE * 0.1f, SPEED_ZERO, DEFAULT_ROTATION);
+            m_registry.emplace<core::Transform>(entity.enttID, pos, DEFAULT_SIZE * 0.1f, speed, direction);
+            m_registry.emplace<core::Camera>(entity.enttID, glm::vec2(yaw, pitch), target, speed, camera["rotateSpeed"].get<float>(), distance);
 
             entity.components = ComponentFlags::MODEL | ComponentFlags::TRANSFORM;
         } else {
             m_camera = core::Camera({camera["angles"]["yaw"].get<float>(), camera["angles"]["pitch"].get<float>()},
-                                    {0.0f, 1.0f, 0.f},
-                                    target,
-                                    camera["speed"].get<float>(), camera["rotateSpeed"].get<float>(),
-                                    camera["distance"], 45.0f, 0.01f, 100.f);
+                                    target, camera["speed"].get<float>(), camera["rotateSpeed"].get<float>(),
+                                    camera["distance"]);
         }
 
         for (auto& e : scene["entities"]) {
@@ -112,8 +122,83 @@ namespace core {
         }
     }
 
-    void Scene::saveScene(const std::string &uri) {
+    void Scene::saveScene(const std::string &uri, bool editorBuild) {
+        json scene;
+        core::Camera* camera;
 
+        if (editorBuild) {
+            camera = &m_registry.get<core::Camera>(m_entities[0].enttID);
+        } else {
+            camera = &m_camera;
+        }
+
+        auto target = camera->getCenter();
+        auto angles = glm::degrees(camera->getEulerAngles());
+
+        scene["camera"] = {
+                {"target", {
+                    {"x", target.x},
+                    {"y", target.y},
+                    {"z", target.z}
+                } },
+                { "angles", {
+                    {"yaw", angles.x},
+                    {"pitch", angles.y}
+                } },
+                { "speed", camera->getSpeed(), },
+                { "rotateSpeed", camera->getTurnSpeed() },
+                { "distance", camera->getDistance() }
+        };
+
+        scene["entities"] = {};
+
+        for (auto& entity : m_entities) {
+            if (entity.components & core::TRANSFORM && !(entity.components & core::CAMERA)) {
+                size_t entitiesCount = scene["entities"].size();
+
+                scene["entities"].push_back({
+                    {"name", entity.name},
+                });
+
+                if (entity.components & core::TRANSFORM) {
+                    auto& transform = m_registry.get<core::Transform>(entity.enttID);
+                    auto& position = transform.getPosition();
+                    auto& rotation = transform.getRotation();
+                    auto& size = transform.getSize();
+
+                    scene["entities"][entitiesCount]["transform"] = {
+                        { "position", {
+                            position.x,
+                            position.y,
+                            position.z
+                        } },
+                        { "rotation", {
+                            rotation.x,
+                            rotation.y,
+                            rotation.z
+                        } },
+                        { "size", {
+                            size.x,
+                            size.y,
+                            size.z
+                        } },
+                        {"speed", transform.getSpeed()}
+                    };
+                }
+
+                if (entity.components & core::MODEL) {
+                    auto& model = m_registry.get<core::MeshModel>(entity.enttID);
+
+                    scene["entities"][entitiesCount]["model"] = {
+                            {"name", model.getModelID()}
+                    };
+                }
+            }
+        }
+
+        std::ofstream file(uri.c_str());
+        file << std::setw(4) << scene;
+        file.close();
     }
 
     void Scene::drawNode(const Model::Node &node, core::Model& model) {

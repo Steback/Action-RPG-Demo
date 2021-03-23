@@ -28,14 +28,15 @@ namespace editor {
             m_entitiesInfo.push_back({entity.id, entity.name, 0});
         }
 
-        m_scene->getCamera() = core::Camera({45.0f, 45.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, 0.5f, 10.0f, 10.0f, 45.0f,
-                                            0.01f, 100.0f);
+        m_scene->getCamera() = core::Camera({45.0f, 45.0f}, {0.0f, 0.0f, 0.0f}, 0.5f, 10.0f, 10.0f);
     }
 
     void Editor::update() {
         cameraMovement();
 
         renderer->updateVP(m_scene->getCamera().getView(), m_scene->getCamera().getProjection(m_window->aspect()));
+
+        m_scene->update(m_deltaTime);
     }
 
     void Editor::draw() {
@@ -55,6 +56,8 @@ namespace editor {
 
         if (m_addModel) addModel();
 
+        if (m_saveScene) saveScene();
+
         drawGizmo();
 
         core::UIImGui::render();
@@ -67,9 +70,9 @@ namespace editor {
     void Editor::menuBar() {
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("File")) {
-                ImGui::MenuItem("New", nullptr, nullptr);
-                ImGui::MenuItem("Save", nullptr, nullptr);
-                ImGui::MenuItem("Open", nullptr, nullptr);
+                ImGui::MenuItem("New");
+                if (ImGui::MenuItem("Save")) m_widowOpen = m_saveScene = !m_saveScene;
+                ImGui::MenuItem("Open");
 
                 ImGui::EndMenu();
             }
@@ -126,10 +129,31 @@ namespace editor {
                 ImGui::InputText("Entity name", entity.name.data(), 30);
                 m_entitiesInfo[m_entitySelected].name = entity.name;
 
-                std::vector<const char*> entityTypes = {"CAMERA", "PLAYER"};
-                ImGui::Combo("Type", reinterpret_cast<int*>(&entity.type), entityTypes.data(), entityTypes.size());
+                ImGui::Text("Flags %lu", entity.flags);
 
-                if (entity.components & core::TRANSFORM) {
+                std::vector<const char*> entityTypes = {"CAMERA", "PLAYER"};
+
+                if (entity.flags & core::EntityFlags::CAMERA) {
+                    if (ImGui::CollapsingHeader("Camera")) {
+                        auto& camera = m_scene->getComponent<core::Camera>(entity.id);
+
+                        ImGui::InputFloat3("Eye", glm::value_ptr(camera.getEye()));
+                        ImGui::InputFloat3("Front", glm::value_ptr(camera.getCenter()));
+                        ImGui::Separator();
+
+                        glm::vec2 angles = glm::degrees(camera.getEulerAngles());
+                        ImGui::InputFloat2("Euler Angles", glm::value_ptr(angles));
+                        camera.getEulerAngles() = glm::radians(angles);
+
+                        ImGui::Separator();
+                        ImGui::InputFloat("FOV", &camera.getFovy());
+                        ImGui::Separator();
+                        ImGui::InputFloat("Velocity", &camera.getSpeed());
+                        ImGui::InputFloat("Turn Velocity", &camera.getTurnSpeed());
+                        ImGui::Separator();
+                        ImGui::InputFloat("Distances", &camera.getDistance());
+                    }
+                } else {
                     if (ImGui::CollapsingHeader("Transform")) {
 
                         ImGui::InputFloat3("Position", glm::value_ptr(transform.getPosition()));
@@ -203,8 +227,8 @@ namespace editor {
             ImGui::Separator();
             ImGui::InputFloat("FOV", &m_scene->getCamera().getFovy());
             ImGui::Separator();
-            ImGui::InputFloat("Velocity", &m_scene->getCamera().getVelocity());
-            ImGui::InputFloat("Turn Velocity", &m_scene->getCamera().getTurnVelocity());
+            ImGui::InputFloat("Velocity", &m_scene->getCamera().getSpeed());
+            ImGui::InputFloat("Turn Velocity", &m_scene->getCamera().getTurnSpeed());
             ImGui::Separator();
             ImGui::InputFloat("Distances", &m_scene->getCamera().getDistance());
         }
@@ -262,7 +286,7 @@ namespace editor {
     }
 
     void Editor::addEntity() {
-        auto& entity = m_scene->addEntity("Object", core::PLAYER);
+        auto& entity = m_scene->addEntity("Object", core::EntityFlags::OBJECT);
         uint64_t modelID = core::tools::hashString("cube");
 
         m_scene->registry().emplace<core::MeshModel>(entity.enttID, modelID);
@@ -321,6 +345,23 @@ namespace editor {
             }
 
             ImGui::TreePop();
+        }
+    }
+
+    void Editor::saveScene() {
+        if (m_saveScene)
+            ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose a Directory", nullptr, "../data/");
+
+        if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) {
+            if (ImGuiFileDialog::Instance()->IsOk()) {
+                std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
+                filePath.append(".json");
+
+                m_scene->saveScene(filePath, true);
+            }
+
+            ImGuiFileDialog::Instance()->Close();
+            m_widowOpen = m_saveScene = !m_saveScene;
         }
     }
 

@@ -48,6 +48,8 @@ namespace editor {
 
         void loadNode(core::Model::Node& node, core::Model& model);
 
+        void saveScene();
+
     private:
         size_t m_entitySelected = -1;
         bool m_gizmoDraw = true;
@@ -57,6 +59,7 @@ namespace editor {
         bool m_imguiDemo = false;
         bool m_addModel = false;
         bool m_widowOpen = false;
+        bool m_saveScene = false;
         std::vector<std::string> m_modelsNames;
         std::vector<EntityInfo> m_entitiesInfo;
     };

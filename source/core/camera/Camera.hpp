@@ -4,6 +4,8 @@
 
 #include "glm/glm.hpp"
 
+#include "../Constants.hpp"
+
 
 namespace core {
 
@@ -12,8 +14,7 @@ namespace core {
 
         Camera();
 
-        explicit Camera(const glm::vec2& angles, const glm::vec3& up, const glm::vec3& target, float speed, float rotateSpeed,
-                        float distance, float yFov, float zNear, float zFar);
+        explicit Camera(const glm::vec2& angles, const glm::vec3& target, float speed, float rotateSpeed, float distance);
 
         ~Camera();
 
@@ -21,7 +22,7 @@ namespace core {
 
         void rotate(float deltaTime, const glm::vec2& offset);
 
-        void setDirection(float yaw, float pitch);
+        void setDirection(float yaw, float pitch, bool radians = true);
 
         void setZoom(float deltaTime, glm::vec2& offset, bool& scrolling);
 
@@ -43,23 +44,25 @@ namespace core {
 
         float& getFarPlane();
 
-        float& getVelocity();
+        float& getSpeed();
 
-        float& getTurnVelocity();
+        float& getTurnSpeed();
 
         float& getDistance();
+
+        glm::vec3 getDirection() const ;
 
     private:
         glm::vec3 m_position{};
         glm::vec3 m_direction{};
         glm::vec3 m_target{};
-        glm::vec3 m_up{};
+        glm::vec3 m_up = YUP;
         float m_speed{};
         float m_rotateSpeed{};
         glm::vec2 m_eulerAngles{};
-        float m_yFov{};
-        float m_zNear{};
-        float m_zFar{};
+        float m_yFov = FOV;
+        float m_zNear = Z_NEAR_PLANE;
+        float m_zFar = Z_FAR_PLANE;
         float m_distance{};
     };
 

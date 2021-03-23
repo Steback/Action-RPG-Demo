@@ -36,6 +36,7 @@ namespace core {
 
     private:
         glm::vec3 m_position{};
+        // TODO: Change size vector for just scale float
         glm::vec3 m_size{};
         glm::vec3 m_rotation{};
         float m_speed{};

@@ -3,14 +3,15 @@
 #include "glm/gtc/matrix_transform.hpp"
 
 
+
 namespace core {
 
     Camera::Camera() = default;
 
-    Camera::Camera(const glm::vec2& angles, const glm::vec3& up, const glm::vec3& target, float speed, float rotateSpeed, float distance,
-                   float yFov, float zNear, float zFar) : m_eulerAngles(angles), m_up(up), m_target(target), m_speed(speed),
-                                                          m_rotateSpeed(rotateSpeed), m_distance(distance), m_yFov(yFov), m_zNear(zNear), m_zFar(zFar) {
-        setDirection(m_eulerAngles.x, m_eulerAngles.y);
+    Camera::Camera(const glm::vec2& angles, const glm::vec3& target, float speed, float rotateSpeed, float distance) :
+                    m_eulerAngles(angles), m_up(YUP), m_target(target), m_speed(speed), m_rotateSpeed(rotateSpeed),
+                    m_distance(distance) {
+        setDirection(m_eulerAngles.x, m_eulerAngles.y, false);
         m_position = m_target + (m_direction * m_distance);
     }
 
@@ -24,15 +25,21 @@ namespace core {
     void Camera::rotate(float deltaTime, const glm::vec2& offset) {
         m_eulerAngles += offset * deltaTime * m_rotateSpeed;
 
-        setDirection(m_eulerAngles.x, m_eulerAngles.y);
+        setDirection(m_eulerAngles.x, m_eulerAngles.y, false);
 
         m_position = m_target + (m_direction * m_distance);
     }
 
-    void Camera::setDirection(float yaw, float pitch) {
-        m_direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-        m_direction.y = sin(glm::radians(pitch));
-        m_direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    void Camera::setDirection(float yaw, float pitch, bool radians) {
+        if (radians) {
+            m_direction.x = glm::cos(yaw) * glm::cos(pitch);
+            m_direction.y = glm::sin(pitch);
+            m_direction.z = glm::sin(yaw) * glm::cos(pitch);
+        } else {
+            m_direction.x = glm::cos(glm::radians(yaw)) * glm::cos(glm::radians(pitch));
+            m_direction.y = glm::sin(glm::radians(pitch));
+            m_direction.z = glm::sin(glm::radians(yaw)) * glm::cos(glm::radians(pitch));
+        }
     }
 
     void Camera::setZoom(float deltaTime, glm::vec2 &offset, bool& scrolling) {
@@ -83,16 +90,20 @@ namespace core {
         return m_zFar;
     }
 
-    float &Camera::getVelocity() {
+    float &Camera::getSpeed() {
         return m_speed;
     }
 
-    float &Camera::getTurnVelocity() {
+    float &Camera::getTurnSpeed() {
         return m_rotateSpeed;
     }
 
     float &Camera::getDistance() {
         return m_distance;
+    }
+
+    glm::vec3 Camera::getDirection() const {
+        return m_direction;
     }
 
 } // namespace core

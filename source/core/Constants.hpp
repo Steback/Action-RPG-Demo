@@ -25,4 +25,9 @@ const glm::vec3 DEFAULT_SIZE = {1.0f, 1.0f, 1.0f};
 const float SPEED_ZERO = 0.0f;
 const glm::vec3 DEFAULT_ROTATION = {0.0f, 0.0f, 0.0f};
 
+const glm::vec3 YUP = {0.0f, 1.0f, 0.0f};
+const float Z_NEAR_PLANE = 0.01f;
+const float Z_FAR_PLANE = 100.00f;
+const float FOV = 45.0f;
+
 #endif //PROTOTYPE_ACTION_RPG_CONSTANTS_HPP
