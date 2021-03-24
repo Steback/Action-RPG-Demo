@@ -14,14 +14,10 @@ namespace game {
     }
 
     void Game::update() {
-        renderer->updateVP(m_scene->getCamera().getView(), m_scene->getCamera().getProjection(m_window->aspect()));
 
-        m_scene->update(m_deltaTime);
     }
 
-    void Game::draw() {
-        core::UIImGui::newFrame();
-
+    void Game::drawUI() {
         ImGui::InputFloat3("Eye", glm::value_ptr(m_scene->getCamera().getEye()));
         ImGui::InputFloat3("Front", glm::value_ptr(m_scene->getCamera().getCenter()));
         ImGui::InputFloat3("Up", glm::value_ptr(m_scene->getCamera().getUp()));
@@ -34,8 +30,6 @@ namespace game {
         ImGui::InputFloat("Turn Velocity", &m_scene->getCamera().getTurnSpeed());
         ImGui::Separator();
         ImGui::InputFloat("Distances", &m_scene->getCamera().getDistance());
-
-        core::UIImGui::render();
     }
 
     void Game::cleanup() {

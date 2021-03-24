@@ -38,7 +38,7 @@ namespace core {
 
         for (auto& entity : view) {
             auto& meshModel = view.get<core::MeshModel>(entity);
-            core::Model& model = core::Application::resourceManager->getModel(meshModel.getModelID());
+            core::Model& model = core::Application::m_resourceManager->getModel(meshModel.getModelID());
             m_currentEntity = entity;
 
             for (auto& node : model.getNodes()) {
@@ -138,7 +138,7 @@ namespace core {
             if (!e["model"].empty()) {
                 auto& model = e["model"];
 
-                core::Application::resourceManager->createModel(model["name"].get<std::string>() + ".gltf", model["name"]);
+                core::Application::m_resourceManager->createModel(model["name"].get<std::string>() + ".gltf", model["name"]);
                 m_registry.emplace<core::MeshModel>(entity.enttID, core::tools::hashString(model["name"].get<std::string>()));
             }
 
@@ -214,7 +214,7 @@ namespace core {
                     auto& model = m_registry.get<core::MeshModel>(entity.enttID);
 
                     scene["entities"][entitiesCount]["model"] = {
-                            {"name", core::Application::resourceManager->getModel(model.getModelID()).getName()}
+                            {"name", core::Application::m_resourceManager->getModel(model.getModelID()).getName()}
                     };
                 }
             }
@@ -236,7 +236,7 @@ namespace core {
                 modelMatrix = transform.worldTransformMatrix() * node.matrix;
             }
 
-            core::Application::renderer->renderMesh(core::Application::resourceManager->getMesh(node.mesh), modelMatrix);
+            core::Application::m_renderer->renderMesh(core::Application::m_resourceManager->getMesh(node.mesh), modelMatrix);
         }
 
         for (auto& child : node.children) {

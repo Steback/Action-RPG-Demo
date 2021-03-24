@@ -5,10 +5,12 @@
 
 namespace core {
 
-    std::unique_ptr<core::Renderer> Application::renderer;
-    core::ResourceManager* Application::resourceManager;
+    std::unique_ptr<core::Renderer> Application::m_renderer;
+    std::unique_ptr<core::ResourceManager> Application::m_resourceManager;
+    std::unique_ptr<core::Scene> Application::m_scene;
 
-    Application::Application(const std::string& appName, bool drawGrid) {
+    Application::Application(const std::string& appName, const glm::vec4& clearColor, bool drawGrid)
+            : m_clearColor(clearColor) {
         spdlog::info("[App] Start");
 
         m_window = std::make_unique<core::Window>(appName, 1776, 1000);
@@ -35,10 +37,10 @@ namespace core {
         VkPhysicalDeviceFeatures deviceFeatures{};
         m_device->createLogicalDevice(deviceFeatures, enabledExtensions);
 
-        renderer = std::make_unique<core::Renderer>(m_window, *m_instance, appName, m_device, m_surface);
-        resourceManager = new core::ResourceManager(m_device, renderer->getGraphicsQueue());
+        m_renderer = std::make_unique<core::Renderer>(m_window, *m_instance, appName, m_device, m_surface);
+        m_resourceManager = std::make_unique<core::ResourceManager>(m_device, m_renderer->getGraphicsQueue());
 
-        renderer->init(drawGrid);
+        m_renderer->init(drawGrid);
 
         m_scene = std::make_unique<core::Scene>();
 
@@ -53,27 +55,13 @@ namespace core {
         shutdown();
     }
 
-    void Application::render() {
-        renderer->acquireNextImage();
-        renderer->beginRenderPass();
-        {
-            renderer->setPipeline();
-            m_scene->render();
-            renderer->drawGrid();
-            draw();
-        }
-        renderer->endRenderPass();
-        renderer->drawFrame();
-    }
-
     void Application::shutdown() {
         vkDeviceWaitIdle(m_device->m_logicalDevice);
 
         cleanup();
         m_scene->cleanup();
-        renderer->cleanup();
-        resourceManager->cleanup();
-        delete resourceManager;
+        m_renderer->cleanup();
+        m_resourceManager->cleanup();
         m_device->destroy();
         delete m_device;
         m_instance.destroySurface(m_surface);
@@ -91,8 +79,17 @@ namespace core {
             m_deltaTime = now - m_lastTime;
             m_lastTime = now;
 
+            m_renderer->updateVP(m_scene->getCamera().getView(), m_scene->getCamera().getProjection(m_window->aspect()));
+
+            m_scene->update(m_deltaTime);
+
             update();
-            render();
+
+            core::UIImGui::newFrame();
+            drawUI();
+            core::UIImGui::render();
+
+            m_renderer->render(m_clearColor);
         }
     }
 

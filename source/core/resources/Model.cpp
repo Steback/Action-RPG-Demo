@@ -78,7 +78,7 @@ namespace core {
 
             if (inputNode.mesh == inputModel.meshes.size() - 1) m_baseMesh = node.id;
 
-            node.mesh = core::Application::resourceManager->loadMesh(node.name, mesh, inputModel, textureID);
+            node.mesh = core::Application::m_resourceManager->loadMesh(node.name, mesh, inputModel, textureID);
         }
 
         if (parentID != -1) {

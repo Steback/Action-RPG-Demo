@@ -32,7 +32,7 @@ namespace core {
 
         void cleanup();
 
-        void drawFrame();
+        void render(const glm::vec4& clearColor);
 
         void createRenderPass();
 
@@ -66,11 +66,9 @@ namespace core {
 
         VkQueue& getGraphicsQueue();
 
-        void acquireNextImage();
-
         void renderMesh(const core::Mesh& mesh, const glm::mat4& matrix);
 
-        void beginRenderPass();
+        void beginRenderPass(const glm::vec4& clearColor);
 
         void endRenderPass();
 

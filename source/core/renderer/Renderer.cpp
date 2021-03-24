@@ -2,7 +2,6 @@
 
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp"
 
 #include "Initializers.hpp"
 #include "Tools.hpp"
@@ -81,7 +80,32 @@ namespace core {
         spdlog::info("[Renderer] Cleaned");
     }
 
-    void Renderer::drawFrame() {
+    void Renderer::render(const glm::vec4& clearColor) {
+        vkWaitForFences(m_logicalDevice, 1, &m_fences[m_currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
+
+        VkResult result = m_swapChain.acquireNextImage(m_imageAvailableSemaphores[m_currentFrame], &m_indexImage);
+
+        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+            recreateSwapchain();
+            return;
+        } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+            throw_ex("Failed to acquire swap chain image");
+        }
+
+        if (m_imageFences[m_indexImage] != VK_NULL_HANDLE) {
+            vkWaitForFences(m_logicalDevice, 1, &m_imageFences[m_indexImage], VK_TRUE, std::numeric_limits<uint64_t>::max());
+        }
+
+        m_imageFences[m_indexImage] = m_fences[m_currentFrame];
+
+        beginRenderPass(clearColor);
+        {
+            setPipeline();
+            core::Application::m_scene->render();
+            drawGrid();
+        }
+        endRenderPass();
+
         m_ui.recordCommands(m_indexImage, m_swapChain.getExtent());
 
         VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphores[m_currentFrame] };
@@ -116,7 +140,7 @@ namespace core {
         presentInfo.pImageIndices = &m_indexImage;
         presentInfo.pResults = nullptr;
 
-        VkResult result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
+        result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_window->resize()) {
             m_window->resize() = false;
@@ -294,7 +318,7 @@ namespace core {
 
         std::array<VkDescriptorSetLayout, 2> layouts = {
                 m_descriptorSetLayout,
-                core::Application::resourceManager->getTextureDescriptorSetLayout()
+                core::Application::m_resourceManager->getTextureDescriptorSetLayout()
         };
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo = vk::initializers::pipelineLayoutCreateInfo();
@@ -420,7 +444,7 @@ namespace core {
         }
 
         m_ui.resize(m_swapChain);
-        core::Application::resourceManager->recreateResources();
+        core::Application::m_resourceManager->recreateResources();
     }
 
     void Renderer::cleanSwapChain() {
@@ -448,7 +472,7 @@ namespace core {
         m_swapChain.cleanup();
 
         vkDestroyDescriptorPool(m_logicalDevice, m_descriptorPool, nullptr);
-        core::Application::resourceManager->cleanupResources();
+        core::Application::m_resourceManager->cleanupResources();
     }
 
     void Renderer:: createDescriptorSetLayout() {
@@ -610,25 +634,6 @@ namespace core {
         return m_graphicsQueue;
     }
 
-    void Renderer::acquireNextImage() {
-        vkWaitForFences(m_logicalDevice, 1, &m_fences[m_currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
-
-        VkResult result = m_swapChain.acquireNextImage(m_imageAvailableSemaphores[m_currentFrame], &m_indexImage);
-
-        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-            recreateSwapchain();
-            return;
-        } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-            throw_ex("Failed to acquire swap chain image");
-        }
-
-        if (m_imageFences[m_indexImage] != VK_NULL_HANDLE) {
-            vkWaitForFences(m_logicalDevice, 1, &m_imageFences[m_indexImage], VK_TRUE, std::numeric_limits<uint64_t>::max());
-        }
-
-        m_imageFences[m_indexImage] = m_fences[m_currentFrame];
-    }
-
     void Renderer::renderMesh(const Mesh &mesh, const glm::mat4& matrix) {
         m_mvp.model = matrix;
 
@@ -643,7 +648,7 @@ namespace core {
 
         std::array<VkDescriptorSet, 2> descriptorSetGroup = {
                 m_descriptorSets[m_indexImage],
-                core::Application::resourceManager->getTexture(mesh.getTextureId()).getDescriptorSet()
+                core::Application::m_resourceManager->getTexture(mesh.getTextureId()).getDescriptorSet()
         };
 
         vkCmdBindDescriptorSets(m_commandBuffers[m_indexImage], VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -658,9 +663,9 @@ namespace core {
                          1, 0, 0, 0);
     }
 
-    void Renderer::beginRenderPass() {
+    void Renderer::beginRenderPass(const glm::vec4& clearColor) {
         std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = {0.24f, 0.24f, 0.24f, 1.0f};
+        clearValues[0].color = {clearColor.x, clearColor.y, clearColor.z, clearColor.w};
         clearValues[1].depthStencil = {1.0f, 0};
 
         VkRenderPassBeginInfo renderPassInfo = vk::initializers::renderPassBeginInfo();

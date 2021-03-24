@@ -12,14 +12,14 @@
 
 namespace editor {
 
-    Editor::Editor() : core::Application("Editor", true), m_currentOperation(ImGuizmo::OPERATION::TRANSLATE) {
+    Editor::Editor() : core::Application("Editor", {0.24f, 0.24f, 0.24f, 1.0f}, true), m_currentOperation(ImGuizmo::OPERATION::TRANSLATE) {
 
     }
 
     Editor::~Editor() = default;
 
     void Editor::init() {
-        resourceManager->createModel("cube.gltf", "cube");
+        m_resourceManager->createModel("cube.gltf", "cube");
         m_modelsNames.emplace_back("cube");
 
         m_scene->loadScene("../data/basicScene.json", true);
@@ -29,7 +29,7 @@ namespace editor {
             int modelID;
 
             for (int i = 0; i < m_modelsNames.size(); ++i) {
-                if (m_modelsNames[i] == resourceManager->getModel(model.getModelID()).getName()) modelID = i;
+                if (m_modelsNames[i] == m_resourceManager->getModel(model.getModelID()).getName()) modelID = i;
             }
 
             m_entitiesInfo.push_back({entity.id, entity.name, modelID});
@@ -41,14 +41,12 @@ namespace editor {
     void Editor::update() {
         cameraMovement();
 
-        renderer->updateVP(m_scene->getCamera().getView(), m_scene->getCamera().getProjection(m_window->aspect()));
+        m_renderer->updateVP(m_scene->getCamera().getView(), m_scene->getCamera().getProjection(m_window->aspect()));
 
         m_scene->update(m_deltaTime);
     }
 
-    void Editor::draw() {
-        core::UIImGui::newFrame();
-
+    void Editor::drawUI() {
         if (m_imguiDemo) {
             ImGui::ShowDemoWindow(&m_imguiDemo);
             m_widowOpen = !m_widowOpen;
@@ -68,8 +66,6 @@ namespace editor {
         if (m_loadScene) loadScene();
 
         drawGizmo();
-
-        core::UIImGui::render();
     }
 
     void Editor::cleanup() {
@@ -190,7 +186,7 @@ namespace editor {
                                     uint64_t modelID = core::tools::hashString(m_modelsNames[currentModel]);
                                     meshModel.setModelID(modelID);
 
-                                    auto& model = resourceManager->getModel(modelID);
+                                    auto& model = m_resourceManager->getModel(modelID);
                                     auto& node = model.getBaseMesh();
 
                                     glm::vec3 tempTranslate, tempScale, tempSkew;
@@ -210,7 +206,7 @@ namespace editor {
                         }
 
                         if (ImGui::CollapsingHeader(m_modelsNames[m_entitiesInfo[m_entitySelected].model].c_str())) {
-                            auto& model = resourceManager->getModel(meshModel.getModelID());
+                            auto& model = m_resourceManager->getModel(meshModel.getModelID());
 
                             loadNode(model.getNode(0), model);
                         }
@@ -316,7 +312,7 @@ namespace editor {
                 idx = fileName.rfind('.');
                 std::string modelName = fileName.substr(0, idx);
 
-                resourceManager->createModel(fileName, modelName);
+                m_resourceManager->createModel(fileName, modelName);
                 m_modelsNames.emplace_back(modelName);
             }
 
@@ -395,7 +391,7 @@ namespace editor {
                     int modelID;
 
                     for (int i = 0; i < m_modelsNames.size(); ++i) {
-                        if (m_modelsNames[i] == resourceManager->getModel(model.getModelID()).getName()) modelID = i;
+                        if (m_modelsNames[i] == m_resourceManager->getModel(model.getModelID()).getName()) modelID = i;
                     }
 
                     m_entitiesInfo.push_back({entity.id, entity.name, modelID});

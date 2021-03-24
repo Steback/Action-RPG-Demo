@@ -27,7 +27,7 @@ namespace editor {
 
         void update() override;
 
-        void draw() override;
+        void drawUI() override;
 
         void cleanup() override;
 
