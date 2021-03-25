@@ -55,8 +55,6 @@ namespace core {
 
         std::vector<Node>& getNodes();
 
-        void cleanup();
-
         void loadNode(const tinygltf::Node& inputNode, const tinygltf::Model& inputModel, int parentID = -1);
 
         std::string& getName();

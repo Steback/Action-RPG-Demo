@@ -18,18 +18,14 @@ namespace game {
     }
 
     void Game::drawUI() {
-        ImGui::InputFloat3("Eye", glm::value_ptr(m_scene->getCamera().getEye()));
-        ImGui::InputFloat3("Front", glm::value_ptr(m_scene->getCamera().getCenter()));
-        ImGui::InputFloat3("Up", glm::value_ptr(m_scene->getCamera().getUp()));
-        ImGui::Separator();
-        ImGui::InputFloat2("Euler Angles", glm::value_ptr(m_scene->getCamera().getEulerAngles()));
-        ImGui::Separator();
-        ImGui::InputFloat("FOV", &m_scene->getCamera().getFovy());
-        ImGui::Separator();
-        ImGui::InputFloat("Velocity", &m_scene->getCamera().getSpeed());
-        ImGui::InputFloat("Turn Velocity", &m_scene->getCamera().getTurnSpeed());
-        ImGui::Separator();
-        ImGui::InputFloat("Distances", &m_scene->getCamera().getDistance());
+        ImGui::SetNextWindowSize({-1, -1});
+        ImGui::Begin("Debug", nullptr);
+        {
+            ImGui::Text("Delta time: %f", m_deltaTime);
+            ImGui::Text("Delta time: %f", 1 / 60.0f);
+            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        }
+        ImGui::End();
     }
 
     void Game::cleanup() {

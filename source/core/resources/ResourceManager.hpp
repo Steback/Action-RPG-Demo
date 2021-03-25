@@ -3,6 +3,7 @@
 
 
 #include <vector>
+#include <memory>
 
 #include "vulkan/vulkan.h"
 
@@ -34,9 +35,9 @@ namespace core {
 
         void generateMipmaps(const core::Texture& texture, VkFormat format, VkExtent2D size, uint32_t mipLevels);
 
-        void createModel(const std::string& uri, const std::string& name);
+        uint64_t createModel(const std::string& uri, const std::string& name);
 
-        core::Model& getModel(uint64_t id);
+        std::shared_ptr<core::Model> getModel(uint64_t id);
 
         core::Mesh& getMesh(uint64_t id);
 
@@ -51,7 +52,7 @@ namespace core {
         vk::Device* m_device{};
         VkQueue m_graphicsQueue{};
         std::unordered_map<uint64_t, core::Texture> m_textures;
-        std::unordered_map<uint64_t, core::Model> m_models;
+        std::unordered_map<uint64_t, std::shared_ptr<core::Model>> m_models;
         std::unordered_map<uint64_t, core::Mesh> m_meshes;
         VkDescriptorPool m_descriptorPool{};
         VkDescriptorSetLayout m_descriptorSetLayout{};

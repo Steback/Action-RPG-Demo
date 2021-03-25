@@ -28,22 +28,16 @@ namespace core {
                 transform.getPosition() = camera.getCenter() + (camera.getDirection() * camera.getDistance());
                 camera.getEye() = transform.getPosition();
             } else {
-//                m_registry.get<core::Transform>(entity.enttID).update(deltaTime);
+                m_registry.get<core::Transform>(entity.enttID).update(deltaTime);
             }
         }
     }
 
     void Scene::render() {
-        auto view = m_registry.view<core::MeshModel>();
+        auto view = m_registry.view<core::Render>();
 
         for (auto& entity : view) {
-            auto& meshModel = view.get<core::MeshModel>(entity);
-            core::Model& model = core::Application::m_resourceManager->getModel(meshModel.getModelID());
-            m_currentEntity = entity;
-
-            for (auto& node : model.getNodes()) {
-                drawNode(node, model);
-            }
+            view.get<core::Render>(entity).render();
         }
     }
 
@@ -98,7 +92,7 @@ namespace core {
         if (editorBuild) {
             auto& entity = addEntity("Camera", EntityFlags::OBJECT | EntityFlags::CAMERA);
 
-            m_registry.emplace<core::MeshModel>(entity.enttID, core::tools::hashString("cube"));
+            m_registry.emplace<core::Render>(entity.enttID, core::tools::hashString("cube"), entity.id);
 
             glm::vec3 direction;
             float yaw = glm::radians(camera["angles"]["yaw"].get<float>());
@@ -138,8 +132,9 @@ namespace core {
             if (!e["model"].empty()) {
                 auto& model = e["model"];
 
-                core::Application::m_resourceManager->createModel(model["name"].get<std::string>() + ".gltf", model["name"]);
-                m_registry.emplace<core::MeshModel>(entity.enttID, core::tools::hashString(model["name"].get<std::string>()));
+                m_registry.emplace<core::Render>(entity.enttID,
+                                                 core::Application::m_resourceManager->createModel(model["name"].get<std::string>() + ".gltf", model["name"]),
+                                                 entity.id);
             }
 
             entity.components = ComponentFlags::TRANSFORM | ComponentFlags::MODEL;
@@ -211,10 +206,10 @@ namespace core {
                 }
 
                 if (entity.components & core::MODEL) {
-                    auto& model = m_registry.get<core::MeshModel>(entity.enttID);
+                    auto& model = m_registry.get<core::Render>(entity.enttID);
 
                     scene["entities"][entitiesCount]["model"] = {
-                            {"name", core::Application::m_resourceManager->getModel(model.getModelID()).getName()}
+                            {"name", model.getName()}
                     };
                 }
             }
@@ -223,25 +218,6 @@ namespace core {
         std::ofstream file(uri.c_str());
         file << std::setw(4) << scene;
         file.close();
-    }
-
-    void Scene::drawNode(const Model::Node &node, core::Model& model) {
-        if (node.mesh > 0) {
-            auto& transform = m_registry.get<core::Transform>(m_currentEntity);
-            glm::mat4 modelMatrix;
-
-            if (model.getBaseMesh().id == node.id) {
-                modelMatrix = transform.worldTransformMatrix();
-            } else {
-                modelMatrix = transform.worldTransformMatrix() * node.matrix;
-            }
-
-            core::Application::m_renderer->renderMesh(core::Application::m_resourceManager->getMesh(node.mesh), modelMatrix);
-        }
-
-        for (auto& child : node.children) {
-            drawNode(model.getNode(child), model);
-        }
     }
 
     entt::registry &Scene::registry() {

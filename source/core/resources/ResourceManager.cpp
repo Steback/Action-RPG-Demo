@@ -20,8 +20,6 @@ namespace core {
     ResourceManager::~ResourceManager() = default;
 
     void ResourceManager::cleanup() {
-        for (auto& model : m_models) model.second.cleanup();
-
         for (auto& mesh : m_meshes) mesh.second.cleanup();
 
         for (auto& texture : m_textures) texture.second.cleanup(m_device->m_logicalDevice);
@@ -209,7 +207,7 @@ namespace core {
         VK_CHECK_RESULT(vkCreateDescriptorSetLayout(m_device->m_logicalDevice, &samplerLayoutInfo, nullptr, &m_descriptorSetLayout))
     }
 
-    void ResourceManager::createModel(const std::string &uri, const std::string& name) {
+    uint64_t ResourceManager::createModel(const std::string &uri, const std::string& name) {
         tinygltf::Model inputModel;
         tinygltf::TinyGLTF loader;
         std::string error, warning;
@@ -218,18 +216,22 @@ namespace core {
 
         if (fileLoaded) {
             uint64_t modelName = core::tools::hashString(name);
-            m_models[modelName] = core::Model(name);
+            m_models[modelName] = std::make_shared<core::Model>(name);
 
             for (auto& image : inputModel.images) createTexture(image.uri, image.name);
 
-            for (auto& nodeID : inputModel.scenes[0].nodes) m_models[modelName].loadNode(inputModel.nodes[nodeID], inputModel);
+            for (auto& nodeID : inputModel.scenes[0].nodes) m_models[modelName]->loadNode(inputModel.nodes[nodeID], inputModel);
+
+            return modelName;
 
         } else {
             fmt::print(stderr, "[Model] error: {} \n", error);
+
+            return 0;
         }
     }
 
-    core::Model& ResourceManager::getModel(uint64_t id) {
+    std::shared_ptr<core::Model> ResourceManager::getModel(uint64_t id) {
         return m_models[id];
     }
 

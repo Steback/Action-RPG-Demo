@@ -1,7 +1,6 @@
 #include "Model.hpp"
 
 #include <utility>
-#include <glm/gtx/matrix_decompose.inl>
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -37,10 +36,6 @@ namespace core {
 
     std::vector<Model::Node>& Model::getNodes() {
         return m_nodes;
-    }
-
-    void Model::cleanup() {
-
     }
 
     void Model::loadNode(const tinygltf::Node &inputNode, const tinygltf::Model &inputModel, int parentID) {

@@ -12,7 +12,7 @@
 #include "../resources/ResourceManager.hpp"
 #include "../Constants.hpp"
 #include "../components/Transform.hpp"
-#include "../components/MeshModel.hpp"
+#include "../components/Render.hpp"
 
 using json = nlohmann::json;
 
@@ -72,9 +72,6 @@ namespace core {
         T& getComponent(uint32_t id) {
             return m_registry.get<T>(m_entities[id].enttID);
         }
-
-    private:
-        void drawNode(const core::Model::Node& node, core::Model& model);
 
     private:
         std::vector<core::Entity> m_entities;

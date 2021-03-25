@@ -5,7 +5,7 @@
 #include "fmt/format.h"
 #include <glm/gtx/matrix_decompose.inl>
 
-#include "components/MeshModel.hpp"
+#include "components/Render.hpp"
 #include "renderer/UIImGui.hpp"
 #include "Gizmos.hpp"
 
@@ -25,11 +25,11 @@ namespace editor {
         m_scene->loadScene("../data/basicScene.json", true);
 
         for (auto& entity : m_scene->getEntities()) {
-            auto& model = m_scene->getComponent<core::MeshModel>(entity.id);
+            auto& model = m_scene->getComponent<core::Render>(entity.id);
             int modelID;
 
             for (int i = 0; i < m_modelsNames.size(); ++i) {
-                if (m_modelsNames[i] == m_resourceManager->getModel(model.getModelID()).getName()) modelID = i;
+                if (m_modelsNames[i] == model.getName()) modelID = i;
             }
 
             m_entitiesInfo.push_back({entity.id, entity.name, modelID});
@@ -171,9 +171,7 @@ namespace editor {
 
                 if (entity.components & core::MODEL) {
                     if (ImGui::CollapsingHeader("Model")) {
-                        auto& meshModel = m_scene->getComponent<core::MeshModel>(entity.id);
-
-                        ImGui::Text("Model ID: %lu", meshModel.getModelID());
+                        auto& render = m_scene->getComponent<core::Render>(entity.id);
 
                         int currentModel = m_entitiesInfo[m_entitySelected].model;
 
@@ -184,16 +182,13 @@ namespace editor {
                                 if (ImGui::Selectable(m_modelsNames[i].c_str(), is_selected)) {
                                     m_entitiesInfo[m_entitySelected].model = currentModel = i;
                                     uint64_t modelID = core::tools::hashString(m_modelsNames[currentModel]);
-                                    meshModel.setModelID(modelID);
-
-                                    auto& model = m_resourceManager->getModel(modelID);
-                                    auto& node = model.getBaseMesh();
+                                    render.setModel(modelID);
 
                                     glm::vec3 tempTranslate, tempScale, tempSkew;
                                     glm::vec4 tempPerspective;
                                     glm::quat tempOrientation;
 
-                                    glm::decompose(node.matrix, tempScale, tempOrientation, tempTranslate, tempSkew, tempPerspective);
+                                    glm::decompose(render.getBaseMesh().matrix, tempScale, tempOrientation, tempTranslate, tempSkew, tempPerspective);
 
                                     transform.getPosition() += tempTranslate;
                                     transform.getRotation() += glm::eulerAngles(tempOrientation);
@@ -203,12 +198,6 @@ namespace editor {
                             }
 
                             ImGui::EndCombo();
-                        }
-
-                        if (ImGui::CollapsingHeader(m_modelsNames[m_entitiesInfo[m_entitySelected].model].c_str())) {
-                            auto& model = m_resourceManager->getModel(meshModel.getModelID());
-
-                            loadNode(model.getNode(0), model);
                         }
                     }
                 }
@@ -291,7 +280,7 @@ namespace editor {
         auto& entity = m_scene->addEntity("Object", core::EntityFlags::OBJECT);
         uint64_t modelID = core::tools::hashString("cube");
 
-        m_scene->registry().emplace<core::MeshModel>(entity.enttID, modelID);
+        m_scene->registry().emplace<core::Render>(entity.enttID, modelID, entity.id);
         m_scene->registry().emplace<core::Transform>(entity.enttID, m_scene->getCamera().getCenter(), DEFAULT_SIZE, SPEED_ZERO, DEFAULT_ROTATION);
         entity.components = core::MODEL | core::TRANSFORM;
 
@@ -387,11 +376,11 @@ namespace editor {
                 m_scene->loadScene(filePathName, true);
 
                 for (auto& entity : m_scene->getEntities()) {
-                    auto& model = m_scene->getComponent<core::MeshModel>(entity.id);
+                    auto& render = m_scene->getComponent<core::Render>(entity.id);
                     int modelID;
 
                     for (int i = 0; i < m_modelsNames.size(); ++i) {
-                        if (m_modelsNames[i] == m_resourceManager->getModel(model.getModelID()).getName()) modelID = i;
+                        if (m_modelsNames[i] == render.getName()) modelID = i;
                     }
 
                     m_entitiesInfo.push_back({entity.id, entity.name, modelID});
