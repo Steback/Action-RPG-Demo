@@ -2,14 +2,22 @@
 #define PROTOTYPE_ACTION_RPG_INITIALIZERS_HPP
 
 
+#include <string>
+
 #include "vulkan/vulkan.h"
 
 
 namespace vk::initializers {
 
-    inline VkApplicationInfo applicationInfo() {
+    inline VkApplicationInfo applicationInfo(const std::string& appName, uint32_t appVersion,
+                                             const std::string& engineName, uint32_t engineVersion) {
         return {
-            .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO
+            .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+            .pApplicationName = appName.c_str(),
+            .applicationVersion = appVersion,
+            .pEngineName = engineName.c_str(),
+            .engineVersion = engineVersion,
+            .apiVersion = VK_API_VERSION_1_2
         };
     }
 

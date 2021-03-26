@@ -3,6 +3,7 @@
 
 
 #include <vector>
+#include <memory>
 
 #include "vulkan/vulkan.h"
 #include "imgui.h"
@@ -20,7 +21,7 @@ namespace core {
     public:
         UIImGui();
 
-        explicit UIImGui(vk::SwapChain& swapChain, vk::Device* device, GLFWwindow* window, VkInstance instance, VkQueue graphicsQueue);
+        explicit UIImGui(vk::SwapChain& swapChain, const std::shared_ptr<vk::Device>& device, GLFWwindow* window, VkInstance instance, VkQueue graphicsQueue);
 
         ~UIImGui();
 
@@ -58,7 +59,7 @@ namespace core {
         std::vector<VkCommandBuffer> m_commandBuffers{};
         VkDescriptorPool m_descriptorPool{};
         VkQueue m_graphicsQueue{};
-        vk::Device* m_device{};
+        std::shared_ptr<vk::Device> m_device{};
     };
 
 } // namepsace core

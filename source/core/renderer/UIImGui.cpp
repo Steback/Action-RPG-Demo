@@ -8,7 +8,7 @@ namespace core {
 
     UIImGui::UIImGui() = default;
 
-    UIImGui::UIImGui(vk::SwapChain &swapChain, vk::Device *device, GLFWwindow* window, VkInstance instance, VkQueue graphicsQueue) {
+    UIImGui::UIImGui(vk::SwapChain &swapChain, const std::shared_ptr<vk::Device>& device, GLFWwindow* window, VkInstance instance, VkQueue graphicsQueue) {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImGui::StyleColorsDark();

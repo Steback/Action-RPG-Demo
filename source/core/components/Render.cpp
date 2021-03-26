@@ -1,7 +1,5 @@
 #include "Render.hpp"
 
-#include <utility>
-
 #include "../Application.hpp"
 
 

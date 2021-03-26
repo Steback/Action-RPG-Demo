@@ -1,7 +1,7 @@
 {
     "camera": {
         "angles": {
-            "pitch": 45.0,
+            "pitch": 0.0,
             "yaw": 90.0
         },
         "distance": 10.0,
@@ -9,7 +9,7 @@
         "speed": 0.5,
         "target": {
             "x": 0.0,
-            "y": 0.0,
+            "y": 1.0,
             "z": 0.0
         }
     },
@@ -21,7 +21,7 @@
             "name": "Skeletons",
             "transform": {
                 "position": [
-                    -3.0,
+                    -1.5,
                     0.0,
                     0.0
                 ],
@@ -45,7 +45,7 @@
             "name": "Hero",
             "transform": {
                 "position": [
-                    0.0,
+                    1.5,
                     0.0,
                     -1.8044039507003617e-07
                 ],

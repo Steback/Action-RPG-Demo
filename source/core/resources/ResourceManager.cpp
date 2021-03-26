@@ -1,5 +1,7 @@
 #include "ResourceManager.hpp"
 
+#include <utility>
+
 #define TINYGLTF_IMPLEMENTATION
 #define TINYGLTF_NO_STB_IMAGE_WRITE
 #include "tiny_gltf.h"
@@ -11,8 +13,8 @@
 
 namespace core {
 
-    ResourceManager::ResourceManager(vk::Device *device, VkQueue graphicsQueue)
-            : m_device(device), m_graphicsQueue(graphicsQueue) {
+    ResourceManager::ResourceManager(std::shared_ptr<vk::Device> device, VkQueue graphicsQueue)
+            : m_device(std::move(device)), m_graphicsQueue(graphicsQueue) {
         createDescriptorSetLayout();
         createDescriptorPool();
     }

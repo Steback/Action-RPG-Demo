@@ -1,5 +1,5 @@
-#ifndef PROTOTYPE_ACTION_RPG_RENDERER_HPP
-#define PROTOTYPE_ACTION_RPG_RENDERER_HPP
+#ifndef PROTOTYPE_ACTION_RPG_RENDERDEVICE_HPP
+#define PROTOTYPE_ACTION_RPG_RENDERDEVICE_HPP
 
 
 #include <memory>
@@ -22,11 +22,11 @@
 
 namespace core {
 
-    class Renderer {
+    class RenderDevice {
     public:
-        explicit Renderer(std::unique_ptr<Window>& window, VkInstance instance, const std::string& appName, vk::Device* device, VkSurfaceKHR surface);
+        explicit RenderDevice(std::unique_ptr<Window>& window, VkInstance instance, const std::string& appName, std::shared_ptr<vk::Device> device, VkSurfaceKHR surface);
 
-        ~Renderer();
+        ~RenderDevice();
 
         void init(bool drawGrid = false);
 
@@ -79,7 +79,7 @@ namespace core {
     private:
         std::unique_ptr<Window>& m_window;
 
-        vk::Device* m_device{};
+        std::shared_ptr<vk::Device> m_device{};
         VkPhysicalDevice m_physicalDevice{};
         VkDevice m_logicalDevice{};
 
@@ -139,4 +139,4 @@ namespace core {
 } // End namespace core
 
 
-#endif //PROTOTYPE_ACTION_RPG_RENDERER_HPP
+#endif //PROTOTYPE_ACTION_RPG_RENDERDEVICE_HPP

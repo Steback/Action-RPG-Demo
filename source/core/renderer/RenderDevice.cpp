@@ -1,4 +1,6 @@
-#include "Renderer.hpp"
+#include "RenderDevice.hpp"
+
+#include <utility>
 
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include "glm/glm.hpp"
@@ -9,8 +11,8 @@
 
 namespace core {
 
-    Renderer::Renderer(std::unique_ptr<Window>& window, VkInstance instance, const std::string& appName, vk::Device* device, VkSurfaceKHR surface)
-            : m_window(window), m_device(device) {
+    RenderDevice::RenderDevice(std::unique_ptr<Window>& window, VkInstance instance, const std::string& appName, std::shared_ptr<vk::Device> device, VkSurfaceKHR surface)
+            : m_window(window), m_device(std::move(device)) {
         m_logicalDevice = m_device->m_logicalDevice;
         m_physicalDevice = m_device->m_physicalDevice;
         m_surface = surface;
@@ -39,9 +41,9 @@ namespace core {
 
     }
 
-    Renderer::~Renderer() = default;
+    RenderDevice::~RenderDevice() = default;
 
-    void Renderer::init(bool drawGrid) {
+    void RenderDevice::init(bool drawGrid) {
         m_drawGrid = drawGrid;
 
         createCommandPool();
@@ -59,7 +61,7 @@ namespace core {
         spdlog::info("[Renderer] Initialized");
     }
 
-    void Renderer::cleanup() {
+    void RenderDevice::cleanup() {
 
         UIImGui::cleanupImGui();
 
@@ -80,7 +82,7 @@ namespace core {
         spdlog::info("[Renderer] Cleaned");
     }
 
-    void Renderer::render(const glm::vec4& clearColor) {
+    void RenderDevice::render(const glm::vec4& clearColor) {
         vkWaitForFences(m_logicalDevice, 1, &m_fences[m_currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
         VkResult result = m_swapChain.acquireNextImage(m_imageAvailableSemaphores[m_currentFrame], &m_indexImage);
@@ -152,7 +154,7 @@ namespace core {
         m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 
-    void Renderer::createRenderPass() {
+    void RenderDevice::createRenderPass() {
         VkAttachmentDescription colorAttachment{};
         colorAttachment.format = m_swapChain.getFormat();
         colorAttachment.samples = m_msaaSamples;
@@ -222,7 +224,7 @@ namespace core {
         VK_CHECK_RESULT(vkCreateRenderPass(m_logicalDevice, &renderPassInfo, nullptr, &m_renderPass))
     }
 
-    void Renderer::createGraphicsPipeline() {
+    void RenderDevice::createGraphicsPipeline() {
         auto vertexShaderCode = core::tools::readFile("shaders/model.vert.spv");
         auto fragmentShaderCode = core::tools::readFile("shaders/model.frag.spv");
 
@@ -367,7 +369,7 @@ namespace core {
         }
     }
 
-    void Renderer::createFramebuffers() {
+    void RenderDevice::createFramebuffers() {
         m_framebuffers.resize(m_swapChain.getImageCount());
 
         for (size_t i = 0; i < m_swapChain.getImageCount(); ++i) {
@@ -389,7 +391,7 @@ namespace core {
         }
     }
 
-    void Renderer::createCommandPool() {
+    void RenderDevice::createCommandPool() {
         m_commandPool = m_device->createCommandPool(m_device->m_queueFamilyIndices.graphics);
 
         m_commandBuffers.resize(m_swapChain.getImageCount());
@@ -399,7 +401,7 @@ namespace core {
         }
     }
 
-    void Renderer::createSyncObjects() {
+    void RenderDevice::createSyncObjects() {
         m_imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
         m_renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
         m_fences.resize(MAX_FRAMES_IN_FLIGHT);
@@ -419,7 +421,7 @@ namespace core {
         }
     }
 
-    void Renderer::recreateSwapchain() {
+    void RenderDevice::recreateSwapchain() {
         // TODO: Optimize window resize
         while (m_windowSize.width == 0 || m_windowSize.height == 0)  {
             m_windowSize = m_window->getSize();
@@ -447,7 +449,7 @@ namespace core {
         core::Application::m_resourceManager->recreateResources();
     }
 
-    void Renderer::cleanSwapChain() {
+    void RenderDevice::cleanSwapChain() {
         m_depthBuffer.cleanup(m_logicalDevice);
         m_colorImage.cleanup(m_logicalDevice);
 
@@ -475,7 +477,7 @@ namespace core {
         core::Application::m_resourceManager->cleanupResources();
     }
 
-    void Renderer:: createDescriptorSetLayout() {
+    void RenderDevice:: createDescriptorSetLayout() {
         VkDescriptorSetLayoutBinding uboLayoutBinding{};
         uboLayoutBinding.binding = 0;
         uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -490,7 +492,7 @@ namespace core {
         VK_CHECK_RESULT(vkCreateDescriptorSetLayout(m_logicalDevice, &uboLayoutInfo, nullptr, &m_descriptorSetLayout))
     }
 
-    void Renderer::createDescriptorPool() {
+    void RenderDevice::createDescriptorPool() {
         VkDescriptorPoolSize descriptorPoolSize{};
         descriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         descriptorPoolSize.descriptorCount = m_swapChain.getImageCount();
@@ -504,7 +506,7 @@ namespace core {
         VK_CHECK_RESULT(vkCreateDescriptorPool(m_logicalDevice, &descriptorPoolCreateInfo, nullptr, &m_descriptorPool))
     }
 
-    void Renderer::createDescriptorSets() {
+    void RenderDevice::createDescriptorSets() {
         std::vector<VkDescriptorSetLayout> layouts(m_swapChain.getImageCount(), m_descriptorSetLayout);
 
         VkDescriptorSetAllocateInfo allocInfo = vk::initializers::descriptorSetAllocateInfo();
@@ -517,7 +519,7 @@ namespace core {
         VK_CHECK_RESULT(vkAllocateDescriptorSets(m_logicalDevice, &allocInfo, m_descriptorSets.data()))
     }
 
-    void Renderer::createDepthResources() {
+    void RenderDevice::createDepthResources() {
         VkImageCreateInfo imageInfo = vk::initializers::imageCreateInfo();
         imageInfo.imageType = VK_IMAGE_TYPE_2D;
         imageInfo.extent.width = m_swapChain.getExtent().width;
@@ -546,7 +548,7 @@ namespace core {
                                         VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
     }
 
-    void Renderer::createMsaaResources() {
+    void RenderDevice::createMsaaResources() {
         VkFormat colorFormat = m_swapChain.getFormat();
 
         VkImageCreateInfo imageInfo = vk::initializers::imageCreateInfo();
@@ -574,13 +576,13 @@ namespace core {
         m_colorImage.bind(m_logicalDevice, memType, memoryRequirements.size, VK_IMAGE_ASPECT_COLOR_BIT);
     }
 
-    void Renderer::createPushConstants() {
+    void RenderDevice::createPushConstants() {
         m_mvpRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
         m_mvpRange.offset = 0;
         m_mvpRange.size = sizeof(MVP);
     }
 
-    void Renderer::createGridPipeline(VkGraphicsPipelineCreateInfo& createInfo) {
+    void RenderDevice::createGridPipeline(VkGraphicsPipelineCreateInfo& createInfo) {
         auto vertexShaderCode = core::tools::readFile("shaders/grid.vert.spv");
         auto fragmentShaderCode = core::tools::readFile("shaders/grid.frag.spv");
 
@@ -625,16 +627,16 @@ namespace core {
         vkDestroyShaderModule(m_logicalDevice, fragShaderModule, nullptr);
     }
 
-    void Renderer::updateVP(const glm::mat4& view, const glm::mat4& proj) {
+    void RenderDevice::updateVP(const glm::mat4& view, const glm::mat4& proj) {
         m_mvp.view = view;
         m_mvp.proj = proj;
     }
 
-    VkQueue &Renderer::getGraphicsQueue() {
+    VkQueue &RenderDevice::getGraphicsQueue() {
         return m_graphicsQueue;
     }
 
-    void Renderer::renderMesh(const Mesh &mesh, const glm::mat4& matrix) {
+    void RenderDevice::renderMesh(const Mesh &mesh, const glm::mat4& matrix) {
         m_mvp.model = matrix;
 
         VkBuffer vertexBuffer[] = {mesh.getVertexBuffer()};
@@ -663,7 +665,7 @@ namespace core {
                          1, 0, 0, 0);
     }
 
-    void Renderer::beginRenderPass(const glm::vec4& clearColor) {
+    void RenderDevice::beginRenderPass(const glm::vec4& clearColor) {
         std::array<VkClearValue, 2> clearValues{};
         clearValues[0].color = {clearColor.x, clearColor.y, clearColor.z, clearColor.w};
         clearValues[1].depthStencil = {1.0f, 0};
@@ -686,16 +688,16 @@ namespace core {
         vkCmdBeginRenderPass(m_commandBuffers[m_indexImage], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     }
 
-    void Renderer::endRenderPass() {
+    void RenderDevice::endRenderPass() {
         vkCmdEndRenderPass(m_commandBuffers[m_indexImage]);
         VK_CHECK_RESULT(vkEndCommandBuffer(m_commandBuffers[m_indexImage]))
     }
 
-    void Renderer::setPipeline() {
+    void RenderDevice::setPipeline() {
         vkCmdBindPipeline(m_commandBuffers[m_indexImage], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
     }
 
-    void Renderer::drawGrid() {
+    void RenderDevice::drawGrid() {
         if (m_drawGrid) {
             vkCmdBindPipeline(m_commandBuffers[m_indexImage], VK_PIPELINE_BIND_POINT_GRAPHICS, m_gridPipeline);
 

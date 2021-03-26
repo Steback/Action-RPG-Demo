@@ -3,6 +3,7 @@
 
 
 #include <vector>
+#include <memory>
 
 #include "glm/glm.hpp"
 
@@ -18,7 +19,7 @@ namespace core {
         Mesh();
 
         Mesh(const std::vector<core::Vertex>& vertices,const std::vector<uint32_t>& indices,
-             VkQueue transferQueue, uint64_t textureID, const vk::Device* device);
+             VkQueue transferQueue, uint64_t textureID, const std::shared_ptr<vk::Device>& device);
 
         ~Mesh();
 
@@ -35,9 +36,9 @@ namespace core {
         [[nodiscard]] uint64_t getTextureId() const;
 
     private:
-        void createVertexBuffer(const std::vector<core::Vertex>& vertices, VkQueue transferQueue, const vk::Device* device);
+        void createVertexBuffer(const std::vector<core::Vertex>& vertices, VkQueue transferQueue, const std::shared_ptr<vk::Device>& device);
 
-        void createIndexBuffer(const std::vector<uint32_t>& indices, VkQueue transferQueue, const vk::Device* device);
+        void createIndexBuffer(const std::vector<uint32_t>& indices, VkQueue transferQueue, const std::shared_ptr<vk::Device>& device);
 
     private:
         int m_vertexCount{};

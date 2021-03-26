@@ -3,7 +3,7 @@ import sys
 import os
 
 GLSLC = '../bin/glslc'
-SHADERS_DIR = '../assets/shaders/'
+SHADERS_DIR = '../data/shaders/'
 BUILD_DIR = sys.argv[1] + '/shaders/'
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@
 #include "entt/entt.hpp"
 
 #include "window/Window.hpp"
-#include "renderer/Renderer.hpp"
+#include "renderer/RenderDevice.hpp"
 #include "renderer/Device.hpp"
 #include "renderer/Instance.hpp"
 #include "scene/Scene.hpp"
@@ -39,13 +39,13 @@ namespace core {
         virtual void cleanup() = 0;
 
     public:
-        static std::unique_ptr<core::Renderer> m_renderer;
+        static std::unique_ptr<core::RenderDevice> m_renderer;
         static std::unique_ptr<core::ResourceManager> m_resourceManager;
         static std::unique_ptr<core::Scene> m_scene;
 
     protected:
         std::unique_ptr<core::Window> m_window;
-        vk::Device* m_device{};
+        std::shared_ptr<vk::Device> m_device;
         vk::Instance m_instance;
         VkSurfaceKHR m_surface{};
         float m_lastTime{}, m_deltaTime{};
