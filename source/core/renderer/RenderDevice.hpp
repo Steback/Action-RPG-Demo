@@ -24,7 +24,7 @@ namespace core {
 
     class RenderDevice {
     public:
-        explicit RenderDevice(std::unique_ptr<Window>& window, VkInstance instance, const std::string& appName, std::shared_ptr<vk::Device> device, VkSurfaceKHR surface);
+        explicit RenderDevice(std::shared_ptr<Window> window, VkInstance instance, const std::string& appName, std::shared_ptr<vk::Device> device, VkSurfaceKHR surface);
 
         ~RenderDevice();
 
@@ -77,13 +77,12 @@ namespace core {
         void drawGrid();
 
     private:
-        std::unique_ptr<Window>& m_window;
+        std::shared_ptr<Window> m_window;
 
         std::shared_ptr<vk::Device> m_device{};
         VkPhysicalDevice m_physicalDevice{};
         VkDevice m_logicalDevice{};
 
-        VkQueue m_presentQueue{};
         VkQueue m_graphicsQueue{};
 
         VkSurfaceKHR m_surface{};

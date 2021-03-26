@@ -11,8 +11,8 @@
 
 namespace core {
 
-    RenderDevice::RenderDevice(std::unique_ptr<Window>& window, VkInstance instance, const std::string& appName, std::shared_ptr<vk::Device> device, VkSurfaceKHR surface)
-            : m_window(window), m_device(std::move(device)) {
+    RenderDevice::RenderDevice(std::shared_ptr<Window> window, VkInstance instance, const std::string& appName, std::shared_ptr<vk::Device> device, VkSurfaceKHR surface)
+            : m_window(std::move(window)), m_device(std::move(device)) {
         m_logicalDevice = m_device->m_logicalDevice;
         m_physicalDevice = m_device->m_physicalDevice;
         m_surface = surface;
@@ -21,16 +21,11 @@ namespace core {
         VkBool32 presentSupport = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(m_physicalDevice, m_device->m_queueFamilyIndices.graphics, m_surface, &presentSupport);
 
-        if (presentSupport) {
-            m_device->m_queueFamilyIndices.present = m_device->m_queueFamilyIndices.graphics;
-        }
-
         vkGetDeviceQueue(m_logicalDevice, m_device->m_queueFamilyIndices.graphics, 0, &m_graphicsQueue);
-        vkGetDeviceQueue(m_logicalDevice, m_device->m_queueFamilyIndices.present, 0, &m_presentQueue);
 
         m_windowSize = m_window->getSize();
         m_swapChain.connect(m_physicalDevice, m_logicalDevice, m_surface);
-        m_swapChain.create(m_windowSize.width, m_windowSize.height, m_device->m_queueFamilyIndices.graphics, m_device->m_queueFamilyIndices.present);
+        m_swapChain.create(m_windowSize.width, m_windowSize.height, m_device->m_queueFamilyIndices.graphics, m_device->m_queueFamilyIndices.graphics);
 
         m_depthFormat= vk::tools::findSupportedFormat(m_physicalDevice,
                                                       {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
@@ -142,7 +137,7 @@ namespace core {
         presentInfo.pImageIndices = &m_indexImage;
         presentInfo.pResults = nullptr;
 
-        result = vkQueuePresentKHR(m_presentQueue, &presentInfo);
+        result = vkQueuePresentKHR(m_graphicsQueue, &presentInfo);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_window->resize()) {
             m_window->resize() = false;
@@ -432,7 +427,7 @@ namespace core {
 
         cleanSwapChain();
 
-        m_swapChain.create(m_windowSize.width, m_windowSize.height, m_device->m_queueFamilyIndices.graphics, m_device->m_queueFamilyIndices.present);
+        m_swapChain.create(m_windowSize.width, m_windowSize.height, m_device->m_queueFamilyIndices.graphics, m_device->m_queueFamilyIndices.graphics);
         createRenderPass();
         createGraphicsPipeline();
         createMsaaResources();

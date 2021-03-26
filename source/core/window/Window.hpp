@@ -62,8 +62,8 @@ namespace core {
         WindowSize m_size;
         bool m_resize = false;
         std::array<char, 1024> m_keys{false};
-        glm::vec2 m_cursorChangePos;
-        glm::vec2 m_lastCursorPos;
+        glm::vec2 m_cursorChangePos{};
+        glm::vec2 m_lastCursorPos{};
         bool m_rMouseButton{};
         bool m_lMouseButton{};
         glm::vec2 m_scrollOffset{};

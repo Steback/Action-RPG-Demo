@@ -44,7 +44,7 @@ namespace core {
         static std::unique_ptr<core::Scene> m_scene;
 
     protected:
-        std::unique_ptr<core::Window> m_window;
+        std::shared_ptr<core::Window> m_window;
         std::shared_ptr<vk::Device> m_device;
         vk::Instance m_instance;
         VkSurfaceKHR m_surface{};

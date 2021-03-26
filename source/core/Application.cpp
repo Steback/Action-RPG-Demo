@@ -13,7 +13,7 @@ namespace core {
             : m_clearColor(clearColor) {
         spdlog::info("[App] Start");
 
-        m_window = std::make_unique<core::Window>(appName, 1776, 1000);
+        m_window = std::make_shared<core::Window>(appName, 1776, 1000);
 
         VkApplicationInfo appInfo = vk::initializers::applicationInfo(appName, VK_MAKE_VERSION(0, 1, 0),
                                                                       "Custom Engine", VK_MAKE_VERSION(0, 1, 0));

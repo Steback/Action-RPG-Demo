@@ -16,7 +16,6 @@ namespace vk {
 
     struct QueueFamilyIndices {
         uint32_t graphics;
-        uint32_t present;
         uint32_t compute;
         uint32_t transfer;
     };
@@ -67,7 +66,6 @@ namespace vk {
         VkDevice m_logicalDevice{};
         VkPhysicalDeviceProperties m_properties{};
         VkPhysicalDeviceFeatures m_features{};
-        VkPhysicalDeviceFeatures m_enabledFeatures{};
         VkPhysicalDeviceMemoryProperties m_memoryProperties{};
         std::vector<VkQueueFamilyProperties> m_queueFamilyProperties;
         std::vector<std::string> m_supportedExtensions;
