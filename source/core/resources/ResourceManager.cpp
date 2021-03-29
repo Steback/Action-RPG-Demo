@@ -13,7 +13,7 @@
 
 namespace core {
 
-    ResourceManager::ResourceManager(std::shared_ptr<vk::Device> device, VkQueue graphicsQueue)
+    ResourceManager::ResourceManager(std::shared_ptr<vkc::Device> device, VkQueue graphicsQueue)
             : m_device(std::move(device)), m_graphicsQueue(graphicsQueue) {
         createDescriptorSetLayout();
         createDescriptorPool();
@@ -33,7 +33,7 @@ namespace core {
         int width, height;
         VkDeviceSize imageSize;
         stbi_uc* pixels = core::tools::loadTextureFile(fileName, &width, &height, &imageSize);
-        vk::Buffer stagingBuffer;
+        vkc::Buffer stagingBuffer;
 
         m_device->createBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -105,7 +105,7 @@ namespace core {
 
         VkCommandBuffer commandBuffer = m_device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
-        VkImageMemoryBarrier barrier = vk::initializers::imageMemoryBarrier();
+        VkImageMemoryBarrier barrier = vkc::initializers::imageMemoryBarrier();
         barrier.image = texture.getTextureImage().getImage();
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -202,7 +202,7 @@ namespace core {
         samplerLayoutBinding.pImmutableSamplers = nullptr;
         samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-        VkDescriptorSetLayoutCreateInfo samplerLayoutInfo = vk::initializers::descriptorSetLayoutCreateInfo();
+        VkDescriptorSetLayoutCreateInfo samplerLayoutInfo = vkc::initializers::descriptorSetLayoutCreateInfo();
         samplerLayoutInfo.bindingCount = 1;
         samplerLayoutInfo.pBindings = &samplerLayoutBinding;
 

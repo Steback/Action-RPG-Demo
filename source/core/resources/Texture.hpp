@@ -28,7 +28,7 @@ namespace core {
 
         [[nodiscard]] uint32_t getHeight() const;
 
-        [[nodiscard]] vk::Image getTextureImage() const;
+        [[nodiscard]] vkc::Image getTextureImage() const;
 
         [[nodiscard]] VkImageView getImageView() const;
 
@@ -41,7 +41,7 @@ namespace core {
         void createTextureSampler(VkDevice logicalDevice, uint32_t mipLevels);
 
     private:
-        vk::Image m_image;
+        vkc::Image m_image;
         VkDescriptorSet m_descriptorSet{};
         VkSampler m_sampler{};
     };

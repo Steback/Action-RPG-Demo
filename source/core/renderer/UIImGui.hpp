@@ -21,7 +21,7 @@ namespace core {
     public:
         UIImGui();
 
-        explicit UIImGui(vk::SwapChain& swapChain, const std::shared_ptr<vk::Device>& device, GLFWwindow* window, VkInstance instance, VkQueue graphicsQueue);
+        explicit UIImGui(vkc::SwapChain& swapChain, const std::shared_ptr<vkc::Device>& device, GLFWwindow* window, VkInstance instance, VkQueue graphicsQueue);
 
         ~UIImGui();
 
@@ -33,7 +33,7 @@ namespace core {
 
         static void render();
 
-        void resize(vk::SwapChain& swapChain);
+        void resize(vkc::SwapChain& swapChain);
 
         void cleanupResources();
 
@@ -44,7 +44,7 @@ namespace core {
     private:
         void createRenderPass(VkFormat swapChainFormat);
 
-        void createFrameBuffers(vk::SwapChain& swapChain);
+        void createFrameBuffers(vkc::SwapChain& swapChain);
 
         void createCommandPool();
 
@@ -59,7 +59,7 @@ namespace core {
         std::vector<VkCommandBuffer> m_commandBuffers{};
         VkDescriptorPool m_descriptorPool{};
         VkQueue m_graphicsQueue{};
-        std::shared_ptr<vk::Device> m_device{};
+        std::shared_ptr<vkc::Device> m_device{};
     };
 
 } // namepsace core

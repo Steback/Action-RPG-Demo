@@ -5,7 +5,7 @@
 #include "vulkan/vulkan.h"
 
 
-namespace vk {
+namespace vkc {
 
     class Image {
     public:

@@ -9,7 +9,7 @@
 #include "../Constants.hpp"
 
 
-namespace vk {
+namespace vkc {
 
     class Instance {
     public:

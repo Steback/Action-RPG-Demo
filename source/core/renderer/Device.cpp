@@ -4,7 +4,7 @@
 #include "Tools.hpp"
 #include "../Constants.hpp"
 
-namespace vk {
+namespace vkc {
 
     Device::Device(VkPhysicalDevice physicalDevice) : m_physicalDevice(physicalDevice) {
         vkGetPhysicalDeviceProperties(m_physicalDevice, &m_properties);
@@ -117,7 +117,7 @@ namespace vk {
         if (requestedQueueTypes & VK_QUEUE_GRAPHICS_BIT) {
             m_queueFamilyIndices.graphics = getQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT);
 
-            VkDeviceQueueCreateInfo queueInfo = vk::initializers::deviceQueueCreateInfo();
+            VkDeviceQueueCreateInfo queueInfo = vkc::initializers::deviceQueueCreateInfo();
             queueInfo.queueFamilyIndex = m_queueFamilyIndices.graphics;
             queueInfo.queueCount = 1;
             queueInfo.pQueuePriorities = &defaultQueuePriority;
@@ -132,7 +132,7 @@ namespace vk {
 
             if (m_queueFamilyIndices.compute != m_queueFamilyIndices.graphics) {
                 // If compute family index differs, we need an additional queue create info for the compute queue
-                VkDeviceQueueCreateInfo queueInfo = vk::initializers::deviceQueueCreateInfo();
+                VkDeviceQueueCreateInfo queueInfo = vkc::initializers::deviceQueueCreateInfo();
                 queueInfo.queueFamilyIndex = m_queueFamilyIndices.compute;
                 queueInfo.queueCount = 1;
                 queueInfo.pQueuePriorities = &defaultQueuePriority;
@@ -150,7 +150,7 @@ namespace vk {
             if ((m_queueFamilyIndices.transfer != m_queueFamilyIndices.graphics)
                     && (m_queueFamilyIndices.transfer != m_queueFamilyIndices.compute)) {
                 // If compute family index differs, we need an additional queue create info for the compute queue
-                VkDeviceQueueCreateInfo queueInfo = vk::initializers::deviceQueueCreateInfo();
+                VkDeviceQueueCreateInfo queueInfo = vkc::initializers::deviceQueueCreateInfo();
                 queueInfo.queueFamilyIndex = m_queueFamilyIndices.transfer;
                 queueInfo.queueCount = 1;
                 queueInfo.pQueuePriorities = &defaultQueuePriority;
@@ -161,7 +161,7 @@ namespace vk {
             m_queueFamilyIndices.transfer = m_queueFamilyIndices.graphics;
         }
 
-        VkDeviceCreateInfo deviceCreateInfo = vk::initializers::deviceCreateInfo();
+        VkDeviceCreateInfo deviceCreateInfo = vkc::initializers::deviceCreateInfo();
         deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
         deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
         deviceCreateInfo.pEnabledFeatures = &enabledFeatures;
@@ -191,7 +191,7 @@ namespace vk {
     }
 
     VkCommandPool Device::createCommandPool(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags createFlags) const {
-        VkCommandPoolCreateInfo cmdPoolInfo = vk::initializers::commandPoolCreateInfo();
+        VkCommandPoolCreateInfo cmdPoolInfo = vkc::initializers::commandPoolCreateInfo();
         cmdPoolInfo.queueFamilyIndex = queueFamilyIndex;
         cmdPoolInfo.flags = createFlags;
 
@@ -203,14 +203,14 @@ namespace vk {
     }
 
     VkCommandBuffer Device::createCommandBuffer(VkCommandBufferLevel level, VkCommandPool pool, bool begin) const {
-        VkCommandBufferAllocateInfo cmdBufAllocateInfo = vk::initializers::commandBufferAllocateInfo(pool, level, 1);
+        VkCommandBufferAllocateInfo cmdBufAllocateInfo = vkc::initializers::commandBufferAllocateInfo(pool, level, 1);
         VkCommandBuffer cmdBuffer;
 
         VK_CHECK_RESULT(vkAllocateCommandBuffers(m_logicalDevice, &cmdBufAllocateInfo, &cmdBuffer));
 
         // If requested, also start recording for the new command buffer
         if (begin) {
-            VkCommandBufferBeginInfo cmdBufInfo = vk::initializers::commandBufferBeginInfo();
+            VkCommandBufferBeginInfo cmdBufInfo = vkc::initializers::commandBufferBeginInfo();
             cmdBufInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
             VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBuffer, &cmdBufInfo));
@@ -228,12 +228,12 @@ namespace vk {
 
         VK_CHECK_RESULT(vkEndCommandBuffer(commandBuffer));
 
-        VkSubmitInfo submitInfo = vk::initializers::submitInfo();
+        VkSubmitInfo submitInfo = vkc::initializers::submitInfo();
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &commandBuffer;
 
         // Create fence to ensure that the command buffer has finished executing
-        VkFenceCreateInfo fenceInfo = vk::initializers::fenceCreateInfo();
+        VkFenceCreateInfo fenceInfo = vkc::initializers::fenceCreateInfo();
 
         VkFence fence;
         VK_CHECK_RESULT(vkCreateFence(m_logicalDevice, &fenceInfo, nullptr, &fence));
@@ -254,18 +254,18 @@ namespace vk {
     }
 
     VkResult Device::createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags,
-                                  vk::Buffer *buffer, VkDeviceSize size, void *data) const {
+                                  vkc::Buffer *buffer, VkDeviceSize size, void *data) const {
         buffer->m_device = m_logicalDevice;
 
         // Create the buffer handle
-        VkBufferCreateInfo bufferCreateInfo = vk::initializers::bufferCreateInfo(usageFlags, size);
+        VkBufferCreateInfo bufferCreateInfo = vkc::initializers::bufferCreateInfo(usageFlags, size);
         VK_CHECK_RESULT(vkCreateBuffer(m_logicalDevice, &bufferCreateInfo, nullptr, &buffer->m_buffer));
 
         // Create the memory backing up the buffer handle
         VkMemoryRequirements memReqs;
         vkGetBufferMemoryRequirements(m_logicalDevice, buffer->m_buffer, &memReqs);
 
-        VkMemoryAllocateInfo memAlloc = vk::initializers::memoryAllocateInfo();
+        VkMemoryAllocateInfo memAlloc = vkc::initializers::memoryAllocateInfo();
         memAlloc.allocationSize = memReqs.size;
         memAlloc.memoryTypeIndex = getMemoryType(memReqs.memoryTypeBits, memoryPropertyFlags);
 
@@ -303,7 +303,7 @@ namespace vk {
         return buffer->bind();
     }
 
-    void Device::copyBuffer(vk::Buffer *src, vk::Buffer *dst, VkQueue queue, VkBufferCopy *copyRegion) const {
+    void Device::copyBuffer(vkc::Buffer *src, vkc::Buffer *dst, VkQueue queue, VkBufferCopy *copyRegion) const {
         VkCommandBuffer copyCmd = createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
         VkBufferCopy bufferCopy{};
 
@@ -322,7 +322,7 @@ namespace vk {
                                        VkImageLayout newLayout, uint32_t mipLevels) const {
         VkCommandBuffer commandBuffer = createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
-        VkImageMemoryBarrier barrier = vk::initializers::imageMemoryBarrier();
+        VkImageMemoryBarrier barrier = vkc::initializers::imageMemoryBarrier();
         barrier.oldLayout = oldLayout;
         barrier.newLayout = newLayout;
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;

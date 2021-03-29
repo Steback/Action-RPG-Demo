@@ -6,14 +6,14 @@
 #include "Debug.hpp"
 #endif
 
-namespace vk {
+namespace vkc {
 
     Instance::Instance() = default;
 
     Instance::~Instance() = default;
 
     void Instance::init(VkApplicationInfo& appInfo) {
-        std::vector<const char*> extensions = vk::tools::getRequiredExtensions();
+        std::vector<const char*> extensions = vkc::tools::getRequiredExtensions();
 
         VkInstanceCreateInfo createInfo{
                 .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
@@ -65,7 +65,7 @@ namespace vk {
         vkEnumeratePhysicalDevices(m_instance, &deviceCount, devices.data());
 
         for (const auto& device : devices) {
-            if (vk::tools::isDeviceSuitable(device, surface, enabledExtensions)) {
+            if (vkc::tools::isDeviceSuitable(device, surface, enabledExtensions)) {
                 physicalDevice = device;
                 break;
             }

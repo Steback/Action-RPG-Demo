@@ -17,13 +17,13 @@
 	VkResult res = (f);																					\
                                                                                                         \
 	if (res != VK_SUCCESS) {																			\
-	    spdlog::error("VkResult is \"{}\" in {} at line {} \n", vk::tools::errorString(res), __FILE__, __LINE__); \
+	    spdlog::error("VkResult is \"{}\" in {} at line {} \n", vkc::tools::errorString(res), __FILE__, __LINE__); \
 		assert(res == VK_SUCCESS);																		\
 	}																									\
 }
 
 
-namespace vk {
+namespace vkc {
 
     struct SwapChainSupportDetails {
         VkSurfaceCapabilitiesKHR capabilities;

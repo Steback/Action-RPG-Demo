@@ -8,7 +8,7 @@
 #include "../Constants.hpp"
 
 
-namespace vk {
+namespace vkc {
 
     namespace tools {
 
@@ -66,7 +66,7 @@ namespace vk {
             vkGetPhysicalDeviceProperties(device, &properties);
 
             if (extensionsSupported) {
-                vk::SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device, surface);
+                vkc::SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device, surface);
 
                 swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
             }
@@ -91,7 +91,7 @@ namespace vk {
         }
 
         SwapChainSupportDetails querySwapChainSupport(const VkPhysicalDevice& device, const VkSurfaceKHR& surface) {
-            vk::SwapChainSupportDetails details;
+            vkc::SwapChainSupportDetails details;
 
             vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
 

@@ -8,7 +8,7 @@ namespace core {
 
     UIImGui::UIImGui() = default;
 
-    UIImGui::UIImGui(vk::SwapChain &swapChain, const std::shared_ptr<vk::Device>& device, GLFWwindow* window, VkInstance instance, VkQueue graphicsQueue) {
+    UIImGui::UIImGui(vkc::SwapChain &swapChain, const std::shared_ptr<vkc::Device>& device, GLFWwindow* window, VkInstance instance, VkQueue graphicsQueue) {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImGui::StyleColorsDark();
@@ -69,7 +69,7 @@ namespace core {
         ImGui::Render();
     }
 
-    void UIImGui::resize(vk::SwapChain& swapChain) {
+    void UIImGui::resize(vkc::SwapChain& swapChain) {
         ImGui_ImplVulkan_SetMinImageCount(swapChain.getImageCount());
         m_framebuffers.resize(swapChain.getImageCount());
         createFrameBuffers(swapChain);
@@ -90,14 +90,14 @@ namespace core {
     }
 
     void UIImGui::recordCommands(uint32_t imageIndex, VkExtent2D swapChainExtent) {
-        VkCommandBufferBeginInfo cmdBufferBegin = vk::initializers::commandBufferBeginInfo();
+        VkCommandBufferBeginInfo cmdBufferBegin = vkc::initializers::commandBufferBeginInfo();
         cmdBufferBegin.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
         VK_CHECK_RESULT(vkBeginCommandBuffer(m_commandBuffers[imageIndex], &cmdBufferBegin));
 
         VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
 
-        VkRenderPassBeginInfo renderPassBeginInfo = vk::initializers::renderPassBeginInfo();
+        VkRenderPassBeginInfo renderPassBeginInfo = vkc::initializers::renderPassBeginInfo();
         renderPassBeginInfo.renderPass = m_renderPass;
         renderPassBeginInfo.framebuffer = m_framebuffers[imageIndex];
         renderPassBeginInfo.renderArea.extent.width = swapChainExtent.width;
@@ -144,7 +144,7 @@ namespace core {
         subpassDependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
         subpassDependency.dstStageMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-        VkRenderPassCreateInfo renderPassInfo = vk::initializers::renderPassCreateInfo();
+        VkRenderPassCreateInfo renderPassInfo = vkc::initializers::renderPassCreateInfo();
         renderPassInfo.attachmentCount = 1;
         renderPassInfo.pAttachments = &attachmentDescription;
         renderPassInfo.subpassCount = 1;
@@ -155,11 +155,11 @@ namespace core {
         VK_CHECK_RESULT(vkCreateRenderPass(m_device->m_logicalDevice, &renderPassInfo, nullptr, &m_renderPass));
     }
 
-    void UIImGui::createFrameBuffers(vk::SwapChain& swapChain) {
+    void UIImGui::createFrameBuffers(vkc::SwapChain& swapChain) {
         m_framebuffers.resize(swapChain.getImageCount());
 
         VkImageView attachment[1];
-        VkFramebufferCreateInfo info = vk::initializers::framebufferCreateInfo();
+        VkFramebufferCreateInfo info = vkc::initializers::framebufferCreateInfo();
         info.renderPass = m_renderPass;
         info.attachmentCount = 1;
         info.pAttachments = attachment;

@@ -24,7 +24,7 @@ namespace core {
 
     class RenderDevice {
     public:
-        explicit RenderDevice(std::shared_ptr<Window> window, VkInstance instance, const std::string& appName, std::shared_ptr<vk::Device> device, VkSurfaceKHR surface);
+        explicit RenderDevice(std::shared_ptr<Window> window, VkInstance instance, const std::string& appName, std::shared_ptr<vkc::Device> device, VkSurfaceKHR surface);
 
         ~RenderDevice();
 
@@ -79,7 +79,7 @@ namespace core {
     private:
         std::shared_ptr<Window> m_window;
 
-        std::shared_ptr<vk::Device> m_device{};
+        std::shared_ptr<vkc::Device> m_device{};
         VkPhysicalDevice m_physicalDevice{};
         VkDevice m_logicalDevice{};
 
@@ -89,7 +89,7 @@ namespace core {
 
         core::WindowSize m_windowSize;
 
-        vk::SwapChain m_swapChain{};
+        vkc::SwapChain m_swapChain{};
         std::vector<VkFramebuffer> m_framebuffers;
 
         VkRenderPass m_renderPass{};
@@ -121,10 +121,10 @@ namespace core {
         VkSampleCountFlagBits m_msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
         // Multisampling anti-aliasing
-        vk::Image m_colorImage;
+        vkc::Image m_colorImage;
 
         // TODO: Check for optimising in depth buffer
-        vk::Image m_depthBuffer;
+        vkc::Image m_depthBuffer;
         VkFormat m_depthFormat{};
 
         MVP m_mvp{};

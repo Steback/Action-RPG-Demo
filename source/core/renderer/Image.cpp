@@ -4,7 +4,7 @@
 #include "Tools.hpp"
 
 
-namespace vk {
+namespace vkc {
 
     Image::Image() = default;
 
@@ -15,7 +15,7 @@ namespace vk {
     Image::~Image() = default;
 
     void Image::bind(VkDevice logicalDevice, uint32_t memoryTypeIndex, VkDeviceSize size, VkImageAspectFlagBits aspectFlags) {
-        VkMemoryAllocateInfo allocInfo = vk::initializers::memoryAllocateInfo();
+        VkMemoryAllocateInfo allocInfo = vkc::initializers::memoryAllocateInfo();
         allocInfo.allocationSize = size;
         allocInfo.memoryTypeIndex = memoryTypeIndex;
 
@@ -66,7 +66,7 @@ namespace vk {
     }
 
     void Image::createImageView(VkDevice logicalDevice, VkImageAspectFlagBits aspectFlags) {
-        VkImageViewCreateInfo viewInfo = vk::initializers::imageViewCreateInfo();
+        VkImageViewCreateInfo viewInfo = vkc::initializers::imageViewCreateInfo();
         viewInfo.image = m_image;
         viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
         viewInfo.format = m_format;

@@ -4,7 +4,7 @@
 #include "Initializers.hpp"
 
 
-namespace vk {
+namespace vkc {
 
     SwapChain::SwapChain() = default;
 
@@ -17,11 +17,11 @@ namespace vk {
     }
 
     void SwapChain::create(uint32_t& width, uint32_t& height, uint32_t graphicsFamilyIndex, uint32_t presetFamilyIndex) {
-        vk::SwapChainSupportDetails swapChainSupport = vk::tools::querySwapChainSupport(m_physicalDevice, m_surface);
+        vkc::SwapChainSupportDetails swapChainSupport = vkc::tools::querySwapChainSupport(m_physicalDevice, m_surface);
 
-        VkSurfaceFormatKHR surfaceFormat = vk::tools::chooseSwapSurfaceFormat(swapChainSupport.formats);
-        VkPresentModeKHR presentMode = vk::tools::chooseSwapPresentMode(swapChainSupport.presentModes);
-        VkExtent2D extent = vk::tools::chooseSwapExtend(width, height, swapChainSupport.capabilities);
+        VkSurfaceFormatKHR surfaceFormat = vkc::tools::chooseSwapSurfaceFormat(swapChainSupport.formats);
+        VkPresentModeKHR presentMode = vkc::tools::chooseSwapPresentMode(swapChainSupport.presentModes);
+        VkExtent2D extent = vkc::tools::chooseSwapExtend(width, height, swapChainSupport.capabilities);
 
         m_imageCount = swapChainSupport.capabilities.minImageCount + 1;
 
@@ -30,7 +30,7 @@ namespace vk {
             m_imageCount = swapChainSupport.capabilities.maxImageCount;
         }
 
-        VkSwapchainCreateInfoKHR createInfo = vk::initializers::swapchainCreateInfo();
+        VkSwapchainCreateInfoKHR createInfo = vkc::initializers::swapchainCreateInfo();
         createInfo.surface = m_surface;
         createInfo.minImageCount = m_imageCount;
         createInfo.imageFormat = surfaceFormat.format;
@@ -101,7 +101,7 @@ namespace vk {
     }
 
     VkResult SwapChain::queuePresent(VkQueue queue, uint32_t imageIndex, VkSemaphore waitSemaphore) {
-        VkPresentInfoKHR presentInfo = vk::initializers::presentInfo();
+        VkPresentInfoKHR presentInfo = vkc::initializers::presentInfo();
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = &m_swapChain;
         presentInfo.pImageIndices = &imageIndex;

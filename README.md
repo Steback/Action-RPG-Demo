@@ -23,5 +23,5 @@ The resources in this section are all I used for learn some of the key concepts 
 * [Learn the Vulkan API with C++](https://www.udemy.com/course/learn-the-vulkan-api-with-cpp/)
 * [Vulkan Tutorial](https://vulkan-tutorial.com/Introduction)
 * [Sascha Willems example](https://github.com/SaschaWillems/Vulkan)
-* [vk-sandbox](https://github.com/tstullich/vk-sandbox) (It help me to know how to implement Dear ImGui with Vulkan)
+* [vkc-sandbox](https://github.com/tstullich/vkc-sandbox) (It help me to know how to implement Dear ImGui with Vulkan)
 * [Infinite grid](http://asliceofrendering.com/scene%20helper/2020/01/05/InfiniteGrid/)

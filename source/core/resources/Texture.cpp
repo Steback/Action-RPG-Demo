@@ -11,7 +11,7 @@ namespace core {
     Texture::Texture(VkDevice logicalDevice, VkExtent2D size, VkFormat format, VkImageTiling tiling,
                      VkImageUsageFlags usageFlags, uint32_t mipLevels) {
 
-        VkImageCreateInfo createInfo = vk::initializers::imageCreateInfo();
+        VkImageCreateInfo createInfo = vkc::initializers::imageCreateInfo();
         createInfo.imageType = VK_IMAGE_TYPE_2D; // Type of image (1D, 2D or 3D)
         createInfo.extent.width = size.width; // Width of Image extent
         createInfo.extent.height = size.height; // Height of Image extent
@@ -25,7 +25,7 @@ namespace core {
         createInfo.samples = VK_SAMPLE_COUNT_1_BIT; // Number of samples for multi-sampling
         createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        m_image = vk::Image(logicalDevice, createInfo);
+        m_image = vkc::Image(logicalDevice, createInfo);
 
         createTextureSampler(logicalDevice, mipLevels);
     }
@@ -53,7 +53,7 @@ namespace core {
         imageInfo.imageView = m_image.getView();
         imageInfo.sampler = m_sampler;
 
-        VkWriteDescriptorSet writeDescriptorSet = vk::initializers::writeDescriptorSet();
+        VkWriteDescriptorSet writeDescriptorSet = vkc::initializers::writeDescriptorSet();
         writeDescriptorSet.dstSet = m_descriptorSet;
         writeDescriptorSet.dstBinding = 1;
         writeDescriptorSet.dstArrayElement = 0;
@@ -77,7 +77,7 @@ namespace core {
         return m_image.getHeight();
     }
 
-    vk::Image Texture::getTextureImage() const {
+    vkc::Image Texture::getTextureImage() const {
         return m_image;
     }
 
@@ -94,7 +94,7 @@ namespace core {
     }
 
     void Texture::createTextureSampler(VkDevice logicalDevice, uint32_t mipLevels) {
-        VkSamplerCreateInfo samplerInfo = vk::initializers::samplerCreateInfo();
+        VkSamplerCreateInfo samplerInfo = vkc::initializers::samplerCreateInfo();
         samplerInfo.magFilter = VK_FILTER_LINEAR;
         samplerInfo.minFilter = VK_FILTER_LINEAR;
         samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;

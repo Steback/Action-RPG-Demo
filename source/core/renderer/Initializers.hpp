@@ -7,7 +7,7 @@
 #include "vulkan/vulkan.h"
 
 
-namespace vk::initializers {
+namespace vkc::initializers {
 
     inline VkApplicationInfo applicationInfo(const std::string& appName, uint32_t appVersion,
                                              const std::string& engineName, uint32_t engineVersion) {

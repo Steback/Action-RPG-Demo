@@ -7,7 +7,7 @@
 #include "vulkan/vulkan.h"
 
 
-namespace vk {
+namespace vkc {
 
     class Buffer {
     public:

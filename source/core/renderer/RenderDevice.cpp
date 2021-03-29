@@ -11,7 +11,7 @@
 
 namespace core {
 
-    RenderDevice::RenderDevice(std::shared_ptr<Window> window, VkInstance instance, const std::string& appName, std::shared_ptr<vk::Device> device, VkSurfaceKHR surface)
+    RenderDevice::RenderDevice(std::shared_ptr<Window> window, VkInstance instance, const std::string& appName, std::shared_ptr<vkc::Device> device, VkSurfaceKHR surface)
             : m_window(std::move(window)), m_device(std::move(device)) {
         m_logicalDevice = m_device->m_logicalDevice;
         m_physicalDevice = m_device->m_physicalDevice;
@@ -27,10 +27,10 @@ namespace core {
         m_swapChain.connect(m_physicalDevice, m_logicalDevice, m_surface);
         m_swapChain.create(m_windowSize.width, m_windowSize.height, m_device->m_queueFamilyIndices.graphics, m_device->m_queueFamilyIndices.graphics);
 
-        m_depthFormat= vk::tools::findSupportedFormat(m_physicalDevice,
-                                                      {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
-                                                      VK_IMAGE_TILING_OPTIMAL,
-                                                      VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        m_depthFormat= vkc::tools::findSupportedFormat(m_physicalDevice,
+                                                       {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
+                                                       VK_IMAGE_TILING_OPTIMAL,
+                                                       VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
         m_ui = core::UIImGui(m_swapChain, m_device, m_window->getWindow(), instance, m_graphicsQueue);
 
@@ -112,7 +112,7 @@ namespace core {
                 m_ui.getCommandBuffer(m_indexImage)
         };
 
-        VkSubmitInfo submitInfo = vk::initializers::submitInfo();
+        VkSubmitInfo submitInfo = vkc::initializers::submitInfo();
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = waitSemaphores;
         submitInfo.pWaitDstStageMask = waitStages;
@@ -129,7 +129,7 @@ namespace core {
 
         VkSwapchainKHR swapChains[] = { m_swapChain.getSwapChain() };
 
-        VkPresentInfoKHR presentInfo = vk::initializers::presentInfo();
+        VkPresentInfoKHR presentInfo = vkc::initializers::presentInfo();
         presentInfo.waitSemaphoreCount = 1;
         presentInfo.pWaitSemaphores = signalSemaphores;
         presentInfo.swapchainCount = 1;
@@ -208,7 +208,7 @@ namespace core {
         dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
         std::array<VkAttachmentDescription, 3> attachments = {colorAttachment, depthAttachment, colorAttachmentResolve};
-        VkRenderPassCreateInfo renderPassInfo = vk::initializers::renderPassCreateInfo();
+        VkRenderPassCreateInfo renderPassInfo = vkc::initializers::renderPassCreateInfo();
         renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
         renderPassInfo.pAttachments = attachments.data();
         renderPassInfo.subpassCount = 1;
@@ -223,15 +223,15 @@ namespace core {
         auto vertexShaderCode = core::tools::readFile("shaders/model.vert.spv");
         auto fragmentShaderCode = core::tools::readFile("shaders/model.frag.spv");
 
-        VkShaderModule vertexShaderModule = vk::tools::loadShader(vertexShaderCode, m_logicalDevice);
-        VkShaderModule fragmentShaderModule = vk::tools::loadShader(fragmentShaderCode, m_logicalDevice);
+        VkShaderModule vertexShaderModule = vkc::tools::loadShader(vertexShaderCode, m_logicalDevice);
+        VkShaderModule fragmentShaderModule = vkc::tools::loadShader(fragmentShaderCode, m_logicalDevice);
 
-        VkPipelineShaderStageCreateInfo vertShaderStageInfo = vk::initializers::pipelineShaderStageCreateInfo();
+        VkPipelineShaderStageCreateInfo vertShaderStageInfo = vkc::initializers::pipelineShaderStageCreateInfo();
         vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
         vertShaderStageInfo.module = vertexShaderModule;
         vertShaderStageInfo.pName = "main";
 
-        VkPipelineShaderStageCreateInfo fragShaderStageInfo = vk::initializers::pipelineShaderStageCreateInfo();
+        VkPipelineShaderStageCreateInfo fragShaderStageInfo = vkc::initializers::pipelineShaderStageCreateInfo();
         fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
         fragShaderStageInfo.module = fragmentShaderModule;
         fragShaderStageInfo.pName = "main";
@@ -244,13 +244,13 @@ namespace core {
         auto bindingDescription = Vertex::getBindingDescription();
         auto attributeDescriptions = Vertex::getAttributeDescriptions();
 
-        VkPipelineVertexInputStateCreateInfo vertexInputInfo = vk::initializers::pipelineVertexInputStateCreateInfo();
+        VkPipelineVertexInputStateCreateInfo vertexInputInfo = vkc::initializers::pipelineVertexInputStateCreateInfo();
         vertexInputInfo.vertexBindingDescriptionCount = 1;
         vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
         vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
         vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
-        VkPipelineInputAssemblyStateCreateInfo inputAssembly = vk::initializers::pipelineInputAssemblyStateCreateInfo();
+        VkPipelineInputAssemblyStateCreateInfo inputAssembly = vkc::initializers::pipelineInputAssemblyStateCreateInfo();
         inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         inputAssembly.primitiveRestartEnable = VK_FALSE;
 
@@ -266,13 +266,13 @@ namespace core {
         scissor.offset = { 0, 0 };
         scissor.extent = m_swapChain.getExtent();
 
-        VkPipelineViewportStateCreateInfo viewportState = vk::initializers::pipelineViewportStateCreateInfo();
+        VkPipelineViewportStateCreateInfo viewportState = vkc::initializers::pipelineViewportStateCreateInfo();
         viewportState.viewportCount = 1;
         viewportState.pViewports = &viewport;
         viewportState.scissorCount = 1;
         viewportState.pScissors = &scissor;
 
-        VkPipelineRasterizationStateCreateInfo rasterizer = vk::initializers::pipelineRasterizationStateCreateInfo();
+        VkPipelineRasterizationStateCreateInfo rasterizer = vkc::initializers::pipelineRasterizationStateCreateInfo();
         rasterizer.depthClampEnable = VK_FALSE;
         rasterizer.rasterizerDiscardEnable = VK_FALSE;
         rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
@@ -284,7 +284,7 @@ namespace core {
         rasterizer.depthBiasSlopeFactor = 0.0f;
         rasterizer.lineWidth = 1.0f;
 
-        VkPipelineMultisampleStateCreateInfo multisampling = vk::initializers::pipelineMultisampleStateCreateInfo();
+        VkPipelineMultisampleStateCreateInfo multisampling = vkc::initializers::pipelineMultisampleStateCreateInfo();
         multisampling.rasterizationSamples = m_msaaSamples;
         multisampling.sampleShadingEnable = VK_FALSE;
         multisampling.minSampleShading = 1.0f;
@@ -303,7 +303,7 @@ namespace core {
         colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
                                               VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 
-        VkPipelineColorBlendStateCreateInfo colorBlending = vk::initializers::pipelineColorBlendStateCreateInfo();
+        VkPipelineColorBlendStateCreateInfo colorBlending = vkc::initializers::pipelineColorBlendStateCreateInfo();
         colorBlending.logicOpEnable = VK_FALSE;
         colorBlending.logicOp = VK_LOGIC_OP_COPY;
         colorBlending.attachmentCount = 1;
@@ -318,7 +318,7 @@ namespace core {
                 core::Application::m_resourceManager->getTextureDescriptorSetLayout()
         };
 
-        VkPipelineLayoutCreateInfo pipelineLayoutInfo = vk::initializers::pipelineLayoutCreateInfo();
+        VkPipelineLayoutCreateInfo pipelineLayoutInfo = vkc::initializers::pipelineLayoutCreateInfo();
         pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(layouts.size());
         pipelineLayoutInfo.pSetLayouts = layouts.data();
         pipelineLayoutInfo.pushConstantRangeCount = 1;
@@ -326,7 +326,7 @@ namespace core {
 
         VK_CHECK_RESULT(vkCreatePipelineLayout(m_logicalDevice, &pipelineLayoutInfo, nullptr, &m_pipelineLayout))
 
-        VkPipelineDepthStencilStateCreateInfo depthStencil = vk::initializers::pipelineDepthStencilStateCreateInfo();
+        VkPipelineDepthStencilStateCreateInfo depthStencil = vkc::initializers::pipelineDepthStencilStateCreateInfo();
         depthStencil.depthTestEnable = VK_TRUE;
         depthStencil.depthWriteEnable = VK_TRUE;
         depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
@@ -337,7 +337,7 @@ namespace core {
         depthStencil.front = {};
         depthStencil.back = {};
 
-        VkGraphicsPipelineCreateInfo pipelineInfo = vk::initializers::graphicsPipelineCreateInfo();
+        VkGraphicsPipelineCreateInfo pipelineInfo = vkc::initializers::graphicsPipelineCreateInfo();
         pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
         pipelineInfo.pStages = shaderStages.data();
         pipelineInfo.pVertexInputState = &vertexInputInfo;
@@ -374,7 +374,7 @@ namespace core {
                     m_swapChain.getImageView(i)
             };
 
-            VkFramebufferCreateInfo framebufferInfo = vk::initializers::framebufferCreateInfo();
+            VkFramebufferCreateInfo framebufferInfo = vkc::initializers::framebufferCreateInfo();
             framebufferInfo.renderPass = m_renderPass;
             framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
             framebufferInfo.pAttachments = attachments.data();
@@ -402,9 +402,9 @@ namespace core {
         m_fences.resize(MAX_FRAMES_IN_FLIGHT);
         m_imageFences.resize(m_swapChain.getImageCount(), VK_NULL_HANDLE);
 
-        VkSemaphoreCreateInfo semaphoreInfo = vk::initializers::semaphoreCreateInfo();
+        VkSemaphoreCreateInfo semaphoreInfo = vkc::initializers::semaphoreCreateInfo();
 
-        VkFenceCreateInfo fenceInfo = vk::initializers::fenceCreateInfo();
+        VkFenceCreateInfo fenceInfo = vkc::initializers::fenceCreateInfo();
         fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
@@ -480,7 +480,7 @@ namespace core {
         uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
         uboLayoutBinding.pImmutableSamplers = nullptr;
 
-        VkDescriptorSetLayoutCreateInfo uboLayoutInfo = vk::initializers::descriptorSetLayoutCreateInfo();
+        VkDescriptorSetLayoutCreateInfo uboLayoutInfo = vkc::initializers::descriptorSetLayoutCreateInfo();
         uboLayoutInfo.bindingCount = 1;
         uboLayoutInfo.pBindings = &uboLayoutBinding;
 
@@ -492,7 +492,7 @@ namespace core {
         descriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         descriptorPoolSize.descriptorCount = m_swapChain.getImageCount();
 
-        VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = vk::initializers::descriptorPoolCreateInfo();
+        VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = vkc::initializers::descriptorPoolCreateInfo();
         descriptorPoolCreateInfo.poolSizeCount = 1;
         descriptorPoolCreateInfo.pPoolSizes = &descriptorPoolSize;
         descriptorPoolCreateInfo.maxSets = m_swapChain.getImageCount();
@@ -504,7 +504,7 @@ namespace core {
     void RenderDevice::createDescriptorSets() {
         std::vector<VkDescriptorSetLayout> layouts(m_swapChain.getImageCount(), m_descriptorSetLayout);
 
-        VkDescriptorSetAllocateInfo allocInfo = vk::initializers::descriptorSetAllocateInfo();
+        VkDescriptorSetAllocateInfo allocInfo = vkc::initializers::descriptorSetAllocateInfo();
         allocInfo.descriptorPool = m_descriptorPool;
         allocInfo.descriptorSetCount = m_swapChain.getImageCount();
         allocInfo.pSetLayouts = layouts.data();
@@ -515,7 +515,7 @@ namespace core {
     }
 
     void RenderDevice::createDepthResources() {
-        VkImageCreateInfo imageInfo = vk::initializers::imageCreateInfo();
+        VkImageCreateInfo imageInfo = vkc::initializers::imageCreateInfo();
         imageInfo.imageType = VK_IMAGE_TYPE_2D;
         imageInfo.extent.width = m_swapChain.getExtent().width;
         imageInfo.extent.height = m_swapChain.getExtent().height;
@@ -530,7 +530,7 @@ namespace core {
         imageInfo.samples = m_msaaSamples;
         imageInfo.flags = 0;
 
-        m_depthBuffer = vk::Image(m_logicalDevice, imageInfo);
+        m_depthBuffer = vkc::Image(m_logicalDevice, imageInfo);
 
         VkMemoryRequirements memoryRequirements{};
         vkGetImageMemoryRequirements(m_logicalDevice, m_depthBuffer.getImage(), &memoryRequirements);
@@ -546,7 +546,7 @@ namespace core {
     void RenderDevice::createMsaaResources() {
         VkFormat colorFormat = m_swapChain.getFormat();
 
-        VkImageCreateInfo imageInfo = vk::initializers::imageCreateInfo();
+        VkImageCreateInfo imageInfo = vkc::initializers::imageCreateInfo();
         imageInfo.imageType = VK_IMAGE_TYPE_2D;
         imageInfo.extent.width = m_swapChain.getExtent().width;
         imageInfo.extent.height = m_swapChain.getExtent().height;
@@ -561,7 +561,7 @@ namespace core {
         imageInfo.samples = m_msaaSamples;
         imageInfo.flags = 0;
 
-        m_colorImage = vk::Image(m_logicalDevice, imageInfo);
+        m_colorImage = vkc::Image(m_logicalDevice, imageInfo);
 
         VkMemoryRequirements memoryRequirements{};
         vkGetImageMemoryRequirements(m_logicalDevice, m_colorImage.getImage(), &memoryRequirements);
@@ -581,15 +581,15 @@ namespace core {
         auto vertexShaderCode = core::tools::readFile("shaders/grid.vert.spv");
         auto fragmentShaderCode = core::tools::readFile("shaders/grid.frag.spv");
 
-        VkShaderModule vertShaderModule = vk::tools::loadShader(vertexShaderCode, m_logicalDevice);
-        VkShaderModule fragShaderModule = vk::tools::loadShader(fragmentShaderCode, m_logicalDevice);
+        VkShaderModule vertShaderModule = vkc::tools::loadShader(vertexShaderCode, m_logicalDevice);
+        VkShaderModule fragShaderModule = vkc::tools::loadShader(fragmentShaderCode, m_logicalDevice);
 
-        VkPipelineShaderStageCreateInfo vertShaderStageInfo = vk::initializers::pipelineShaderStageCreateInfo();
+        VkPipelineShaderStageCreateInfo vertShaderStageInfo = vkc::initializers::pipelineShaderStageCreateInfo();
         vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
         vertShaderStageInfo.module = vertShaderModule;
         vertShaderStageInfo.pName = "main";
 
-        VkPipelineShaderStageCreateInfo fragShaderStageInfo = vk::initializers::pipelineShaderStageCreateInfo();
+        VkPipelineShaderStageCreateInfo fragShaderStageInfo = vkc::initializers::pipelineShaderStageCreateInfo();
         fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
         fragShaderStageInfo.module = fragShaderModule;
         fragShaderStageInfo.pName = "main";
@@ -599,7 +599,7 @@ namespace core {
                 fragShaderStageInfo
         };
 
-        VkPipelineVertexInputStateCreateInfo vertexInputInfo = vk::initializers::pipelineVertexInputStateCreateInfo();
+        VkPipelineVertexInputStateCreateInfo vertexInputInfo = vkc::initializers::pipelineVertexInputStateCreateInfo();
         vertexInputInfo.vertexBindingDescriptionCount = 0;
         vertexInputInfo.pVertexBindingDescriptions = nullptr;
         vertexInputInfo.vertexAttributeDescriptionCount = 0;
@@ -607,7 +607,7 @@ namespace core {
 
         createInfo.pVertexInputState = &vertexInputInfo;
 
-        VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = vk::initializers::pipelineLayoutCreateInfo();
+        VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = vkc::initializers::pipelineLayoutCreateInfo();
         pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
         pipelineLayoutCreateInfo.pPushConstantRanges = &m_mvpRange;
 
@@ -665,9 +665,9 @@ namespace core {
         clearValues[0].color = {clearColor.x, clearColor.y, clearColor.z, clearColor.w};
         clearValues[1].depthStencil = {1.0f, 0};
 
-        VkRenderPassBeginInfo renderPassInfo = vk::initializers::renderPassBeginInfo();
+        VkRenderPassBeginInfo renderPassInfo = vkc::initializers::renderPassBeginInfo();
 
-        VkCommandBufferBeginInfo beginInfo = vk::initializers::commandBufferBeginInfo();
+        VkCommandBufferBeginInfo beginInfo = vkc::initializers::commandBufferBeginInfo();
         beginInfo.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
         VK_CHECK_RESULT(vkBeginCommandBuffer(m_commandBuffers[m_indexImage], &beginInfo))

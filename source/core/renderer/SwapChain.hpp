@@ -10,7 +10,7 @@
 #include "../window/Window.hpp"
 
 
-namespace vk {
+namespace vkc {
 
     struct SwapChainBuffer {
         VkImage image;

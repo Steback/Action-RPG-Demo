@@ -12,7 +12,7 @@
 #include "../window/Window.hpp"
 
 
-namespace vk {
+namespace vkc {
 
     struct QueueFamilyIndices {
         uint32_t graphics;
@@ -50,9 +50,9 @@ namespace vk {
         void flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free = true) const;
 
         VkResult createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags,
-                              vk::Buffer *buffer, VkDeviceSize size, void *data = nullptr) const;
+                              vkc::Buffer *buffer, VkDeviceSize size, void *data = nullptr) const;
 
-        void copyBuffer(vk::Buffer *src, vk::Buffer *dst, VkQueue queue, VkBufferCopy *copyRegion = nullptr) const;
+        void copyBuffer(vkc::Buffer *src, vkc::Buffer *dst, VkQueue queue, VkBufferCopy *copyRegion = nullptr) const;
 
         void transitionImageLayout(VkImage image, VkFormat format, VkQueue queue, VkImageLayout oldLayout,
                                    VkImageLayout newLayout, uint32_t mipLevels = 1) const;

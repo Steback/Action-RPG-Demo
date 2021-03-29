@@ -15,8 +15,8 @@ namespace core {
 
         m_window = std::make_shared<core::Window>(appName, 1776, 1000);
 
-        VkApplicationInfo appInfo = vk::initializers::applicationInfo(appName, VK_MAKE_VERSION(0, 1, 0),
-                                                                      "Custom Engine", VK_MAKE_VERSION(0, 1, 0));
+        VkApplicationInfo appInfo = vkc::initializers::applicationInfo(appName, VK_MAKE_VERSION(0, 1, 0),
+                                                                       "Custom Engine", VK_MAKE_VERSION(0, 1, 0));
 
         m_instance.init(appInfo);
 
@@ -24,7 +24,7 @@ namespace core {
         m_instance.createSurface(m_window->getWindow(), m_surface);
         m_instance.pickPhysicalDevice(physicalDevice, m_surface, {VK_KHR_SWAPCHAIN_EXTENSION_NAME});
 
-        m_device = std::make_shared<vk::Device>(physicalDevice);
+        m_device = std::make_shared<vkc::Device>(physicalDevice);
 
         VkPhysicalDeviceFeatures deviceFeatures{};
         m_device->createLogicalDevice(deviceFeatures, {VK_KHR_SWAPCHAIN_EXTENSION_NAME});
