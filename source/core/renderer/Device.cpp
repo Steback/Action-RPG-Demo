@@ -182,7 +182,6 @@ namespace vkc {
             deviceCreateInfo.ppEnabledExtensionNames = enabledExtensions.data();
         }
 
-        m_enabledFeatures = enabledFeatures;
 
         VK_CHECK_RESULT(vkCreateDevice(m_physicalDevice, &deviceCreateInfo, nullptr, &m_logicalDevice));
 
