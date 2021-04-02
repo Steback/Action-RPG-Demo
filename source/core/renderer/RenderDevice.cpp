@@ -16,7 +16,7 @@ namespace core {
         m_logicalDevice = m_device->m_logicalDevice;
         m_physicalDevice = m_device->m_physicalDevice;
         m_surface = surface;
-        m_msaaSamples = m_device->getMaxUsableSampleCount();
+        m_msaaSamples = static_cast<VkSampleCountFlagBits>(m_device->getMaxUsableSampleCount());
 
         VkBool32 presentSupport = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(m_physicalDevice, m_device->m_queueFamilyIndices.graphics, m_surface, &presentSupport);
@@ -33,7 +33,6 @@ namespace core {
                                                        VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
         m_ui = core::UIImGui(m_swapChain, m_device, m_window->getWindow(), instance, m_graphicsQueue);
-
     }
 
     RenderDevice::~RenderDevice() = default;
@@ -392,7 +391,7 @@ namespace core {
         m_commandBuffers.resize(m_swapChain.getImageCount());
 
         for (int i = 0; i < m_swapChain.getImageCount(); ++i) {
-            m_commandBuffers[i] = m_device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, m_commandPool);
+            m_commandBuffers[i] = m_device->createCommandBuffer(vk::CommandBufferLevel::ePrimary, m_commandPool);
         }
     }
 
@@ -437,7 +436,7 @@ namespace core {
         createDescriptorSets();
 
         for (int i = 0; i < m_swapChain.getImageCount(); ++i) {
-            m_commandBuffers[i] = m_device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, m_commandPool);
+            m_commandBuffers[i] = m_device->createCommandBuffer(vk::CommandBufferLevel::ePrimary, m_commandPool);
         }
 
         m_ui.resize(m_swapChain);
@@ -535,12 +534,12 @@ namespace core {
         VkMemoryRequirements memoryRequirements{};
         vkGetImageMemoryRequirements(m_logicalDevice, m_depthBuffer.getImage(), &memoryRequirements);
 
-        auto memType = m_device->getMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        auto memType = m_device->getMemoryType(memoryRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
         m_depthBuffer.bind(m_logicalDevice, memType, memoryRequirements.size, VK_IMAGE_ASPECT_DEPTH_BIT);
 
-        m_device->transitionImageLayout(m_depthBuffer.getImage(), m_depthBuffer.getFormat(), m_graphicsQueue,
-                                        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+        m_device->transitionImageLayout(m_depthBuffer.getImage(), static_cast<vk::Format>(m_depthBuffer.getFormat()), m_graphicsQueue,
+                                        vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
     }
 
     void RenderDevice::createMsaaResources() {
@@ -566,7 +565,7 @@ namespace core {
         VkMemoryRequirements memoryRequirements{};
         vkGetImageMemoryRequirements(m_logicalDevice, m_colorImage.getImage(), &memoryRequirements);
 
-        auto memType = m_device->getMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        auto memType = m_device->getMemoryType(memoryRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
         m_colorImage.bind(m_logicalDevice, memType, memoryRequirements.size, VK_IMAGE_ASPECT_COLOR_BIT);
     }

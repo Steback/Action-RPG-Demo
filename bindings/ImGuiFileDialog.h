@@ -432,7 +432,7 @@ if (IGFD_DisplayDialog(cfiledialog, "filedlg", ImGuiWindowFlags_NoCollapse, minS
 	IGFD_CloseDialog(cfiledialog);
 }
 
-// cleanup ImGuiFileDialog
+// destroy ImGuiFileDialog
 IGFD_Destroy(cfiledialog);
 
 -----------------------------------------------------------------------------------------------------------------
@@ -908,7 +908,7 @@ typedef IGFD::FileDialog ImGuiFileDialog;
 	};
 
 	IMGUIFILEDIALOG_API IGFD_Selection_Pair IGFD_Selection_Pair_Get();										// return an initialized IGFD_Selection_Pair			
-	IMGUIFILEDIALOG_API void IGFD_Selection_Pair_DestroyContent(IGFD_Selection_Pair *vSelection_Pair);		// cleanup the content of a IGFD_Selection_Pair
+	IMGUIFILEDIALOG_API void IGFD_Selection_Pair_DestroyContent(IGFD_Selection_Pair *vSelection_Pair);		// destroy the content of a IGFD_Selection_Pair
 	
 	struct IGFD_Selection
 	{
@@ -917,11 +917,11 @@ typedef IGFD::FileDialog ImGuiFileDialog;
 	};
 
 	IMGUIFILEDIALOG_API IGFD_Selection IGFD_Selection_Get();												// return an initialized IGFD_Selection
-	IMGUIFILEDIALOG_API void IGFD_Selection_DestroyContent(IGFD_Selection* vSelection);						// cleanup the content of a IGFD_Selection
+	IMGUIFILEDIALOG_API void IGFD_Selection_DestroyContent(IGFD_Selection* vSelection);						// destroy the content of a IGFD_Selection
 
 	// constructor / destructor
 	IMGUIFILEDIALOG_API ImGuiFileDialog* IGFD_Create(void);													// create the filedialog context
-	IMGUIFILEDIALOG_API void IGFD_Destroy(ImGuiFileDialog *vContext);										// cleanup the filedialog context
+	IMGUIFILEDIALOG_API void IGFD_Destroy(ImGuiFileDialog *vContext);										// destroy the filedialog context
 
 	typedef void (*IGFD_PaneFun)(const char*, void*, bool*);												// callback fucntion for display the pane
 	

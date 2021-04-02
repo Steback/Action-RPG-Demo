@@ -15,7 +15,7 @@
 
 #define VK_CHECK_RESULT_HPP(f) { \
     vk::Result res = (f); \
-    if (res != vk::Result::eSuccess) throw std::runtime_error(fmt::format("VkResult is \"{}\" in {} at line {} \n", vkc::tools::errorString(res), __FILE__, __LINE__)); \
+    if (res != vk::Result::eSuccess) throw std::runtime_error(fmt::format("VkResult is \"{}\" in {} at line {} \n", vk::to_string(res), __FILE__, __LINE__)); \
 }
 
 namespace core {

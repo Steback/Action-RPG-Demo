@@ -55,8 +55,8 @@ namespace core {
     private:
         VkRenderPass m_renderPass{};
         std::vector<VkFramebuffer> m_framebuffers{};
-        VkCommandPool m_commandPool{};
-        std::vector<VkCommandBuffer> m_commandBuffers{};
+        vk::CommandPool m_commandPool{};
+        std::vector<vk::CommandBuffer> m_commandBuffers{};
         VkDescriptorPool m_descriptorPool{};
         VkQueue m_graphicsQueue{};
         std::shared_ptr<vkc::Device> m_device{};

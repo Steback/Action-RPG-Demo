@@ -39,9 +39,9 @@ namespace core {
         ImGui_ImplVulkan_Init(&init_info, m_renderPass);
 
         // Upload the fonts for Dear ImGui
-        VkCommandBuffer commandBuffer = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, m_commandPool, true);
+        vk::CommandBuffer commandBuffer = device->createCommandBuffer(vk::CommandBufferLevel::ePrimary, m_commandPool, true);
         ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
-        device->flushCommandBuffer(commandBuffer, graphicsQueue, m_commandPool, true);
+        device->flushCommandBuffer(commandBuffer, graphicsQueue, m_commandPool);
         ImGui_ImplVulkan_DestroyFontUploadObjects();
     }
 
@@ -81,8 +81,7 @@ namespace core {
             vkDestroyFramebuffer(m_device->m_logicalDevice, framebuffer, nullptr);
         }
 
-        vkFreeCommandBuffers(m_device->m_logicalDevice, m_commandPool, static_cast<uint64_t>(m_commandBuffers.size()),
-                              m_commandBuffers.data());
+        m_device->m_logicalDevice.freeCommandBuffers(m_commandPool, static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
     }
 
     VkCommandBuffer UIImGui::getCommandBuffer(uint32_t imageIndex) {
@@ -182,7 +181,7 @@ namespace core {
         m_commandBuffers.resize(imageCount);
 
         for (int i = 0; i < imageCount; ++i) {
-            m_commandBuffers[i] = m_device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, m_commandPool);
+            m_commandBuffers[i] = m_device->createCommandBuffer(vk::CommandBufferLevel::ePrimary, m_commandPool);
         }
     }
 

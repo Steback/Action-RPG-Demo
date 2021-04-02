@@ -16,11 +16,11 @@ namespace vkc {
     public:
         Instance();
 
+        explicit Instance(const vk::ApplicationInfo& appInfo);
+
         ~Instance();
 
-        void init(const vk::ApplicationInfo& appInfo);
-
-        void cleanup();
+        void destroy();
 
         [[nodiscard]] vk::Instance getInstance() const;
 

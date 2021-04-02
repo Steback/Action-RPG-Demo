@@ -4,8 +4,8 @@
 
 #include "GLFW/glfw3.h"
 
-#include "Debug.hpp"
 #include "../Constants.hpp"
+#include "Initializers.hpp"
 
 
 namespace vkc {

@@ -15,21 +15,18 @@ namespace core {
 
         m_window = std::make_shared<core::Window>(appName, 1776, 1000);
 
-        m_instance.init({
+        m_instance = std::make_shared<vkc::Instance>(vk::ApplicationInfo{
             .pApplicationName = appName.c_str(),
             .applicationVersion = VK_MAKE_VERSION(0, 1, 0),
             .pEngineName = "Custom Engine",
             .engineVersion = VK_MAKE_VERSION(0, 1, 0)
         });
 
-        m_surface = m_instance.createSurface(m_window->getWindow());
+        m_surface = m_instance->createSurface(m_window->getWindow());
 
-        m_device = std::make_shared<vkc::Device>(m_instance.selectPhysicalDevice({VK_KHR_SWAPCHAIN_EXTENSION_NAME}));
+        m_device = std::make_shared<vkc::Device>(m_instance);
 
-        VkPhysicalDeviceFeatures deviceFeatures{};
-        m_device->createLogicalDevice(deviceFeatures, {VK_KHR_SWAPCHAIN_EXTENSION_NAME});
-
-        m_renderer = std::make_unique<core::RenderDevice>(m_window, m_instance.getInstance(), appName, m_device, m_surface);
+        m_renderer = std::make_unique<core::RenderDevice>(m_window, m_instance->getInstance(), appName, m_device, m_surface);
         m_resourceManager = std::make_unique<core::ResourceManager>(m_device, m_renderer->getGraphicsQueue());
 
         m_renderer->init(drawGrid);
@@ -54,9 +51,9 @@ namespace core {
         m_scene->cleanup();
         m_renderer->cleanup();
         m_resourceManager->cleanup();
+        m_instance->destroy(m_surface);
         m_device->destroy();
-        m_instance.destroy(m_surface);
-        m_instance.cleanup();
+        m_instance->destroy();
         m_window->clean();
 
         spdlog::info("[App] Cleaned");

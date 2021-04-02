@@ -97,7 +97,7 @@ namespace core {
         VkPipelineLayout m_pipelineLayout{};
         VkPipeline m_graphicsPipeline{};
 
-        VkCommandPool m_commandPool{};
+        vk::CommandPool m_commandPool{};
         std::vector<VkCommandBuffer> m_commandBuffers;
 
         std::vector<VkSemaphore> m_imageAvailableSemaphores{};

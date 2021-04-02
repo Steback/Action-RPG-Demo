@@ -89,9 +89,7 @@ namespace vkc {
 
     Instance::Instance() = default;
 
-    Instance::~Instance() = default;
-
-    void Instance::init(const vk::ApplicationInfo& appInfo) {
+    Instance::Instance(const vk::ApplicationInfo& appInfo) {
         std::vector<const char*> reqExtensions = getRequiredExtensions();
         std::vector<const char*> reqLayer;
 
@@ -121,15 +119,17 @@ namespace vkc {
             throw std::runtime_error("GetInstanceProcAddr: Unable to find pfnVkDestroyDebugUtilsMessengerEXT function.");
 
         m_debugMessenger = m_instance.createDebugUtilsMessengerEXT({
-            .messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
-            .messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
-                    vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,
-            .pfnUserCallback = &debugMessageFunc
-        });
+                                                                           .messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
+                                                                           .messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
+                                                                                          vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,
+                                                                           .pfnUserCallback = &debugMessageFunc
+                                                                   });
 #endif
     }
 
-    void Instance::cleanup() {
+    Instance::~Instance() = default;
+
+    void Instance::destroy() {
 #ifdef CORE_DEBUG
         m_instance.destroyDebugUtilsMessengerEXT(m_debugMessenger);
 #endif

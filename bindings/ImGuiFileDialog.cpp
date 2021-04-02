@@ -2923,7 +2923,7 @@ IMGUIFILEDIALOG_API IGFD_Selection_Pair IGFD_Selection_Pair_Get(void)
 	return res;
 }
 
-// cleanup only the content of vSelection_Pair
+// destroy only the content of vSelection_Pair
 IMGUIFILEDIALOG_API void IGFD_Selection_Pair_DestroyContent(IGFD_Selection_Pair* vSelection_Pair)
 {
 	if (vSelection_Pair)
@@ -2941,7 +2941,7 @@ IMGUIFILEDIALOG_API IGFD_Selection IGFD_Selection_Get(void)
 	return { 0, 0U };
 }
 
-// cleanup only the content of vSelection
+// destroy only the content of vSelection
 IMGUIFILEDIALOG_API void IGFD_Selection_DestroyContent(IGFD_Selection* vSelection)
 {
 	if (vSelection)
@@ -2964,7 +2964,7 @@ IMGUIFILEDIALOG_API ImGuiFileDialog* IGFD_Create(void)
 	return new ImGuiFileDialog();
 }
 
-// cleanup the instance of ImGuiFileDialog
+// destroy the instance of ImGuiFileDialog
 IMGUIFILEDIALOG_API void IGFD_Destroy(ImGuiFileDialog* vContext)
 {
 	if (vContext)

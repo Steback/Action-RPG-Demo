@@ -35,8 +35,8 @@ namespace core {
         stbi_uc* pixels = core::tools::loadTextureFile(fileName, &width, &height, &imageSize);
         vkc::Buffer stagingBuffer;
 
-        m_device->createBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        m_device->createBuffer(vk::BufferUsageFlagBits::eTransferSrc,
+                               vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
                                &stagingBuffer, imageSize);
 
         stagingBuffer.map(imageSize);
@@ -45,7 +45,7 @@ namespace core {
 
         stbi_image_free(pixels);
 
-        VkExtent2D size = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
+        vk::Extent2D size = {static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
         auto mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height))));
 
         core::Texture texture(m_device->m_logicalDevice, size, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
@@ -55,12 +55,12 @@ namespace core {
         VkMemoryRequirements memoryRequirements{};
         vkGetImageMemoryRequirements(m_device->m_logicalDevice, texture.getTextureImage().getImage(), &memoryRequirements);
 
-        auto memType = m_device->getMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        auto memType = m_device->getMemoryType(memoryRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
         texture.bind(m_device->m_logicalDevice, memType, memoryRequirements.size);
 
-        m_device->transitionImageLayout(texture.getTextureImage().getImage(), VK_FORMAT_R8G8B8A8_SRGB, m_graphicsQueue,
-                                        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels );
+        m_device->transitionImageLayout(texture.getTextureImage().getImage(), vk::Format::eR8G8B8Srgb, m_graphicsQueue,
+                                        vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, mipLevels);
 
         m_device->copyBufferToImage(stagingBuffer.m_buffer, texture.getTextureImage().getImage(), m_graphicsQueue,
                                     size);
@@ -103,7 +103,7 @@ namespace core {
             core::throw_ex("texture image format does not support linear blitting");
         }
 
-        VkCommandBuffer commandBuffer = m_device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+        vk::CommandBuffer commandBuffer = m_device->createCommandBuffer(vk::CommandBufferLevel::ePrimary, true);
 
         VkImageMemoryBarrier barrier = vkc::initializers::imageMemoryBarrier();
         barrier.image = texture.getTextureImage().getImage();
@@ -177,7 +177,7 @@ namespace core {
                              0, nullptr,
                              1, &barrier);
 
-        m_device->flushCommandBuffer(commandBuffer, m_graphicsQueue, true);
+        m_device->flushCommandBuffer(commandBuffer, m_graphicsQueue);
     }
 
     void ResourceManager::createDescriptorPool() {

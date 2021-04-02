@@ -45,14 +45,14 @@ namespace core {
         VkDeviceSize size = sizeof(core::Vertex) * vertices.size();
         vkc::Buffer stagingBuffer;
 
-        device->createBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        device->createBuffer(vk::BufferUsageFlagBits::eTransferSrc,
+                             vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
                              &stagingBuffer,
                              size,
                              (void*)vertices.data());
 
-        device->createBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        device->createBuffer(vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst,
+                             vk::MemoryPropertyFlagBits::eDeviceLocal,
                              &m_vertexBuffer,
                              size);
 
@@ -65,14 +65,14 @@ namespace core {
         VkDeviceSize size = sizeof(uint32_t) * indices.size();
         vkc::Buffer stagingBuffer;
 
-        device->createBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        device->createBuffer(vk::BufferUsageFlagBits::eTransferSrc,
+                             vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
                              &stagingBuffer,
                              size,
                              (void*)indices.data());
 
-        device->createBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        device->createBuffer(vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst,
+                             vk::MemoryPropertyFlagBits::eDeviceLocal,
                              &m_indexBuffer,
                              size);
 

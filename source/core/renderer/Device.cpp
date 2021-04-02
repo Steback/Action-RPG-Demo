@@ -1,142 +1,47 @@
 #include "Device.hpp"
 
-#include "Debug.hpp"
 #include "Tools.hpp"
+#include "Instance.hpp"
 #include "../Constants.hpp"
+#include "../Utilities.hpp"
+
 
 namespace vkc {
 
-    Device::Device(VkPhysicalDevice physicalDevice) : m_physicalDevice(physicalDevice) {
-        vkGetPhysicalDeviceProperties(m_physicalDevice, &m_properties);
-        vkGetPhysicalDeviceFeatures(m_physicalDevice, &m_features);
-        vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &m_memoryProperties);
+    Device::Device(const std::shared_ptr<Instance>& instance, vk::QueueFlags requestedQueueTypes) {
+        std::vector<const char*> reqExtensions = {
+                VK_KHR_SWAPCHAIN_EXTENSION_NAME
+        };
 
-        uint32_t queueFamilyCount;
-        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
+        m_physicalDevice = instance->selectPhysicalDevice(reqExtensions);
+        std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos{};
 
-        m_queueFamilyProperties.resize(queueFamilyCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount,
-                                                 m_queueFamilyProperties.data());
-
-        uint32_t extCount = 0;
-        vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extCount, nullptr);
-
-        if (extCount > 0) {
-            std::vector<VkExtensionProperties> extensions(extCount);
-
-            if (vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extCount, &extensions.front())
-                    == VK_SUCCESS) {
-                for (auto ext : extensions) {
-                    m_supportedExtensions.emplace_back(ext.extensionName);
-                }
-            }
-        }
-    }
-
-    Device::~Device() = default;
-
-    void Device::destroy() const {
-        if (m_commandPool) {
-            vkDestroyCommandPool(m_logicalDevice, m_commandPool, nullptr);
-        }
-
-        if (m_logicalDevice) {
-            vkDestroyDevice(m_logicalDevice, nullptr);
-        }
-    }
-
-    Device::operator VkDevice() const {
-        return m_logicalDevice;
-    }
-
-    uint32_t Device::getMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const {
-        VkPhysicalDeviceMemoryProperties memProperties;
-        vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &memProperties);
-
-        for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-            if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
-                return i;
-            }
-        }
-
-        core::throw_ex("Failed to find suitable memory type");
-
-        return -1;
-    }
-
-    uint32_t Device::getQueueFamilyIndex(VkQueueFlagBits queueFlags) const {
-        // Dedicated queue for compute
-        // Try to find a queue family index that supports compute but not graphics
-        if (queueFlags & VK_QUEUE_COMPUTE_BIT) {
-            for (uint32_t i = 0; i < static_cast<uint32_t>(m_queueFamilyProperties.size()); i++) {
-                if ((m_queueFamilyProperties[i].queueFlags & queueFlags)
-                        && ((m_queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0)) {
-                    return i;
-                }
-            }
-        }
-
-        // Dedicated queue for transfer
-        // Try to find a queue family index that supports transfer but not graphics and compute
-        if (queueFlags & VK_QUEUE_TRANSFER_BIT) {
-            for (uint32_t i = 0; i < static_cast<uint32_t>(m_queueFamilyProperties.size()); i++) {
-                if ((m_queueFamilyProperties[i].queueFlags & queueFlags)
-                        && ((m_queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0)
-                        && ((m_queueFamilyProperties[i].queueFlags & VK_QUEUE_COMPUTE_BIT) == 0)) {
-                    return i;
-                }
-            }
-        }
-
-        // For other queue types or if no separate compute queue is present, return the first one to support the requested flags
-        for (uint32_t i = 0; i < static_cast<uint32_t>(m_queueFamilyProperties.size()); i++) {
-            if (m_queueFamilyProperties[i].queueFlags & queueFlags) {
-                return i;
-            }
-        }
-
-        core::throw_ex("Could not find a matching queue family index");
-
-        return -1;
-    }
-
-    bool Device::extensionSupported(const std::string& extension) {
-        return (std::find(m_supportedExtensions.begin(), m_supportedExtensions.end(), extension)
-                != m_supportedExtensions.end());
-    }
-
-    void Device::createLogicalDevice(VkPhysicalDeviceFeatures enabledFeatures, const std::vector<const char *>& enabledExtensions,
-                                     VkQueueFlags requestedQueueTypes) {
-        std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
-
-        // Get queue family indices for the requested queue family types
-        // Note that the indices may overlap depending on the implementation
         const float defaultQueuePriority(0.0f);
 
         // Graphics queue
-        if (requestedQueueTypes & VK_QUEUE_GRAPHICS_BIT) {
-            m_queueFamilyIndices.graphics = getQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT);
+        if (requestedQueueTypes & vk::QueueFlagBits::eGraphics) {
+            m_queueFamilyIndices.graphics = getQueueFamilyIndex(vk::QueueFlagBits::eGraphics);
 
-            VkDeviceQueueCreateInfo queueInfo = vkc::initializers::deviceQueueCreateInfo();
-            queueInfo.queueFamilyIndex = m_queueFamilyIndices.graphics;
-            queueInfo.queueCount = 1;
-            queueInfo.pQueuePriorities = &defaultQueuePriority;
-            queueCreateInfos.push_back(queueInfo);
+            queueCreateInfos.push_back({
+                .queueFamilyIndex = m_queueFamilyIndices.graphics,
+                .queueCount = 1,
+                .pQueuePriorities = &defaultQueuePriority
+            });
         } else {
             m_queueFamilyIndices.graphics = VK_NULL_HANDLE;
         }
 
         // Dedicated compute queue
-        if (requestedQueueTypes & VK_QUEUE_COMPUTE_BIT) {
-            m_queueFamilyIndices.compute = getQueueFamilyIndex(VK_QUEUE_COMPUTE_BIT);
+        if (requestedQueueTypes & vk::QueueFlagBits::eCompute) {
+            m_queueFamilyIndices.compute = getQueueFamilyIndex(vk::QueueFlagBits::eCompute);
 
             if (m_queueFamilyIndices.compute != m_queueFamilyIndices.graphics) {
                 // If compute family index differs, we need an additional queue create info for the compute queue
-                VkDeviceQueueCreateInfo queueInfo = vkc::initializers::deviceQueueCreateInfo();
-                queueInfo.queueFamilyIndex = m_queueFamilyIndices.compute;
-                queueInfo.queueCount = 1;
-                queueInfo.pQueuePriorities = &defaultQueuePriority;
-                queueCreateInfos.push_back(queueInfo);
+                queueCreateInfos.push_back({
+                    .queueFamilyIndex = m_queueFamilyIndices.compute,
+                    .queueCount = 1,
+                    .pQueuePriorities = &defaultQueuePriority
+                });
             }
         } else {
             // Else we use the same queue
@@ -144,144 +49,181 @@ namespace vkc {
         }
 
         // Dedicated transfer queue
-        if (requestedQueueTypes & VK_QUEUE_TRANSFER_BIT) {
-            m_queueFamilyIndices.transfer = getQueueFamilyIndex(VK_QUEUE_TRANSFER_BIT);
+        if (requestedQueueTypes & vk::QueueFlagBits::eTransfer) {
+            m_queueFamilyIndices.transfer = getQueueFamilyIndex(vk::QueueFlagBits::eTransfer);
 
             if ((m_queueFamilyIndices.transfer != m_queueFamilyIndices.graphics)
                     && (m_queueFamilyIndices.transfer != m_queueFamilyIndices.compute)) {
                 // If compute family index differs, we need an additional queue create info for the compute queue
-                VkDeviceQueueCreateInfo queueInfo = vkc::initializers::deviceQueueCreateInfo();
-                queueInfo.queueFamilyIndex = m_queueFamilyIndices.transfer;
-                queueInfo.queueCount = 1;
-                queueInfo.pQueuePriorities = &defaultQueuePriority;
-                queueCreateInfos.push_back(queueInfo);
+                queueCreateInfos.push_back({
+                    .queueFamilyIndex = m_queueFamilyIndices.transfer,
+                    .queueCount = 1,
+                    .pQueuePriorities = &defaultQueuePriority
+                });
             }
         } else {
             // Else we use the same queue
             m_queueFamilyIndices.transfer = m_queueFamilyIndices.graphics;
         }
 
-        VkDeviceCreateInfo deviceCreateInfo = vkc::initializers::deviceCreateInfo();
-        deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-        deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
-        deviceCreateInfo.pEnabledFeatures = &enabledFeatures;
-
-#ifdef CORE_DEBUG
-        deviceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-        deviceCreateInfo.ppEnabledLayerNames = validationLayers.data();
-#endif
-
-        if (!enabledExtensions.empty()) {
-            for (const char* enabledExtension : enabledExtensions) {
-                if (!extensionSupported(enabledExtension)) {
-                    spdlog::warn("Enabled device extension \"" + std::string(enabledExtension) + "\" is not present at device level\n");
-                }
-            }
-
-            deviceCreateInfo.enabledExtensionCount = (uint32_t)enabledExtensions.size();
-            deviceCreateInfo.ppEnabledExtensionNames = enabledExtensions.data();
-        }
-
-
-        VK_CHECK_RESULT(vkCreateDevice(m_physicalDevice, &deviceCreateInfo, nullptr, &m_logicalDevice));
+        m_logicalDevice = m_physicalDevice.createDevice({
+            .queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size()),
+            .pQueueCreateInfos = queueCreateInfos.data(),
+            .enabledExtensionCount = static_cast<uint32_t>(reqExtensions.size()),
+            .ppEnabledExtensionNames = reqExtensions.data(),
+            .pEnabledFeatures = {},
+        });
 
         // Create a default command pool for graphics command buffers
         m_commandPool = createCommandPool(m_queueFamilyIndices.graphics);
     }
 
-    VkCommandPool Device::createCommandPool(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags createFlags) const {
-        VkCommandPoolCreateInfo cmdPoolInfo = vkc::initializers::commandPoolCreateInfo();
-        cmdPoolInfo.queueFamilyIndex = queueFamilyIndex;
-        cmdPoolInfo.flags = createFlags;
+    Device::~Device() = default;
 
-        VkCommandPool cmdPool;
+    void Device::destroy() const {
+        if (m_commandPool) m_logicalDevice.destroyCommandPool(m_commandPool);
 
-        VK_CHECK_RESULT(vkCreateCommandPool(m_logicalDevice, &cmdPoolInfo, nullptr, &cmdPool));
-
-        return cmdPool;
+        if (m_logicalDevice) m_logicalDevice.destroy();
     }
 
-    VkCommandBuffer Device::createCommandBuffer(VkCommandBufferLevel level, VkCommandPool pool, bool begin) const {
-        VkCommandBufferAllocateInfo cmdBufAllocateInfo = vkc::initializers::commandBufferAllocateInfo(pool, level, 1);
-        VkCommandBuffer cmdBuffer;
+    Device::operator vk::Device() const {
+        return m_logicalDevice;
+    }
 
-        VK_CHECK_RESULT(vkAllocateCommandBuffers(m_logicalDevice, &cmdBufAllocateInfo, &cmdBuffer));
+    uint32_t Device::getMemoryType(uint32_t typeFilter, vk::MemoryPropertyFlags properties) const {
+        vk::PhysicalDeviceMemoryProperties memProperties = m_physicalDevice.getMemoryProperties();
+
+        for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+            if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+                return i;
+        }
+
+        throw std::runtime_error("Failed to find suitable memory type");
+
+        return -1;
+    }
+
+    uint32_t Device::getQueueFamilyIndex(vk::QueueFlags queueFlags) const {
+        std::vector<vk::QueueFamilyProperties> properties = m_physicalDevice.getQueueFamilyProperties();
+
+        // Dedicated queue for compute
+        // Try to find a queue family index that supports compute but not graphics
+        if (queueFlags & vk::QueueFlagBits::eCompute) {
+            for (uint32_t i = 0; i < static_cast<uint32_t>(properties.size()); i++) {
+                if ((properties[i].queueFlags & queueFlags)
+                        && (!(properties[i].queueFlags & vk::QueueFlagBits::eGraphics)))
+                    return i;
+            }
+        }
+
+        // Dedicated queue for transfer
+        // Try to find a queue family index that supports transfer but not graphics and compute
+        if (queueFlags & vk::QueueFlagBits::eTransfer) {
+            for (uint32_t i = 0; i < static_cast<uint32_t>(properties.size()); i++) {
+                if ((properties[i].queueFlags & queueFlags)
+                        && (!(properties[i].queueFlags & vk::QueueFlagBits::eCompute))
+                        && (!(properties[i].queueFlags & vk::QueueFlagBits::eCompute)))
+                    return i;
+            }
+        }
+
+        // For other queue types or if no separate compute queue is present, return the first one to support the requested flags
+        for (uint32_t i = 0; i < static_cast<uint32_t>(properties.size()); i++) {
+            if (properties[i].queueFlags & queueFlags)
+                return i;
+        }
+
+        throw std::runtime_error("Could not find a matching queue family index");
+
+        return -1;
+    }
+
+    vk::CommandPool Device::createCommandPool(uint32_t queueFamilyIndex, vk::CommandPoolCreateFlags createFlags) const {
+        return m_logicalDevice.createCommandPool({
+            .flags = createFlags,
+            .queueFamilyIndex = queueFamilyIndex
+        });
+    }
+
+    vk::CommandBuffer Device::createCommandBuffer(vk::CommandBufferLevel level, vk::CommandPool pool, bool begin) const {
+        vk::CommandBuffer cmdBuffer;
+
+        cmdBuffer = m_logicalDevice.allocateCommandBuffers({
+            .commandPool = pool,
+            .level = level,
+            .commandBufferCount = 1,
+        }).front();
 
         // If requested, also start recording for the new command buffer
         if (begin) {
-            VkCommandBufferBeginInfo cmdBufInfo = vkc::initializers::commandBufferBeginInfo();
-            cmdBufInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-            VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBuffer, &cmdBufInfo));
+            cmdBuffer.begin({
+                .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit
+            });
         }
 
         return cmdBuffer;
     }
 
-    VkCommandBuffer Device::createCommandBuffer(VkCommandBufferLevel level, bool begin) const {
+    vk::CommandBuffer Device::createCommandBuffer(vk::CommandBufferLevel level, bool begin) const {
         return createCommandBuffer(level, m_commandPool, begin);;
     }
 
-    void Device::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, VkCommandPool pool, bool free) const {
-        if (commandBuffer == VK_NULL_HANDLE) return;
+    void Device::flushCommandBuffer(vk::CommandBuffer commandBuffer, vk::Queue queue, vk::CommandPool pool, bool free) const {
+        if (!commandBuffer) return;
 
-        VK_CHECK_RESULT(vkEndCommandBuffer(commandBuffer));
+        commandBuffer.end();
 
-        VkSubmitInfo submitInfo = vkc::initializers::submitInfo();
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffer;
+        vk::SubmitInfo submitInfo{
+                .commandBufferCount = 1,
+                .pCommandBuffers = &commandBuffer
+        };
 
         // Create fence to ensure that the command buffer has finished executing
-        VkFenceCreateInfo fenceInfo = vkc::initializers::fenceCreateInfo();
-
-        VkFence fence;
-        VK_CHECK_RESULT(vkCreateFence(m_logicalDevice, &fenceInfo, nullptr, &fence));
+        vk::Fence fence = m_logicalDevice.createFence({});
 
         // Submit to the queue
-        VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submitInfo, fence));
+        VK_CHECK_RESULT_HPP(queue.submit(1, &submitInfo, fence))
 
         // Wait for the fence to signal that command buffer has finished executing
-        VK_CHECK_RESULT(vkWaitForFences(m_logicalDevice, 1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max()));
+        VK_CHECK_RESULT_HPP(m_logicalDevice.waitForFences(1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max()))
 
-        vkDestroyFence(m_logicalDevice, fence, nullptr);
+        m_logicalDevice.destroy(fence);
 
-        if (free) vkFreeCommandBuffers(m_logicalDevice, pool, 1, &commandBuffer);
+        if (free)
+            m_logicalDevice.freeCommandBuffers(pool, commandBuffer);
     }
 
-    void Device::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free) const {
+    void Device::flushCommandBuffer(vk::CommandBuffer commandBuffer, vk::Queue queue, bool free) const {
         return flushCommandBuffer(commandBuffer, queue, m_commandPool, free);
     }
 
-    VkResult Device::createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags,
-                                  vkc::Buffer *buffer, VkDeviceSize size, void *data) const {
+    vk::Result Device::createBuffer(vk::BufferUsageFlags usageFlags, vk::MemoryPropertyFlags memoryPropertyFlags,
+                                   vkc::Buffer *buffer, vk::DeviceSize size, void *data) const {
         buffer->m_device = m_logicalDevice;
 
         // Create the buffer handle
-        VkBufferCreateInfo bufferCreateInfo = vkc::initializers::bufferCreateInfo(usageFlags, size);
-        VK_CHECK_RESULT(vkCreateBuffer(m_logicalDevice, &bufferCreateInfo, nullptr, &buffer->m_buffer));
+        buffer->m_buffer = m_logicalDevice.createBuffer({
+            .size = size,
+            .usage = usageFlags
+        });
 
         // Create the memory backing up the buffer handle
-        VkMemoryRequirements memReqs;
-        vkGetBufferMemoryRequirements(m_logicalDevice, buffer->m_buffer, &memReqs);
+        vk::MemoryRequirements memReqs = m_logicalDevice.getBufferMemoryRequirements(buffer->m_buffer);
+        vk::MemoryAllocateInfo memAlloc{
+            .allocationSize = memReqs.size,
+            .memoryTypeIndex = getMemoryType(memReqs.memoryTypeBits , memoryPropertyFlags)
+        };
 
-        VkMemoryAllocateInfo memAlloc = vkc::initializers::memoryAllocateInfo();
-        memAlloc.allocationSize = memReqs.size;
-        memAlloc.memoryTypeIndex = getMemoryType(memReqs.memoryTypeBits, memoryPropertyFlags);
-
-        VkMemoryAllocateFlagsInfoKHR allocFlagsInfo{};
-
-        if (usageFlags & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
-            allocFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO_KHR;
-            allocFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+        vk::MemoryAllocateFlagsInfoKHR allocFlagsInfo{};
+        if (usageFlags & vk::BufferUsageFlagBits::eShaderDeviceAddress) {
+            allocFlagsInfo.flags = vk::MemoryAllocateFlagBits::eDeviceAddress;
             memAlloc.pNext = &allocFlagsInfo;
         }
 
-        VK_CHECK_RESULT(vkAllocateMemory(m_logicalDevice, &memAlloc, nullptr, &buffer->m_memory));
+        buffer->m_memory = m_logicalDevice.allocateMemory(memAlloc);
 
         buffer->m_alignment = memReqs.alignment;
         buffer->m_size = size;
-        buffer->m_usageFlags = usageFlags;
-        buffer->m_memoryPropertyFlags = memoryPropertyFlags;
 
         // If a pointer to the buffer data has been passed, map the buffer and copy over the data
         if (data != nullptr) {
@@ -289,7 +231,7 @@ namespace vkc {
 
             memcpy(buffer->m_mapped, data, size);
 
-            if ((memoryPropertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0)
+            if (!(memoryPropertyFlags & vk::MemoryPropertyFlagBits::eHostCoherent))
                 buffer->flush();
 
             buffer->unmap();
@@ -299,12 +241,12 @@ namespace vkc {
         buffer->setupDescriptor();
 
         // Attach the memory to the buffer object
-        return buffer->bind();
+        return static_cast<vk::Result>(buffer->bind());
     }
 
-    void Device::copyBuffer(vkc::Buffer *src, vkc::Buffer *dst, VkQueue queue, VkBufferCopy *copyRegion) const {
-        VkCommandBuffer copyCmd = createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
-        VkBufferCopy bufferCopy{};
+    void Device::copyBuffer(vkc::Buffer *src, vkc::Buffer *dst, vk::Queue queue, vk::BufferCopy *copyRegion) const {
+        vk::CommandBuffer copyCmd = createCommandBuffer(vk::CommandBufferLevel::ePrimary, true);
+        vk::BufferCopy bufferCopy{};
 
         if (copyRegion == nullptr) {
             bufferCopy.size = src->m_size;
@@ -312,121 +254,111 @@ namespace vkc {
             bufferCopy = *copyRegion;
         }
 
-        vkCmdCopyBuffer(copyCmd, src->m_buffer, dst->m_buffer, 1, &bufferCopy);
+        copyCmd.copyBuffer(src->m_buffer, dst->m_buffer, 1, &bufferCopy);
 
         flushCommandBuffer(copyCmd, queue);
     }
 
-    void Device::transitionImageLayout(VkImage image, VkFormat format, VkQueue queue, VkImageLayout oldLayout,
-                                       VkImageLayout newLayout, uint32_t mipLevels) const {
-        VkCommandBuffer commandBuffer = createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+    void Device::transitionImageLayout(vk::Image image, vk::Format format, vk::Queue queue, vk::ImageLayout oldLayout,
+                                       vk::ImageLayout newLayout, uint32_t mipLevels) const {
+        vk::CommandBuffer commandBuffer = createCommandBuffer(vk::CommandBufferLevel::ePrimary, true);
 
-        VkImageMemoryBarrier barrier = vkc::initializers::imageMemoryBarrier();
-        barrier.oldLayout = oldLayout;
-        barrier.newLayout = newLayout;
-        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.image = image;
-        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        barrier.subresourceRange.baseMipLevel = 0;
-        barrier.subresourceRange.levelCount = mipLevels;
-        barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount = 1;
-        barrier.srcAccessMask = 0;
-        barrier.dstAccessMask = 0;
-
-        VkPipelineStageFlags sourceStage;
-        VkPipelineStageFlags destinationStage;
-
-        if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
-            barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-
-            // Check for stencil support
-            if (format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT) {
-                barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+        vk::ImageMemoryBarrier barrier{
+            .srcAccessMask = {},
+            .dstAccessMask = {},
+            .oldLayout = oldLayout,
+            .newLayout = newLayout,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image = image,
+            .subresourceRange = {
+                    .aspectMask = vk::ImageAspectFlagBits::eColor,
+                    .baseMipLevel = 0,
+                    .levelCount = mipLevels,
+                    .baseArrayLayer = 0,
+                    .layerCount = 1
             }
-        } else {
-            barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        }
-
-        if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-            barrier.srcAccessMask = 0;
-            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-            sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-            sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        } else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
-            barrier.srcAccessMask = 0;
-            barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-            sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-        } else {
-            core::throw_ex("unsupported layout transition!");
-        }
-
-        vkCmdPipelineBarrier(
-                commandBuffer,
-                sourceStage, destinationStage,
-                0,
-                0, nullptr,
-                0, nullptr,
-                1, &barrier
-        );
-
-        flushCommandBuffer(commandBuffer, queue, true);
-    }
-
-    void Device::copyBufferToImage(VkBuffer buffer, VkImage image, VkQueue queue, VkExtent2D size) const {
-        VkCommandBuffer commandBuffer = createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
-
-        VkBufferImageCopy region{};
-        region.bufferOffset = 0;
-        region.bufferRowLength = 0;
-        region.bufferImageHeight = 0;
-
-        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        region.imageSubresource.mipLevel = 0;
-        region.imageSubresource.baseArrayLayer = 0;
-        region.imageSubresource.layerCount = 1;
-
-        region.imageOffset = {0, 0, 0};
-        region.imageExtent = {
-                size.width,
-                size.height,
-                1
         };
 
-        vkCmdCopyBufferToImage(
-                commandBuffer,
-                buffer,
-                image,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                1,
-                &region
-        );
+        vk::PipelineStageFlags sourceStage;
+        vk::PipelineStageFlags destinationStage;
+
+        if (newLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal) {
+            barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
+
+            // Check for stencil support
+            if (format == vk::Format::eD32SfloatS8Uint || format == vk::Format::eD24UnormS8Uint) {
+                barrier.subresourceRange.aspectMask |= vk::ImageAspectFlagBits::eStencil;
+            }
+        } else {
+            barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+        }
+
+        if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eTransferDstOptimal) {
+            barrier.srcAccessMask = {};
+            barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+
+            sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
+            destinationStage = vk::PipelineStageFlagBits::eTransfer;
+        } else if (oldLayout == vk::ImageLayout::eTransferDstOptimal && newLayout == vk::ImageLayout::eShaderReadOnlyOptimal) {
+            barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+            barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+
+            sourceStage = vk::PipelineStageFlagBits::eTransfer;
+            destinationStage = vk::PipelineStageFlagBits::eFragmentShader;
+        } else if (oldLayout == vk::ImageLayout::eUndefined && newLayout == vk::ImageLayout::eDepthStencilAttachmentOptimal) {
+            barrier.srcAccessMask = {};
+            barrier.dstAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+
+            sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
+            destinationStage = vk::PipelineStageFlagBits::eEarlyFragmentTests;
+        } else {
+            throw std::runtime_error("Unsupported layout transition!");
+        }
+
+        commandBuffer.pipelineBarrier(sourceStage, destinationStage, {}, 0, nullptr, 0, nullptr, 1, &barrier);
 
         flushCommandBuffer(commandBuffer, queue);
     }
 
-    VkSampleCountFlagBits Device::getMaxUsableSampleCount() const {
-        VkSampleCountFlags counts = m_properties.limits.framebufferColorSampleCounts &
+    void Device::copyBufferToImage(vk::Buffer buffer, vk::Image image, vk::Queue queue, vk::Extent2D size) const {
+        vk::CommandBuffer commandBuffer = createCommandBuffer(vk::CommandBufferLevel::ePrimary, true);
+
+        vk::BufferImageCopy region{
+            .bufferOffset = 0,
+            .bufferRowLength = 0,
+            .bufferImageHeight = 0,
+            .imageSubresource = {
+                    .aspectMask = vk::ImageAspectFlagBits::eColor,
+                    .mipLevel = 0,
+                    .baseArrayLayer = 0,
+                    .layerCount = 1
+            },
+            .imageOffset = {0, 0, 0},
+            .imageExtent = {
+                    .width = size.width,
+                    .height = size.height,
+                    .depth = 1
+            }
+        };
+
+        commandBuffer.copyBufferToImage(buffer, image, vk::ImageLayout::eTransferDstOptimal, 1, &region);
+
+        flushCommandBuffer(commandBuffer, queue);
+    }
+
+    vk::SampleCountFlagBits Device::getMaxUsableSampleCount() const {
+        vk::SampleCountFlags counts = m_properties.limits.framebufferColorSampleCounts &
                m_properties.limits.framebufferDepthSampleCounts;
 
-        if (counts & VK_SAMPLE_COUNT_64_BIT) { return VK_SAMPLE_COUNT_64_BIT; }
-        if (counts & VK_SAMPLE_COUNT_32_BIT) { return VK_SAMPLE_COUNT_32_BIT; }
-        if (counts & VK_SAMPLE_COUNT_16_BIT) { return VK_SAMPLE_COUNT_16_BIT; }
-        if (counts & VK_SAMPLE_COUNT_8_BIT) { return VK_SAMPLE_COUNT_8_BIT; }
-        if (counts & VK_SAMPLE_COUNT_4_BIT) { return VK_SAMPLE_COUNT_4_BIT; }
-        if (counts & VK_SAMPLE_COUNT_2_BIT) { return VK_SAMPLE_COUNT_2_BIT; }
+        if (counts & vk::SampleCountFlagBits::e64) { return vk::SampleCountFlagBits::e64; }
+        if (counts & vk::SampleCountFlagBits::e32) { return vk::SampleCountFlagBits::e32; }
+        if (counts & vk::SampleCountFlagBits::e16) { return vk::SampleCountFlagBits::e16; }
+        if (counts & vk::SampleCountFlagBits::e8) { return vk::SampleCountFlagBits::e8; }
+        if (counts & vk::SampleCountFlagBits::e4) { return vk::SampleCountFlagBits::e4; }
+        if (counts & vk::SampleCountFlagBits::e2) { return vk::SampleCountFlagBits::e2; }
 
-        return VK_SAMPLE_COUNT_1_BIT;
+        return vk::SampleCountFlagBits::e1;
     }
 
 } // End namespace vk
