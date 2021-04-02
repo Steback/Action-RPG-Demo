@@ -1,10 +1,89 @@
 #include "Instance.hpp"
 
-#include "Tools.hpp"
+#include <set>
+
+#include "spdlog/spdlog.h"
+#include "fmt/format.h"
+
+#include "../Utilities.hpp"
+
+
+PFN_vkCreateDebugUtilsMessengerEXT  pfnVkCreateDebugUtilsMessengerEXT;
+PFN_vkDestroyDebugUtilsMessengerEXT pfnVkDestroyDebugUtilsMessengerEXT;
+
+VKAPI_ATTR VkResult VKAPI_CALL vkCreateDebugUtilsMessengerEXT(VkInstance instance,
+                                                              const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
+                                                              const VkAllocationCallbacks *pAllocator,
+                                                              VkDebugUtilsMessengerEXT *pMessenger) {
+    return pfnVkCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger);
+}
+
+VKAPI_ATTR void VKAPI_CALL vkDestroyDebugUtilsMessengerEXT(VkInstance instance,
+                                                           VkDebugUtilsMessengerEXT messenger,
+                                                           VkAllocationCallbacks const *pAllocator) {
+    return pfnVkDestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
+}
+
+VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                                VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+                                                VkDebugUtilsMessengerCallbackDataEXT const *pCallbackData,
+                                                void * /*pUserData*/) {
+    std::string message{};
+    message += vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageTypes)) + ":\n";
+    message += std::string("\t") + "messageIDName   = <" + pCallbackData->pMessageIdName + ">\n";
+    message += std::string("\t") + "messageIdNumber = " + std::to_string(pCallbackData->messageIdNumber) + "\n";
+    message += std::string("\t") + "message         = <" + pCallbackData->pMessage + ">\n";
+
+    if (0 < pCallbackData->queueLabelCount) {
+        message += std::string("\t") + "Queue Labels:\n";
+
+        for (uint8_t i = 0; i < pCallbackData->queueLabelCount; i++) {
+            message += std::string("\t\t") + "labelName = <" + pCallbackData->pQueueLabels[i].pLabelName + ">\n";
+        }
+    }
+    if (0 < pCallbackData->cmdBufLabelCount) {
+        message += std::string("\t") + "CommandBuffer Labels:\n";
+
+        for ( uint8_t i = 0; i < pCallbackData->cmdBufLabelCount; i++ ) {
+            message += std::string("\t\t") + "labelName = <" + pCallbackData->pCmdBufLabels[i].pLabelName + ">\n";
+        }
+    }
+
+    if (0 < pCallbackData->objectCount) {
+        message += std::string("\t") + "Objects:\n";
+
+        for ( uint8_t i = 0; i < pCallbackData->objectCount; i++ ) {
+            message += std::string("\t\t") + "Object " + std::to_string(i) + "\n";
+            message += std::string("\t\t\t")
+                    + "objectType   = "
+                    + vk::to_string( static_cast<vk::ObjectType>( pCallbackData->pObjects[i].objectType ) ) + "\n";
+            message += std::string("\t\t\t")
+                    + "objectHandle = " + std::to_string(pCallbackData->pObjects[i].objectHandle) + "\n";
+
+            if (pCallbackData->pObjects[i].pObjectName) {
+                message += std::string("\t\t\t") + "objectName   = <" + pCallbackData->pObjects[i].pObjectName + ">\n";
+            }
+        }
+    }
+
+    spdlog::error(message);
+
+    return false;
+}
+
+std::vector<const char*> getRequiredExtensions() {
+    uint32_t glfwExtensionCount = 0;
+    const char** glfwExtensions;
+    glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+    std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
 #ifdef CORE_DEBUG
-#include "Debug.hpp"
+    extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 #endif
+
+    return extensions;
+}
 
 namespace vkc {
 
@@ -12,83 +91,83 @@ namespace vkc {
 
     Instance::~Instance() = default;
 
-    void Instance::init(VkApplicationInfo& appInfo) {
-        std::vector<const char*> extensions = vkc::tools::getRequiredExtensions();
+    void Instance::init(const vk::ApplicationInfo& appInfo) {
+        std::vector<const char*> reqExtensions = getRequiredExtensions();
+        std::vector<const char*> reqLayer;
 
-        VkInstanceCreateInfo createInfo{
-                .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+#ifdef CORE_DEBUG
+        reqLayer.push_back("VK_LAYER_KHRONOS_validation");
+#endif
+
+        vk::InstanceCreateInfo createInfo{
                 .pApplicationInfo = &appInfo,
-                .enabledExtensionCount = static_cast<uint32_t>(extensions.size()),
-                .ppEnabledExtensionNames = extensions.data(),
+                .enabledLayerCount = static_cast<uint32_t>(reqLayer.size()),
+                .ppEnabledLayerNames = reqLayer.data(),
+                .enabledExtensionCount = static_cast<uint32_t>(reqExtensions.size()),
+                .ppEnabledExtensionNames = reqExtensions.data()
         };
 
-#ifdef CORE_DEBUG
-        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-        createInfo.ppEnabledLayerNames = validationLayers.data();
-
-        VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-        populateDebugMessengerCreateInfo(debugCreateInfo);
-
-        createInfo.pNext = &debugCreateInfo;
-#endif
-
-        VK_CHECK_RESULT(vkCreateInstance(&createInfo, nullptr, &m_instance));
+        m_instance = vk::createInstance(createInfo);
 
 #ifdef CORE_DEBUG
-        if (!checkValidationLayerSupport(validationLayers))
-            throw std::runtime_error("[Renderer] Validation layers requested, but not available");
+        pfnVkCreateDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(m_instance.getProcAddr("vkCreateDebugUtilsMessengerEXT"));
 
-        setupDebugMessenger();
+        if (!pfnVkCreateDebugUtilsMessengerEXT)
+            throw std::runtime_error("GetInstanceProcAddr: Unable to find pfnVkCreateDebugUtilsMessengerEXT function.");
+
+        pfnVkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(m_instance.getProcAddr("vkDestroyDebugUtilsMessengerEXT"));
+
+        if (!pfnVkDestroyDebugUtilsMessengerEXT)
+            throw std::runtime_error("GetInstanceProcAddr: Unable to find pfnVkDestroyDebugUtilsMessengerEXT function.");
+
+        m_debugMessenger = m_instance.createDebugUtilsMessengerEXT({
+            .messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
+            .messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
+                    vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,
+            .pfnUserCallback = &debugMessageFunc
+        });
 #endif
     }
 
-    void Instance::destroy() {
+    void Instance::cleanup() {
 #ifdef CORE_DEBUG
-        destroyDebugUtilsMessengerEXT(m_instance, debugMessenger, nullptr);
+        m_instance.destroyDebugUtilsMessengerEXT(m_debugMessenger);
 #endif
 
-        vkDestroyInstance(m_instance, nullptr);
+        m_instance.destroy();
     }
 
-    VkInstance &Instance::operator*() {
+    vk::Instance Instance::getInstance() const {
         return m_instance;
     }
 
-    void Instance::pickPhysicalDevice(VkPhysicalDevice &physicalDevice, VkSurfaceKHR& surface,
-                                      const std::vector<const char *>& enabledExtensions) {
-        uint32_t deviceCount = 0;
-        vkEnumeratePhysicalDevices(m_instance, &deviceCount, nullptr);
+    vk::PhysicalDevice Instance::selectPhysicalDevice(const std::vector<const char *>& enabledExtensions) {
+        auto physicalDevices = m_instance.enumeratePhysicalDevices();
 
-        if (deviceCount == 0) core::throw_ex("Failed to find GPUs with Vulkan support");
+        if (physicalDevices.empty()) throw  std::runtime_error("Failed to find GPUs with Vulkan support");
 
-        std::vector<VkPhysicalDevice> devices(deviceCount);
-        vkEnumeratePhysicalDevices(m_instance, &deviceCount, devices.data());
+        for (const auto& device : physicalDevices) {
+            std::set<std::string> reqExtension(enabledExtensions.begin(), enabledExtensions.end());
 
-        for (const auto& device : devices) {
-            if (vkc::tools::isDeviceSuitable(device, surface, enabledExtensions)) {
-                physicalDevice = device;
-                break;
+            for (auto& extension : device.enumerateDeviceExtensionProperties()) {
+                reqExtension.erase(extension.extensionName);
             }
+
+            if (reqExtension.empty()) return device;
         }
 
-        if (physicalDevice == VK_NULL_HANDLE) core::throw_ex("Failed to find a suitable GPU!");
+        throw std::runtime_error("Failed to find a suitable GPU!");
     }
 
-    void Instance::createSurface(GLFWwindow* window, VkSurfaceKHR& surface) {
-        VK_CHECK_RESULT(glfwCreateWindowSurface(m_instance, window, nullptr, &surface));
+    vk::SurfaceKHR Instance::createSurface(GLFWwindow* window) {
+        VkSurfaceKHR surface;
+        glfwCreateWindowSurface(m_instance, window, nullptr, &surface);
+
+        return vk::SurfaceKHR(surface);
     }
 
-    void Instance::destroySurface(VkSurfaceKHR &surface) {
-        vkDestroySurfaceKHR(m_instance, surface, nullptr);
+    void Instance::destroy(vk::SurfaceKHR surface) {
+        m_instance.destroy(surface);
     }
-
-#ifdef CORE_DEBUG
-    void Instance::setupDebugMessenger() {
-        VkDebugUtilsMessengerCreateInfoEXT createInfo;
-        populateDebugMessengerCreateInfo(createInfo);
-
-        VK_CHECK_RESULT(createDebugUtilsMessengerEXT(m_instance, &createInfo, nullptr, &debugMessenger));
-    }
-#endif
 
 } // End namespace vk

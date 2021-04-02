@@ -13,6 +13,11 @@
 #include "Constants.hpp"
 
 
+#define VK_CHECK_RESULT_HPP(f) { \
+    vk::Result res = (f); \
+    if (res != vk::Result::eSuccess) throw std::runtime_error(fmt::format("VkResult is \"{}\" in {} at line {} \n", vkc::tools::errorString(res), __FILE__, __LINE__)); \
+}
+
 namespace core {
 
     struct MVP {

@@ -15,21 +15,21 @@ namespace core {
 
         m_window = std::make_shared<core::Window>(appName, 1776, 1000);
 
-        VkApplicationInfo appInfo = vkc::initializers::applicationInfo(appName, VK_MAKE_VERSION(0, 1, 0),
-                                                                       "Custom Engine", VK_MAKE_VERSION(0, 1, 0));
+        m_instance.init({
+            .pApplicationName = appName.c_str(),
+            .applicationVersion = VK_MAKE_VERSION(0, 1, 0),
+            .pEngineName = "Custom Engine",
+            .engineVersion = VK_MAKE_VERSION(0, 1, 0)
+        });
 
-        m_instance.init(appInfo);
+        m_surface = m_instance.createSurface(m_window->getWindow());
 
-        VkPhysicalDevice physicalDevice;
-        m_instance.createSurface(m_window->getWindow(), m_surface);
-        m_instance.pickPhysicalDevice(physicalDevice, m_surface, {VK_KHR_SWAPCHAIN_EXTENSION_NAME});
-
-        m_device = std::make_shared<vkc::Device>(physicalDevice);
+        m_device = std::make_shared<vkc::Device>(m_instance.selectPhysicalDevice({VK_KHR_SWAPCHAIN_EXTENSION_NAME}));
 
         VkPhysicalDeviceFeatures deviceFeatures{};
         m_device->createLogicalDevice(deviceFeatures, {VK_KHR_SWAPCHAIN_EXTENSION_NAME});
 
-        m_renderer = std::make_unique<core::RenderDevice>(m_window, *m_instance, appName, m_device, m_surface);
+        m_renderer = std::make_unique<core::RenderDevice>(m_window, m_instance.getInstance(), appName, m_device, m_surface);
         m_resourceManager = std::make_unique<core::ResourceManager>(m_device, m_renderer->getGraphicsQueue());
 
         m_renderer->init(drawGrid);
@@ -55,8 +55,8 @@ namespace core {
         m_renderer->cleanup();
         m_resourceManager->cleanup();
         m_device->destroy();
-        m_instance.destroySurface(m_surface);
-        m_instance.destroy();
+        m_instance.destroy(m_surface);
+        m_instance.cleanup();
         m_window->clean();
 
         spdlog::info("[App] Cleaned");

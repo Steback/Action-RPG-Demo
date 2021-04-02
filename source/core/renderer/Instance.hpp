@@ -3,7 +3,8 @@
 
 #include <vector>
 
-#include "vulkan/vulkan.h"
+#define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
+#include "vulkan/vulkan.hpp"
 #include "GLFW/glfw3.h"
 
 #include "../Constants.hpp"
@@ -17,28 +18,22 @@ namespace vkc {
 
         ~Instance();
 
-        void init(VkApplicationInfo& appInfo);
+        void init(const vk::ApplicationInfo& appInfo);
 
-        void destroy();
+        void cleanup();
 
-        VkInstance& operator*();
+        [[nodiscard]] vk::Instance getInstance() const;
 
-        void pickPhysicalDevice(VkPhysicalDevice& physicalDevice, VkSurfaceKHR& surface,
-                                const std::vector<const char *>& enabledExtensions);
+        vk::PhysicalDevice selectPhysicalDevice(const std::vector<const char *>& enabledExtensions);
 
-        void createSurface(GLFWwindow* window, VkSurfaceKHR& surface);
+        vk::SurfaceKHR createSurface(GLFWwindow* window);
 
-        void destroySurface(VkSurfaceKHR& surface);
-
-    private:
-#ifdef CORE_DEBUG
-        void setupDebugMessenger();
-#endif
+        void destroy(vk::SurfaceKHR surface);
 
     private:
-        VkInstance m_instance{};
+        vk::Instance m_instance{};
 #ifdef CORE_DEBUG
-        VkDebugUtilsMessengerEXT debugMessenger{};
+        vk::DebugUtilsMessengerEXT m_debugMessenger{};
 #endif
     };
 

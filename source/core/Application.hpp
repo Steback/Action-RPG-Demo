@@ -47,7 +47,7 @@ namespace core {
         std::shared_ptr<core::Window> m_window;
         std::shared_ptr<vkc::Device> m_device;
         vkc::Instance m_instance;
-        VkSurfaceKHR m_surface{};
+        vk::SurfaceKHR m_surface{};
         float m_lastTime{}, m_deltaTime{};
         glm::vec4 m_clearColor;
     };
