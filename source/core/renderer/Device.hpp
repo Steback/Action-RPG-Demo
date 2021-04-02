@@ -48,8 +48,8 @@ namespace vkc {
 
         void flushCommandBuffer(vk::CommandBuffer commandBuffer, vk::Queue queue, bool free = true) const;
 
-        vk::Result createBuffer(vk::BufferUsageFlags usageFlags, vk::MemoryPropertyFlags memoryPropertyFlags,
-                              vkc::Buffer *buffer, vk::DeviceSize size, void *data = nullptr) const;
+        vkc::Buffer createBuffer(vk::BufferUsageFlags usageFlags, vk::MemoryPropertyFlags memoryPropertyFlags,
+                                 vk::DeviceSize size, void *data = nullptr) const;
 
         void copyBuffer(vkc::Buffer *src, vkc::Buffer *dst, vk::Queue queue, vk::BufferCopy *copyRegion = nullptr) const;
 

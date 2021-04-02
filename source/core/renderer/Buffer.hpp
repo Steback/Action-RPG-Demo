@@ -4,7 +4,8 @@
 
 #include <cstring>
 
-#include "vulkan/vulkan.h"
+#define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
+#include "vulkan/vulkan.hpp"
 
 
 namespace vkc {
@@ -15,34 +16,29 @@ namespace vkc {
 
         ~Buffer();
 
-        VkResult map(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+        void map(vk::DeviceSize size = VK_WHOLE_SIZE, vk::DeviceSize offset = 0);
 
         void unmap();
 
-        [[nodiscard]] VkResult bind(VkDeviceSize offset = 0) const;
+        void bind(vk::DeviceSize offset = 0) const;
 
-        void setupDescriptor(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
+        void setupDescriptor(vk::DeviceSize size = VK_WHOLE_SIZE, vk::DeviceSize offset = 0);
 
         template<typename T>
-        void copyTo(T *data, VkDeviceSize size) const {
+        void copyTo(T *data, vk::DeviceSize size) const {
             std::memcpy(m_mapped, data, size);
         }
 
-        VkResult flush(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0) const;
-
-        [[nodiscard]] VkResult invalidate(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0) const;
+        [[nodiscard]] vk::Result flush(vk::DeviceSize size = VK_WHOLE_SIZE, vk::DeviceSize offset = 0) const;
 
         void destroy() const;
 
     public:
-        VkDevice m_device = {};
-        VkBuffer m_buffer = VK_NULL_HANDLE;
-        VkDeviceMemory m_memory = VK_NULL_HANDLE;
-        VkDescriptorBufferInfo m_descriptor{};
-        VkDeviceSize m_size = 0;
-        VkDeviceSize m_alignment = 0;
-        VkBufferUsageFlags m_usageFlags{};
-        VkMemoryPropertyFlags m_memoryPropertyFlags{};
+        vk::Device m_device = {};
+        vk::Buffer m_buffer = nullptr;
+        vk::DeviceMemory m_memory = nullptr;
+        vk::DescriptorBufferInfo m_descriptor{};
+        vk::DeviceSize m_size = 0;
         void* m_mapped = nullptr;
     };
 

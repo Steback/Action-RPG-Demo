@@ -31,13 +31,13 @@ namespace core {
 
     void ResourceManager::createTexture(const std::string &fileName, const std::string& name) {
         int width, height;
-        VkDeviceSize imageSize;
+        vk::DeviceSize imageSize;
         stbi_uc* pixels = core::tools::loadTextureFile(fileName, &width, &height, &imageSize);
         vkc::Buffer stagingBuffer;
 
-        m_device->createBuffer(vk::BufferUsageFlagBits::eTransferSrc,
+        stagingBuffer = m_device->createBuffer(vk::BufferUsageFlagBits::eTransferSrc,
                                vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
-                               &stagingBuffer, imageSize);
+                               imageSize);
 
         stagingBuffer.map(imageSize);
         stagingBuffer.copyTo(pixels, imageSize);

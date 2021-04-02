@@ -42,19 +42,15 @@ namespace core {
     }
 
     void Mesh::createVertexBuffer(const std::vector<core::Vertex> &vertices, VkQueue transferQueue, const std::shared_ptr<vkc::Device>& device) {
-        VkDeviceSize size = sizeof(core::Vertex) * vertices.size();
+        vk::DeviceSize size = sizeof(core::Vertex) * vertices.size();
         vkc::Buffer stagingBuffer;
 
-        device->createBuffer(vk::BufferUsageFlagBits::eTransferSrc,
+        stagingBuffer = device->createBuffer(vk::BufferUsageFlagBits::eTransferSrc,
                              vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
-                             &stagingBuffer,
-                             size,
-                             (void*)vertices.data());
+                             size, (void*)vertices.data());
 
-        device->createBuffer(vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst,
-                             vk::MemoryPropertyFlagBits::eDeviceLocal,
-                             &m_vertexBuffer,
-                             size);
+        m_vertexBuffer = device->createBuffer(vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst,
+                             vk::MemoryPropertyFlagBits::eDeviceLocal, size);
 
         device->copyBuffer(&stagingBuffer, &m_vertexBuffer, transferQueue);
 
@@ -62,19 +58,15 @@ namespace core {
     }
 
     void Mesh::createIndexBuffer(const std::vector<uint32_t> &indices, VkQueue transferQueue, const std::shared_ptr<vkc::Device>& device) {
-        VkDeviceSize size = sizeof(uint32_t) * indices.size();
+        vk::DeviceSize size = sizeof(uint32_t) * indices.size();
         vkc::Buffer stagingBuffer;
 
-        device->createBuffer(vk::BufferUsageFlagBits::eTransferSrc,
+        stagingBuffer = device->createBuffer(vk::BufferUsageFlagBits::eTransferSrc,
                              vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
-                             &stagingBuffer,
-                             size,
-                             (void*)indices.data());
+                             size, (void*)indices.data());
 
-        device->createBuffer(vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst,
-                             vk::MemoryPropertyFlagBits::eDeviceLocal,
-                             &m_indexBuffer,
-                             size);
+        m_indexBuffer = device->createBuffer(vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst,
+                             vk::MemoryPropertyFlagBits::eDeviceLocal, size);
 
         device->copyBuffer(&stagingBuffer, &m_indexBuffer, transferQueue);
 

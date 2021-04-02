@@ -2,8 +2,6 @@
 
 #include "Tools.hpp"
 #include "Instance.hpp"
-#include "../Constants.hpp"
-#include "../Utilities.hpp"
 
 
 namespace vkc {
@@ -165,7 +163,7 @@ namespace vkc {
     }
 
     vk::CommandBuffer Device::createCommandBuffer(vk::CommandBufferLevel level, bool begin) const {
-        return createCommandBuffer(level, m_commandPool, begin);;
+        return createCommandBuffer(level, m_commandPool, begin);
     }
 
     void Device::flushCommandBuffer(vk::CommandBuffer commandBuffer, vk::Queue queue, vk::CommandPool pool, bool free) const {
@@ -197,18 +195,19 @@ namespace vkc {
         return flushCommandBuffer(commandBuffer, queue, m_commandPool, free);
     }
 
-    vk::Result Device::createBuffer(vk::BufferUsageFlags usageFlags, vk::MemoryPropertyFlags memoryPropertyFlags,
-                                   vkc::Buffer *buffer, vk::DeviceSize size, void *data) const {
-        buffer->m_device = m_logicalDevice;
+     vkc::Buffer Device::createBuffer(vk::BufferUsageFlags usageFlags, vk::MemoryPropertyFlags memoryPropertyFlags,
+                                      vk::DeviceSize size, void *data) const {
+        vkc::Buffer buffer;
+        buffer.m_device = m_logicalDevice;
 
         // Create the buffer handle
-        buffer->m_buffer = m_logicalDevice.createBuffer({
+        buffer.m_buffer = m_logicalDevice.createBuffer({
             .size = size,
             .usage = usageFlags
         });
 
         // Create the memory backing up the buffer handle
-        vk::MemoryRequirements memReqs = m_logicalDevice.getBufferMemoryRequirements(buffer->m_buffer);
+        vk::MemoryRequirements memReqs = m_logicalDevice.getBufferMemoryRequirements(buffer.m_buffer);
         vk::MemoryAllocateInfo memAlloc{
             .allocationSize = memReqs.size,
             .memoryTypeIndex = getMemoryType(memReqs.memoryTypeBits , memoryPropertyFlags)
@@ -220,28 +219,29 @@ namespace vkc {
             memAlloc.pNext = &allocFlagsInfo;
         }
 
-        buffer->m_memory = m_logicalDevice.allocateMemory(memAlloc);
+        buffer.m_memory = m_logicalDevice.allocateMemory(memAlloc);
 
-        buffer->m_alignment = memReqs.alignment;
-        buffer->m_size = size;
+        buffer.m_size = size;
 
         // If a pointer to the buffer data has been passed, map the buffer and copy over the data
         if (data != nullptr) {
-            VK_CHECK_RESULT(buffer->map());
+            buffer.map(size);
 
-            memcpy(buffer->m_mapped, data, size);
+            buffer.copyTo(data, size);
 
             if (!(memoryPropertyFlags & vk::MemoryPropertyFlagBits::eHostCoherent))
-                buffer->flush();
+                VK_CHECK_RESULT_HPP(buffer.flush(size))
 
-            buffer->unmap();
+            buffer.unmap();
         }
 
         // Initialize a default descriptor that covers the whole buffer size
-        buffer->setupDescriptor();
+        buffer.setupDescriptor(size);
 
         // Attach the memory to the buffer object
-        return static_cast<vk::Result>(buffer->bind());
+        buffer.bind();
+
+         return buffer;
     }
 
     void Device::copyBuffer(vkc::Buffer *src, vkc::Buffer *dst, vk::Queue queue, vk::BufferCopy *copyRegion) const {
