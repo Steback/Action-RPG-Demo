@@ -4,17 +4,25 @@
 
 #include <vector>
 
-#include "vulkan/vulkan.h"
+#define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
+#include "vulkan/vulkan.hpp"
 #include "GLFW/glfw3.h"
 
 #include "../window/Window.hpp"
 
 
 namespace vkc {
+    class Device;
+
+    struct SwapChainSupportDetails {
+        vk::SurfaceCapabilitiesKHR capabilities;
+        std::vector<vk::SurfaceFormatKHR> formats;
+        std::vector<vk::PresentModeKHR> presentModes;
+    };
 
     struct SwapChainBuffer {
-        VkImage image;
-        VkImageView view;
+        vk::Image image;
+        vk::ImageView view;
     };
 
     class SwapChain {
@@ -23,37 +31,39 @@ namespace vkc {
 
         ~SwapChain();
 
-        void connect(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface);
+        void connect(const std::shared_ptr<vkc::Device>& device, vk::SurfaceKHR surface);
 
         void create(uint32_t& width, uint32_t& height, uint32_t graphicsFamilyIndex, uint32_t presetFamilyIndex);
 
-        VkResult acquireNextImage(VkSemaphore presentCompleteSemaphore, uint32_t* imageIndex);
+        vk::Result acquireNextImage(vk::Semaphore presentCompleteSemaphore, uint32_t* imageIndex);
 
-        VkResult queuePresent(VkQueue queue, uint32_t imageIndex, VkSemaphore waitSemaphore = VK_NULL_HANDLE);
+        vk::Result queuePresent(vk::Queue queue, uint32_t imageIndex, vk::Semaphore waitSemaphore = nullptr);
 
         void cleanup();
 
-        [[nodiscard]] VkSwapchainKHR getSwapChain() const;
+        [[nodiscard]] vk::SwapchainKHR getSwapChain() const;
 
-        [[nodiscard]] VkFormat getFormat() const;
+        [[nodiscard]] vk::Format getFormat() const;
 
-        [[nodiscard]] VkExtent2D getExtent() const;
+        [[nodiscard]] vk::Extent2D getExtent() const;
 
         [[nodiscard]] uint32_t getImageCount() const;
 
-        [[nodiscard]] VkImageView getImageView(size_t index) const;
+        [[nodiscard]] vk::ImageView getImageView(size_t index) const;
+
+        vk::SurfaceKHR getSurface();
 
     private:
-        VkFormat m_format{};
-        VkExtent2D m_extent{};
-        VkColorSpaceKHR m_colorSpace{};
-        VkSwapchainKHR m_swapChain = VK_NULL_HANDLE;
+        vk::Format m_format{};
+        vk::Extent2D m_extent{};
+        vk::ColorSpaceKHR m_colorSpace{};
+        vk::SwapchainKHR m_swapChain = nullptr;
         uint32_t m_imageCount{};
-        std::vector<VkImage> m_images;
+        std::vector<vk::Image> m_images;
         std::vector<SwapChainBuffer> m_buffers;
-        VkDevice m_device{};
-        VkPhysicalDevice m_physicalDevice{};
-        VkSurfaceKHR m_surface{};
+        vk::Device m_device{};
+        vk::PhysicalDevice m_physicalDevice{};
+        vk::SurfaceKHR m_surface{};
     };
 
 } // End namespace vk

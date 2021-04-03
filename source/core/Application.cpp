@@ -22,11 +22,8 @@ namespace core {
             .engineVersion = VK_MAKE_VERSION(0, 1, 0)
         });
 
-        m_surface = m_instance->createSurface(m_window->getWindow());
-
         m_device = std::make_shared<vkc::Device>(m_instance);
-
-        m_renderer = std::make_unique<core::RenderDevice>(m_window, m_instance->getInstance(), appName, m_device, m_surface);
+        m_renderer = std::make_unique<core::RenderDevice>(m_window, m_instance->getInstance(), appName, m_device, m_instance->createSurface(m_window->getWindow()));
         m_resourceManager = std::make_unique<core::ResourceManager>(m_device, m_renderer->getGraphicsQueue());
 
         m_renderer->init(drawGrid);
@@ -49,9 +46,8 @@ namespace core {
 
         cleanup();
         m_scene->cleanup();
-        m_renderer->cleanup();
+        m_renderer->cleanup(m_instance);
         m_resourceManager->cleanup();
-        m_instance->destroy(m_surface);
         m_device->destroy();
         m_instance->destroy();
         m_window->clean();

@@ -30,7 +30,7 @@ namespace core {
 
         void init(bool drawGrid = false);
 
-        void cleanup();
+        void cleanup(const std::shared_ptr<vkc::Instance>& instance);
 
         void render(const glm::vec4& clearColor);
 
@@ -84,8 +84,6 @@ namespace core {
         VkDevice m_logicalDevice{};
 
         VkQueue m_graphicsQueue{};
-
-        VkSurfaceKHR m_surface{};
 
         core::WindowSize m_windowSize;
 

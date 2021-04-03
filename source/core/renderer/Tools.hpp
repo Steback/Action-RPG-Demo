@@ -25,29 +25,13 @@
 
 namespace vkc {
 
-    struct SwapChainSupportDetails {
-        VkSurfaceCapabilitiesKHR capabilities;
-        std::vector<VkSurfaceFormatKHR> formats;
-        std::vector<VkPresentModeKHR> presentModes;
-    };
+
 
     namespace tools {
 
         std::string errorString(VkResult errorCode);
 
         std::vector<const char*> getRequiredExtensions();
-
-        bool isDeviceSuitable(const VkPhysicalDevice& device, const VkSurfaceKHR& surface, const std::vector<const char *>& enabledExtensions);
-
-        bool checkDeviceExtensionSupport(const VkPhysicalDevice& device, const std::vector<const char *>& deviceExtensions);
-
-        SwapChainSupportDetails querySwapChainSupport(const VkPhysicalDevice& device, const VkSurfaceKHR& surface);
-
-        VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
-
-        VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
-
-        VkExtent2D chooseSwapExtend(const uint32_t& width, const uint32_t& height, const VkSurfaceCapabilitiesKHR& capabilities);
 
         VkShaderModule loadShader(const std::vector<char> &code, VkDevice device);
 

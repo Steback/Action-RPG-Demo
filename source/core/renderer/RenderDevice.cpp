@@ -15,16 +15,12 @@ namespace core {
             : m_window(std::move(window)), m_device(std::move(device)) {
         m_logicalDevice = m_device->m_logicalDevice;
         m_physicalDevice = m_device->m_physicalDevice;
-        m_surface = surface;
         m_msaaSamples = m_device->getMaxUsableSampleCount();
-
-        VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(m_physicalDevice, m_device->m_queueFamilyIndices.graphics, m_surface, &presentSupport);
 
         vkGetDeviceQueue(m_logicalDevice, m_device->m_queueFamilyIndices.graphics, 0, &m_graphicsQueue);
 
         m_windowSize = m_window->getSize();
-        m_swapChain.connect(m_physicalDevice, m_logicalDevice, m_surface);
+        m_swapChain.connect(m_device, surface);
         m_swapChain.create(m_windowSize.width, m_windowSize.height, m_device->m_queueFamilyIndices.graphics, m_device->m_queueFamilyIndices.graphics);
 
         m_depthFormat= vkc::tools::findSupportedFormat(m_physicalDevice,
@@ -55,13 +51,14 @@ namespace core {
         spdlog::info("[Renderer] Initialized");
     }
 
-    void RenderDevice::cleanup() {
+    void RenderDevice::cleanup(const std::shared_ptr<vkc::Instance>& instance) {
 
         UIImGui::cleanupImGui();
 
         cleanSwapChain();
 
         m_ui.cleanup();
+        instance->destroy(m_swapChain.getSurface());
 
         vkDestroyDescriptorSetLayout(m_logicalDevice, m_descriptorSetLayout, nullptr);
 
@@ -79,12 +76,12 @@ namespace core {
     void RenderDevice::render(const glm::vec4& clearColor) {
         vkWaitForFences(m_logicalDevice, 1, &m_fences[m_currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
-        VkResult result = m_swapChain.acquireNextImage(m_imageAvailableSemaphores[m_currentFrame], &m_indexImage);
+        vk::Result result = m_swapChain.acquireNextImage(m_imageAvailableSemaphores[m_currentFrame], &m_indexImage);
 
-        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        if (result == vk::Result::eErrorOutOfDateKHR) {
             recreateSwapchain();
             return;
-        } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+        } else if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR) {
             throw_ex("Failed to acquire swap chain image");
         }
 
@@ -136,12 +133,12 @@ namespace core {
         presentInfo.pImageIndices = &m_indexImage;
         presentInfo.pResults = nullptr;
 
-        result = vkQueuePresentKHR(m_graphicsQueue, &presentInfo);
+        result = static_cast<vk::Result>(vkQueuePresentKHR(m_graphicsQueue, &presentInfo));
 
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_window->resize()) {
+        if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR || m_window->resize()) {
             m_window->resize() = false;
             recreateSwapchain();
-        } else if (result != VK_SUCCESS) {
+        } else if (result != vk::Result::eSuccess) {
             throw_ex("Failed to present swap chain image");
         }
 
@@ -150,7 +147,7 @@ namespace core {
 
     void RenderDevice::createRenderPass() {
         VkAttachmentDescription colorAttachment{};
-        colorAttachment.format = m_swapChain.getFormat();
+        colorAttachment.format = static_cast<VkFormat>(m_swapChain.getFormat());
         colorAttachment.samples = static_cast<VkSampleCountFlagBits>(m_msaaSamples);
         colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -178,7 +175,7 @@ namespace core {
         depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
         VkAttachmentDescription colorAttachmentResolve{};
-        colorAttachmentResolve.format = m_swapChain.getFormat();
+        colorAttachmentResolve.format = static_cast<VkFormat>(m_swapChain.getFormat());
         colorAttachmentResolve.samples = VK_SAMPLE_COUNT_1_BIT;
         colorAttachmentResolve.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         colorAttachmentResolve.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -543,7 +540,7 @@ namespace core {
     }
 
     void RenderDevice::createMsaaResources() {
-        VkFormat colorFormat = m_swapChain.getFormat();
+        auto colorFormat = static_cast<VkFormat>(m_swapChain.getFormat());
 
         m_colorImage = vkc::Image(m_logicalDevice, {
                 .imageType = vk::ImageType::e2D,

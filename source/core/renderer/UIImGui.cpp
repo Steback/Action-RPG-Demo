@@ -19,7 +19,7 @@ namespace core {
         m_device = device;
 
         createDescriptorPool();
-        createRenderPass(swapChain.getFormat());
+        createRenderPass(static_cast<VkFormat>(swapChain.getFormat()));
         createCommandPool();
         createCommandBuffers(swapChain.getImageCount());
         createFrameBuffers(swapChain);
