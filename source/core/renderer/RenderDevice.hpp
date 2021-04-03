@@ -118,7 +118,7 @@ namespace core {
         core::UIImGui m_ui;
 
         // Textures
-        VkSampleCountFlagBits m_msaaSamples = VK_SAMPLE_COUNT_1_BIT;
+        vk::SampleCountFlagBits m_msaaSamples = vk::SampleCountFlagBits::e1;
 
         // Multisampling anti-aliasing
         vkc::Image m_colorImage;

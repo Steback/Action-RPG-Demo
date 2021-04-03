@@ -4,8 +4,11 @@
 
 #include <string>
 
+#define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
+#include "vulkan/vulkan.hpp"
+
 #include "../renderer/Image.hpp"
-#include "../renderer/Device.hpp"
+
 
 namespace core {
 
@@ -13,16 +16,16 @@ namespace core {
     public:
         Texture();
 
-        Texture(VkDevice logicalDevice, VkExtent2D size, VkFormat format, VkImageTiling tiling,
-                VkImageUsageFlags usageFlags, uint32_t mipLevels = 1);
+        Texture(vk::Device logicalDevice, vk::Extent2D size, vk::Format format, vk::ImageTiling tiling,
+                vk::ImageUsageFlags usageFlags, uint32_t mipLevels = 1);
 
         ~Texture();
 
-        void bind(VkDevice logicalDevice, uint32_t memoryTypeIndex, VkDeviceSize size);
+        void bind(vk::Device logicalDevice, uint32_t memoryTypeIndex, vk::DeviceSize size);
 
-        void createDescriptor(VkDevice logicalDevice, VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorSetLayout);
+        void createDescriptor(vk::Device logicalDevice, vk::DescriptorPool descriptorPool, vk::DescriptorSetLayout descriptorSetLayout);
 
-        void cleanup(VkDevice logicalDevice);
+        void cleanup(vk::Device logicalDevice);
 
         [[nodiscard]] uint32_t getWidth() const;
 
@@ -30,20 +33,19 @@ namespace core {
 
         [[nodiscard]] vkc::Image getTextureImage() const;
 
-        [[nodiscard]] VkImageView getImageView() const;
+        [[nodiscard]] vk::ImageView getImageView() const;
 
         [[nodiscard]] uint32_t getMipLevel() const;
 
-        VkDescriptorSet getDescriptorSet() const;
+        vk::DescriptorSet getDescriptorSet() const;
 
     private:
-
-        void createTextureSampler(VkDevice logicalDevice, uint32_t mipLevels);
+        void createTextureSampler(vk::Device logicalDevice, uint32_t mipLevels);
 
     private:
         vkc::Image m_image;
-        VkDescriptorSet m_descriptorSet{};
-        VkSampler m_sampler{};
+        vk::DescriptorSet m_descriptorSet{};
+        vk::Sampler m_sampler{};
     };
 
 } // namespace core

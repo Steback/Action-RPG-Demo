@@ -48,8 +48,8 @@ namespace core {
         vk::Extent2D size = {static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
         auto mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height))));
 
-        core::Texture texture(m_device->m_logicalDevice, size, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
-                              VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        core::Texture texture(m_device->m_logicalDevice, size, vk::Format::eR8G8B8A8Unorm, vk::ImageTiling::eOptimal,
+                              vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled,
                               mipLevels);
 
         VkMemoryRequirements memoryRequirements{};

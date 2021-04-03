@@ -2,7 +2,8 @@
 #define PROTOTYPE_ACTION_RPG_IMAGE_HPP
 
 
-#include "vulkan/vulkan.h"
+#define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
+#include "vulkan/vulkan.hpp"
 
 
 namespace vkc {
@@ -11,37 +12,36 @@ namespace vkc {
     public:
         Image();
 
-        Image(VkDevice logicalDevice, const VkImageCreateInfo& createInfo);
+        Image(vk::Device logicalDevice, const vk::ImageCreateInfo& createInfo);
 
         ~Image();
 
-        void bind(VkDevice logicalDevice, uint32_t memoryTypeIndex, VkDeviceSize size, VkImageAspectFlagBits aspectFlags);
+        void bind(vk::Device logicalDevice, uint32_t memoryTypeIndex, vk::DeviceSize size, vk::ImageAspectFlagBits aspectFlags);
 
-        void cleanup(VkDevice logicalDevice);
+        void cleanup(vk::Device logicalDevice);
 
-        [[nodiscard]] VkFormat getFormat() const;
+        [[nodiscard]] vk::Format getFormat() const;
 
         [[nodiscard]] uint32_t getWidth() const;
 
         [[nodiscard]] uint32_t getHeight() const;
 
-        [[nodiscard]] VkImage getImage() const;
+        [[nodiscard]] vk::Image getImage() const;
 
-        [[nodiscard]] VkImageView getView() const;
+        [[nodiscard]] vk::ImageView getView() const;
 
         [[nodiscard]] uint32_t getMipLevel() const;
 
     private:
-        void createImage(VkDevice logicalDevice, const VkImageCreateInfo &imageCreateInfo);
 
-        void createImageView(VkDevice logicalDevice, VkImageAspectFlagBits aspectFlags);
+        void createImageView(vk::Device logicalDevice, vk::ImageAspectFlagBits aspectFlags);
 
     private:
-        VkImage m_image = {};
-        VkImageView m_view = {};
-        VkFormat m_format = {};
-        VkDeviceMemory m_memory = {};
-        VkExtent3D m_extent = {};
+        vk::Image m_image = {};
+        vk::ImageView m_view = {};
+        vk::Format m_format = {};
+        vk::DeviceMemory m_memory = {};
+        vk::Extent3D m_extent = {};
         uint32_t m_mipLevels = 1;
     };
 

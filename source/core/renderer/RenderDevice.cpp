@@ -16,7 +16,7 @@ namespace core {
         m_logicalDevice = m_device->m_logicalDevice;
         m_physicalDevice = m_device->m_physicalDevice;
         m_surface = surface;
-        m_msaaSamples = static_cast<VkSampleCountFlagBits>(m_device->getMaxUsableSampleCount());
+        m_msaaSamples = m_device->getMaxUsableSampleCount();
 
         VkBool32 presentSupport = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(m_physicalDevice, m_device->m_queueFamilyIndices.graphics, m_surface, &presentSupport);
@@ -151,7 +151,7 @@ namespace core {
     void RenderDevice::createRenderPass() {
         VkAttachmentDescription colorAttachment{};
         colorAttachment.format = m_swapChain.getFormat();
-        colorAttachment.samples = m_msaaSamples;
+        colorAttachment.samples = static_cast<VkSampleCountFlagBits>(m_msaaSamples);
         colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -165,7 +165,7 @@ namespace core {
 
         VkAttachmentDescription depthAttachment{};
         depthAttachment.format = m_depthFormat;
-        depthAttachment.samples = m_msaaSamples;
+        depthAttachment.samples = static_cast<VkSampleCountFlagBits>(m_msaaSamples);
         depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -284,7 +284,7 @@ namespace core {
         rasterizer.lineWidth = 1.0f;
 
         VkPipelineMultisampleStateCreateInfo multisampling = vkc::initializers::pipelineMultisampleStateCreateInfo();
-        multisampling.rasterizationSamples = m_msaaSamples;
+        multisampling.rasterizationSamples = static_cast<VkSampleCountFlagBits>(m_msaaSamples);
         multisampling.sampleShadingEnable = VK_FALSE;
         multisampling.minSampleShading = 1.0f;
         multisampling.pSampleMask = nullptr;
@@ -514,29 +514,29 @@ namespace core {
     }
 
     void RenderDevice::createDepthResources() {
-        VkImageCreateInfo imageInfo = vkc::initializers::imageCreateInfo();
-        imageInfo.imageType = VK_IMAGE_TYPE_2D;
-        imageInfo.extent.width = m_swapChain.getExtent().width;
-        imageInfo.extent.height = m_swapChain.getExtent().height;
-        imageInfo.extent.depth = 1;
-        imageInfo.mipLevels = 1;
-        imageInfo.arrayLayers = 1;
-        imageInfo.format = m_depthFormat;
-        imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        imageInfo.samples = m_msaaSamples;
-        imageInfo.flags = 0;
-
-        m_depthBuffer = vkc::Image(m_logicalDevice, imageInfo);
+        m_depthBuffer = vkc::Image(m_logicalDevice, {
+                .imageType = vk::ImageType::e2D,
+                .format = static_cast<vk::Format>(m_depthFormat),
+                .extent = {
+                        .width = m_swapChain.getExtent().width,
+                        .height = m_swapChain.getExtent().height,
+                        .depth = 1
+                },
+                .mipLevels = 1,
+                .arrayLayers = 1,
+                .samples = static_cast<vk::SampleCountFlagBits>(m_msaaSamples),
+                .tiling = vk::ImageTiling::eOptimal,
+                .usage = vk::ImageUsageFlagBits::eDepthStencilAttachment,
+                .sharingMode = vk::SharingMode::eExclusive,
+                .initialLayout = vk::ImageLayout::eUndefined
+        });
 
         VkMemoryRequirements memoryRequirements{};
         vkGetImageMemoryRequirements(m_logicalDevice, m_depthBuffer.getImage(), &memoryRequirements);
 
         auto memType = m_device->getMemoryType(memoryRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
-        m_depthBuffer.bind(m_logicalDevice, memType, memoryRequirements.size, VK_IMAGE_ASPECT_DEPTH_BIT);
+        m_depthBuffer.bind(m_logicalDevice, memType, memoryRequirements.size, vk::ImageAspectFlagBits::eDepth);
 
         m_device->transitionImageLayout(m_depthBuffer.getImage(), static_cast<vk::Format>(m_depthBuffer.getFormat()), m_graphicsQueue,
                                         vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
@@ -545,29 +545,29 @@ namespace core {
     void RenderDevice::createMsaaResources() {
         VkFormat colorFormat = m_swapChain.getFormat();
 
-        VkImageCreateInfo imageInfo = vkc::initializers::imageCreateInfo();
-        imageInfo.imageType = VK_IMAGE_TYPE_2D;
-        imageInfo.extent.width = m_swapChain.getExtent().width;
-        imageInfo.extent.height = m_swapChain.getExtent().height;
-        imageInfo.extent.depth = 1;
-        imageInfo.mipLevels = 1;
-        imageInfo.arrayLayers = 1;
-        imageInfo.format = colorFormat;
-        imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageInfo.usage = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        imageInfo.samples = m_msaaSamples;
-        imageInfo.flags = 0;
-
-        m_colorImage = vkc::Image(m_logicalDevice, imageInfo);
+        m_colorImage = vkc::Image(m_logicalDevice, {
+                .imageType = vk::ImageType::e2D,
+                .format = static_cast<vk::Format>(colorFormat),
+                .extent = {
+                        .width = m_swapChain.getExtent().width,
+                        .height = m_swapChain.getExtent().height,
+                        .depth = 1
+                },
+                .mipLevels = 1,
+                .arrayLayers = 1,
+                .samples = static_cast<vk::SampleCountFlagBits>(m_msaaSamples),
+                .tiling = vk::ImageTiling::eOptimal,
+                .usage = vk::ImageUsageFlagBits::eTransientAttachment | vk::ImageUsageFlagBits::eColorAttachment,
+                .sharingMode = vk::SharingMode::eExclusive,
+                .initialLayout = vk::ImageLayout::eUndefined
+        });
 
         VkMemoryRequirements memoryRequirements{};
         vkGetImageMemoryRequirements(m_logicalDevice, m_colorImage.getImage(), &memoryRequirements);
 
         auto memType = m_device->getMemoryType(memoryRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
-        m_colorImage.bind(m_logicalDevice, memType, memoryRequirements.size, VK_IMAGE_ASPECT_COLOR_BIT);
+        m_colorImage.bind(m_logicalDevice, memType, memoryRequirements.size, vk::ImageAspectFlagBits::eColor);
     }
 
     void RenderDevice::createPushConstants() {

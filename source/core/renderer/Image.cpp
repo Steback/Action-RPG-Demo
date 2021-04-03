@@ -1,39 +1,52 @@
 #include "Image.hpp"
 
-#include "Initializers.hpp"
-#include "Tools.hpp"
-
 
 namespace vkc {
 
     Image::Image() = default;
 
-    Image::Image(VkDevice logicalDevice, const VkImageCreateInfo& createInfo) {
-        createImage(logicalDevice, createInfo);
+    Image::Image(vk::Device logicalDevice, const vk::ImageCreateInfo& createInfo) {
+        m_format = createInfo.format;
+        m_mipLevels = createInfo.mipLevels;
+        m_extent = createInfo.extent;
+
+        m_image = logicalDevice.createImage(createInfo);
     }
 
     Image::~Image() = default;
 
-    void Image::bind(VkDevice logicalDevice, uint32_t memoryTypeIndex, VkDeviceSize size, VkImageAspectFlagBits aspectFlags) {
-        VkMemoryAllocateInfo allocInfo = vkc::initializers::memoryAllocateInfo();
-        allocInfo.allocationSize = size;
-        allocInfo.memoryTypeIndex = memoryTypeIndex;
+    void Image::bind(vk::Device logicalDevice, uint32_t memoryTypeIndex, vk::DeviceSize size, vk::ImageAspectFlagBits aspectFlags) {
+        m_memory = logicalDevice.allocateMemory({
+            .allocationSize = size,
+            .memoryTypeIndex = memoryTypeIndex
+        });
 
-        VK_CHECK_RESULT(vkAllocateMemory(logicalDevice, &allocInfo, nullptr, &m_memory));
-
-        vkBindImageMemory(logicalDevice, m_image, m_memory, 0);
+        logicalDevice.bindImageMemory(m_image, m_memory, 0);
 
         // Create an image view after the image has been bound to GPU memory
-        createImageView(logicalDevice, aspectFlags);
+        vk::ImageViewCreateInfo viewInfo{
+            .image = m_image,
+            .viewType = vk::ImageViewType::e2D,
+            .format = m_format,
+            .subresourceRange = {
+                    .aspectMask = aspectFlags,
+                    .baseMipLevel = 0,
+                    .levelCount = m_mipLevels,
+                    .baseArrayLayer = 0,
+                    .layerCount = 1
+            }
+        };
+
+        m_view = logicalDevice.createImageView(viewInfo);
     }
 
-    void Image::cleanup(VkDevice logicalDevice) {
+    void Image::cleanup(vk::Device logicalDevice) {
         vkDestroyImageView(logicalDevice, m_view, nullptr);
         vkDestroyImage(logicalDevice, m_image, nullptr);
         vkFreeMemory(logicalDevice, m_memory, nullptr);
     }
 
-    VkFormat Image::getFormat() const {
+    vk::Format Image::getFormat() const {
         return m_format;
     }
 
@@ -45,11 +58,11 @@ namespace vkc {
         return m_extent.height;
     }
 
-    VkImage Image::getImage() const {
+    vk::Image Image::getImage() const {
         return m_image;
     }
 
-    VkImageView Image::getView() const {
+    vk::ImageView Image::getView() const {
         return m_view;
     }
 
@@ -57,26 +70,8 @@ namespace vkc {
         return m_mipLevels;
     }
 
-    void Image::createImage(VkDevice logicalDevice, const VkImageCreateInfo &createInfo) {
-        m_format = createInfo.format;
-        m_mipLevels = createInfo.mipLevels;
-        m_extent = createInfo.extent;
+    void Image::createImageView(vk::Device logicalDevice, vk::ImageAspectFlagBits aspectFlags) {
 
-        VK_CHECK_RESULT(vkCreateImage(logicalDevice, &createInfo, nullptr, &m_image));
-    }
-
-    void Image::createImageView(VkDevice logicalDevice, VkImageAspectFlagBits aspectFlags) {
-        VkImageViewCreateInfo viewInfo = vkc::initializers::imageViewCreateInfo();
-        viewInfo.image = m_image;
-        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        viewInfo.format = m_format;
-        viewInfo.subresourceRange.aspectMask = aspectFlags;
-        viewInfo.subresourceRange.baseMipLevel = 0;
-        viewInfo.subresourceRange.levelCount = m_mipLevels;
-        viewInfo.subresourceRange.baseArrayLayer = 0;
-        viewInfo.subresourceRange.layerCount = 1;
-
-        VK_CHECK_RESULT(vkCreateImageView(logicalDevice, &viewInfo, nullptr, &m_view));
     }
 
 } // namespace vk
