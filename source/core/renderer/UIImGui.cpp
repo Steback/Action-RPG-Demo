@@ -8,7 +8,7 @@ namespace core {
 
     UIImGui::UIImGui() = default;
 
-    UIImGui::UIImGui(vkc::SwapChain &swapChain, const std::shared_ptr<vkc::Device>& device, GLFWwindow* window, VkInstance instance, VkQueue graphicsQueue) {
+    UIImGui::UIImGui(vkc::SwapChain &swapChain, const std::shared_ptr<vkc::Device>& device, GLFWwindow* window, vk::Instance instance, vk::Queue graphicsQueue) {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImGui::StyleColorsDark();
@@ -19,7 +19,7 @@ namespace core {
         m_device = device;
 
         createDescriptorPool();
-        createRenderPass(static_cast<VkFormat>(swapChain.getFormat()));
+        createRenderPass(static_cast<vk::Format>(swapChain.getFormat()));
         createCommandPool();
         createCommandBuffers(swapChain.getImageCount());
         createFrameBuffers(swapChain);
@@ -84,92 +84,94 @@ namespace core {
         m_device->m_logicalDevice.freeCommandBuffers(m_commandPool, static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
     }
 
-    VkCommandBuffer UIImGui::getCommandBuffer(uint32_t imageIndex) {
+    vk::CommandBuffer UIImGui::getCommandBuffer(uint32_t imageIndex) {
         return m_commandBuffers[imageIndex];
     }
 
-    void UIImGui::recordCommands(uint32_t imageIndex, VkExtent2D swapChainExtent) {
-        VkCommandBufferBeginInfo cmdBufferBegin = vkc::initializers::commandBufferBeginInfo();
-        cmdBufferBegin.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    void UIImGui::recordCommands(uint32_t imageIndex, vk::Extent2D swapChainExtent) {
+        vk::CommandBuffer cmdBuffer = m_commandBuffers[imageIndex];
 
-        VK_CHECK_RESULT(vkBeginCommandBuffer(m_commandBuffers[imageIndex], &cmdBufferBegin));
+        cmdBuffer.begin({
+            .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit
+        });
 
-        VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+        vk::ClearValue clearColor = {std::array<float, 4>({{ 0.0f, 0.0f, 0.0f, 1.0f }})};
 
-        VkRenderPassBeginInfo renderPassBeginInfo = vkc::initializers::renderPassBeginInfo();
-        renderPassBeginInfo.renderPass = m_renderPass;
-        renderPassBeginInfo.framebuffer = m_framebuffers[imageIndex];
-        renderPassBeginInfo.renderArea.extent.width = swapChainExtent.width;
-        renderPassBeginInfo.renderArea.extent.height = swapChainExtent.height;
-        renderPassBeginInfo.clearValueCount = 1;
-        renderPassBeginInfo.pClearValues = &clearColor;
-
-        vkCmdBeginRenderPass(m_commandBuffers[imageIndex], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+        cmdBuffer.beginRenderPass({
+            .renderPass = m_renderPass,
+            .framebuffer = m_framebuffers[imageIndex],
+            .renderArea = {
+                .extent = swapChainExtent
+            },
+            .clearValueCount = 1,
+            .pClearValues = &clearColor
+        }, vk::SubpassContents::eInline);
         {
-            // Grab and record the transform data for Dear Imgui
             ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_commandBuffers[imageIndex]);
         }
-        // End and submit render pass
-        vkCmdEndRenderPass(m_commandBuffers[imageIndex]);
+        cmdBuffer.endRenderPass();
 
-        VK_CHECK_RESULT(vkEndCommandBuffer(m_commandBuffers[imageIndex]));
+        cmdBuffer.end();
     }
 
-    void UIImGui::createRenderPass(VkFormat swapChainFormat) {
-        VkAttachmentDescription attachmentDescription = {};
-        attachmentDescription.format = swapChainFormat;
-        attachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
-        attachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-        attachmentDescription.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        attachmentDescription.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-        attachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        attachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        attachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    void UIImGui::createRenderPass(vk::Format swapChainFormat) {
+        vk::AttachmentDescription attachmentDescription{
+            .format = swapChainFormat,
+            .samples = vk::SampleCountFlagBits::e1,
+            .loadOp = vk::AttachmentLoadOp::eLoad,
+            .storeOp = vk::AttachmentStoreOp::eStore,
+            .stencilLoadOp = vk::AttachmentLoadOp::eDontCare,
+            .stencilStoreOp = vk::AttachmentStoreOp::eDontCare,
+            .initialLayout = vk::ImageLayout::eColorAttachmentOptimal,
+            .finalLayout = vk::ImageLayout::ePresentSrcKHR
+        };
 
-        VkAttachmentReference attachmentReference = {};
-        attachmentReference.attachment = 0;
-        attachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        vk::AttachmentReference attachmentReference{
+            .attachment = 0,
+            .layout = vk::ImageLayout::eColorAttachmentOptimal
+        };
 
-        VkSubpassDescription subpass = {};
-        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.colorAttachmentCount = 1;
-        subpass.pColorAttachments = &attachmentReference;
+        vk::SubpassDescription subpass{
+            .colorAttachmentCount = 1,
+            .pColorAttachments = &attachmentReference
+        };
 
-        VkSubpassDependency subpassDependency = {};
-        subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-        subpassDependency.dstSubpass = 0;
-        subpassDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        subpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        subpassDependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        subpassDependency.dstStageMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        vk::SubpassDependency subpassDependency{
+                .srcSubpass = VK_SUBPASS_EXTERNAL,
+                .dstSubpass = 0,
+                .srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                .dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                .srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite,
+                .dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite
+        };
 
-        VkRenderPassCreateInfo renderPassInfo = vkc::initializers::renderPassCreateInfo();
-        renderPassInfo.attachmentCount = 1;
-        renderPassInfo.pAttachments = &attachmentDescription;
-        renderPassInfo.subpassCount = 1;
-        renderPassInfo.pSubpasses = &subpass;
-        renderPassInfo.dependencyCount = 1;
-        renderPassInfo.pDependencies = &subpassDependency;
-
-        VK_CHECK_RESULT(vkCreateRenderPass(m_device->m_logicalDevice, &renderPassInfo, nullptr, &m_renderPass));
+        m_renderPass = m_device->m_logicalDevice.createRenderPass({
+            .attachmentCount = 1,
+            .pAttachments = &attachmentDescription,
+            .subpassCount = 1,
+            .pSubpasses = &subpass,
+            .dependencyCount = 1,
+            .pDependencies = &subpassDependency
+        });
     }
 
     void UIImGui::createFrameBuffers(vkc::SwapChain& swapChain) {
         m_framebuffers.resize(swapChain.getImageCount());
 
-        VkImageView attachment[1];
-        VkFramebufferCreateInfo info = vkc::initializers::framebufferCreateInfo();
-        info.renderPass = m_renderPass;
-        info.attachmentCount = 1;
-        info.pAttachments = attachment;
-        info.width = swapChain.getExtent().width;
-        info.height = swapChain.getExtent().height;
-        info.layers = 1;
+        vk::ImageView attachment[1];
+        vk::FramebufferCreateInfo info{
+            .renderPass = m_renderPass,
+            .attachmentCount = 1,
+            .pAttachments = attachment,
+            .width = swapChain.getExtent().width,
+            .height = swapChain.getExtent().height,
+            .layers = 1
+        };
 
         for (uint32_t i = 0; i < swapChain.getImageCount(); ++i) {
             attachment[0] = swapChain.getImageView(i);
 
-            VK_CHECK_RESULT(vkCreateFramebuffer(m_device->m_logicalDevice, &info, nullptr, &m_framebuffers[i]));
+            m_framebuffers[i] = m_device->m_logicalDevice.createFramebuffer(info);
         }
     }
 
@@ -186,28 +188,26 @@ namespace core {
     }
 
     void UIImGui::createDescriptorPool() {
-        VkDescriptorPoolSize pool_sizes[] = {
-                { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
-                { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
-                { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
-                { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
-                { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
-                { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
-                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
-                { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
-                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
-                { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
-                { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+        std::vector<vk::DescriptorPoolSize> poolSizes = {
+                { vk::DescriptorType::eSampler, 1000 },
+                { vk::DescriptorType::eCombinedImageSampler, 1000 },
+                { vk::DescriptorType::eSampledImage, 1000 },
+                { vk::DescriptorType::eStorageImage, 1000 },
+                { vk::DescriptorType::eUniformTexelBuffer, 1000 },
+                { vk::DescriptorType::eStorageTexelBuffer, 1000 },
+                { vk::DescriptorType::eUniformBuffer, 1000 },
+                { vk::DescriptorType::eStorageBuffer, 1000 },
+                { vk::DescriptorType::eUniformBufferDynamic, 1000 },
+                { vk::DescriptorType::eStorageBufferDynamic, 1000 },
+                { vk::DescriptorType::eInputAttachment, 1000 }
         };
 
-        VkDescriptorPoolCreateInfo pool_info = {};
-        pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-        pool_info.maxSets = 1000 * std::size(pool_sizes);
-        pool_info.poolSizeCount = static_cast<uint32_t>(std::size(pool_sizes));
-        pool_info.pPoolSizes = pool_sizes;
-
-        VK_CHECK_RESULT(vkCreateDescriptorPool(m_device->m_logicalDevice, &pool_info, nullptr, &m_descriptorPool));
+        m_descriptorPool = m_device->m_logicalDevice.createDescriptorPool({
+            .flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
+            .maxSets = 100 * static_cast<uint32_t>(poolSizes.size()),
+            .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
+            .pPoolSizes = poolSizes.data()
+        });
     }
 
 } // namespace core
