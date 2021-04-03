@@ -63,7 +63,6 @@ namespace vkc {
     public:
         vk::PhysicalDevice m_physicalDevice;
         vk::Device m_logicalDevice{};
-        vk::PhysicalDeviceProperties m_properties{};
         vk::CommandPool m_commandPool = nullptr;
         QueueFamilyIndices m_queueFamilyIndices{};
     };

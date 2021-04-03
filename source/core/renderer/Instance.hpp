@@ -2,6 +2,7 @@
 #define PROTOTYPE_ACTION_RPG_INSTANCE_HPP
 
 #include <vector>
+#include <map>
 
 #define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
 #include "vulkan/vulkan.hpp"
@@ -34,6 +35,9 @@ namespace vkc {
         vk::Instance m_instance{};
 #ifdef CORE_DEBUG
         vk::DebugUtilsMessengerEXT m_debugMessenger{};
+
+    public:
+        std::unordered_map<uint32_t, std::string> m_debugMessages;
 #endif
     };
 

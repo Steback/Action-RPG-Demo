@@ -1,11 +1,14 @@
 #include "Instance.hpp"
 
 #include <set>
+#include <map>
 
 #include "spdlog/spdlog.h"
 #include "fmt/format.h"
 
 #include "../Utilities.hpp"
+
+
 
 
 PFN_vkCreateDebugUtilsMessengerEXT  pfnVkCreateDebugUtilsMessengerEXT;
@@ -27,46 +30,53 @@ VKAPI_ATTR void VKAPI_CALL vkDestroyDebugUtilsMessengerEXT(VkInstance instance,
 VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                                 VkDebugUtilsMessageTypeFlagsEXT messageTypes,
                                                 VkDebugUtilsMessengerCallbackDataEXT const *pCallbackData,
-                                                void * /*pUserData*/) {
-    std::string message{};
-    message += vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageTypes)) + ":\n";
-    message += std::string("\t") + "messageIDName   = <" + pCallbackData->pMessageIdName + ">\n";
-    message += std::string("\t") + "messageIdNumber = " + std::to_string(pCallbackData->messageIdNumber) + "\n";
-    message += std::string("\t") + "message         = <" + pCallbackData->pMessage + ">\n";
+                                                void* pUserData) {
+    auto* instance = reinterpret_cast<vkc::Instance*>(pUserData);
+    std::unordered_map<uint32_t, std::string>& debugMessages = instance->m_debugMessages;
 
-    if (0 < pCallbackData->queueLabelCount) {
-        message += std::string("\t") + "Queue Labels:\n";
+    if (debugMessages.find(pCallbackData->messageIdNumber) == debugMessages.end()) {
+        std::string message{};
+        message += vk::to_string(static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(messageTypes)) + ":\n";
+        message += std::string("\t") + "messageIDName   = <" + pCallbackData->pMessageIdName + ">\n";
+        message += std::string("\t") + "messageIdNumber = " + std::to_string(pCallbackData->messageIdNumber) + "\n";
+        message += std::string("\t") + "message         = <" + pCallbackData->pMessage + ">\n";
 
-        for (uint8_t i = 0; i < pCallbackData->queueLabelCount; i++) {
-            message += std::string("\t\t") + "labelName = <" + pCallbackData->pQueueLabels[i].pLabelName + ">\n";
-        }
-    }
-    if (0 < pCallbackData->cmdBufLabelCount) {
-        message += std::string("\t") + "CommandBuffer Labels:\n";
+        if (0 < pCallbackData->queueLabelCount) {
+            message += std::string("\t") + "Queue Labels:\n";
 
-        for ( uint8_t i = 0; i < pCallbackData->cmdBufLabelCount; i++ ) {
-            message += std::string("\t\t") + "labelName = <" + pCallbackData->pCmdBufLabels[i].pLabelName + ">\n";
-        }
-    }
-
-    if (0 < pCallbackData->objectCount) {
-        message += std::string("\t") + "Objects:\n";
-
-        for ( uint8_t i = 0; i < pCallbackData->objectCount; i++ ) {
-            message += std::string("\t\t") + "Object " + std::to_string(i) + "\n";
-            message += std::string("\t\t\t")
-                    + "objectType   = "
-                    + vk::to_string( static_cast<vk::ObjectType>( pCallbackData->pObjects[i].objectType ) ) + "\n";
-            message += std::string("\t\t\t")
-                    + "objectHandle = " + std::to_string(pCallbackData->pObjects[i].objectHandle) + "\n";
-
-            if (pCallbackData->pObjects[i].pObjectName) {
-                message += std::string("\t\t\t") + "objectName   = <" + pCallbackData->pObjects[i].pObjectName + ">\n";
+            for (uint8_t i = 0; i < pCallbackData->queueLabelCount; i++) {
+                message += std::string("\t\t") + "labelName = <" + pCallbackData->pQueueLabels[i].pLabelName + ">\n";
             }
         }
-    }
+        if (0 < pCallbackData->cmdBufLabelCount) {
+            message += std::string("\t") + "CommandBuffer Labels:\n";
 
-    spdlog::error(message);
+            for ( uint8_t i = 0; i < pCallbackData->cmdBufLabelCount; i++ ) {
+                message += std::string("\t\t") + "labelName = <" + pCallbackData->pCmdBufLabels[i].pLabelName + ">\n";
+            }
+        }
+
+        if (0 < pCallbackData->objectCount) {
+            message += std::string("\t") + "Objects:\n";
+
+            for ( uint8_t i = 0; i < pCallbackData->objectCount; i++ ) {
+                message += std::string("\t\t") + "Object " + std::to_string(i) + "\n";
+                message += std::string("\t\t\t")
+                           + "objectType   = "
+                           + vk::to_string( static_cast<vk::ObjectType>( pCallbackData->pObjects[i].objectType ) ) + "\n";
+                message += std::string("\t\t\t")
+                           + "objectHandle = " + std::to_string(pCallbackData->pObjects[i].objectHandle) + "\n";
+
+                if (pCallbackData->pObjects[i].pObjectName) {
+                    message += std::string("\t\t\t") + "objectName   = <" + pCallbackData->pObjects[i].pObjectName + ">\n";
+                }
+            }
+        }
+
+        debugMessages[pCallbackData->messageIdNumber] = pCallbackData->pMessage;
+
+        spdlog::error(message);
+    }
 
     return false;
 }
@@ -93,6 +103,8 @@ namespace vkc {
         std::vector<const char*> reqExtensions = getRequiredExtensions();
         std::vector<const char*> reqLayer;
 
+        reqExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+
 #ifdef CORE_DEBUG
         reqLayer.push_back("VK_LAYER_KHRONOS_validation");
 #endif
@@ -105,9 +117,21 @@ namespace vkc {
                 .ppEnabledExtensionNames = reqExtensions.data()
         };
 
+#ifdef CORE_DEBUG
+        spdlog::info("[Debug] Setup");
+
+        vk::DebugUtilsMessengerCreateInfoEXT debugCreateInfo{
+                .messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
+                .messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
+                               vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,
+                .pfnUserCallback = &debugMessageFunc,
+                .pUserData = this
+        };
+
+        createInfo.pNext = &debugCreateInfo;
+
         m_instance = vk::createInstance(createInfo);
 
-#ifdef CORE_DEBUG
         pfnVkCreateDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(m_instance.getProcAddr("vkCreateDebugUtilsMessengerEXT"));
 
         if (!pfnVkCreateDebugUtilsMessengerEXT)
@@ -118,12 +142,9 @@ namespace vkc {
         if (!pfnVkDestroyDebugUtilsMessengerEXT)
             throw std::runtime_error("GetInstanceProcAddr: Unable to find pfnVkDestroyDebugUtilsMessengerEXT function.");
 
-        m_debugMessenger = m_instance.createDebugUtilsMessengerEXT({
-                                                                           .messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
-                                                                           .messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
-                                                                                          vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation,
-                                                                           .pfnUserCallback = &debugMessageFunc
-                                                                   });
+        m_debugMessenger = m_instance.createDebugUtilsMessengerEXT(debugCreateInfo);
+#else
+        m_instance = vk::createInstance(createInfo);
 #endif
     }
 

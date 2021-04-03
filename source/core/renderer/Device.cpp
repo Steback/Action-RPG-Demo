@@ -8,7 +8,7 @@ namespace vkc {
 
     Device::Device(const std::shared_ptr<Instance>& instance, vk::QueueFlags requestedQueueTypes) {
         std::vector<const char*> reqExtensions = {
-                VK_KHR_SWAPCHAIN_EXTENSION_NAME
+                VK_KHR_SWAPCHAIN_EXTENSION_NAME,
         };
 
         m_physicalDevice = instance->selectPhysicalDevice(reqExtensions);
@@ -348,8 +348,10 @@ namespace vkc {
     }
 
     vk::SampleCountFlagBits Device::getMaxUsableSampleCount() const {
-        vk::SampleCountFlags counts = m_properties.limits.framebufferColorSampleCounts &
-               m_properties.limits.framebufferDepthSampleCounts;
+        vk::PhysicalDeviceProperties properties = m_physicalDevice.getProperties();
+
+        vk::SampleCountFlags counts = properties.limits.framebufferColorSampleCounts &
+                properties.limits.framebufferDepthSampleCounts;
 
         if (counts & vk::SampleCountFlagBits::e64) { return vk::SampleCountFlagBits::e64; }
         if (counts & vk::SampleCountFlagBits::e32) { return vk::SampleCountFlagBits::e32; }
