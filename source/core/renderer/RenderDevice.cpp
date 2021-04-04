@@ -237,8 +237,9 @@ namespace core {
                 fragShaderStageInfo
         };
 
-        auto bindingDescription = Vertex::getBindingDescription();
-        auto attributeDescriptions = Vertex::getAttributeDescriptions();
+        // TODO: Change return value of Binding and Attributes
+        VkVertexInputBindingDescription bindingDescription = Vertex::getBindingDescription();
+        std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions = Vertex::getAttributeDescriptions();
 
         VkPipelineVertexInputStateCreateInfo vertexInputInfo = vkc::initializers::pipelineVertexInputStateCreateInfo();
         vertexInputInfo.vertexBindingDescriptionCount = 1;

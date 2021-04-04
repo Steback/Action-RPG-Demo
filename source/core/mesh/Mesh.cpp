@@ -8,7 +8,7 @@ namespace core {
     Mesh::Mesh() = default;
 
     Mesh::Mesh(const std::vector<core::Vertex>& vertices,const std::vector<uint32_t>& indices,
-               VkQueue transferQueue, uint64_t textureID, const std::shared_ptr<vkc::Device>& device)
+               vk::Queue transferQueue, uint64_t textureID, const std::shared_ptr<vkc::Device>& device)
             : m_vertexCount(vertices.size()), m_indexCount(indices.size()), m_textureID(textureID) {
         createVertexBuffer(vertices, transferQueue, device);
         createIndexBuffer(indices, transferQueue, device);
@@ -20,7 +20,7 @@ namespace core {
         return m_vertexCount;
     }
 
-    VkBuffer Mesh::getVertexBuffer() const {
+    vk::Buffer Mesh::getVertexBuffer() const {
         return m_vertexBuffer.m_buffer;
     }
 
@@ -28,7 +28,7 @@ namespace core {
         return m_indexCount;
     }
 
-    VkBuffer Mesh::getIndexBuffer() const {
+    vk::Buffer Mesh::getIndexBuffer() const {
         return m_indexBuffer.m_buffer;
     }
 
@@ -41,7 +41,7 @@ namespace core {
         return m_textureID;
     }
 
-    void Mesh::createVertexBuffer(const std::vector<core::Vertex> &vertices, VkQueue transferQueue, const std::shared_ptr<vkc::Device>& device) {
+    void Mesh::createVertexBuffer(const std::vector<core::Vertex> &vertices, vk::Queue transferQueue, const std::shared_ptr<vkc::Device>& device) {
         vk::DeviceSize size = sizeof(core::Vertex) * vertices.size();
         vkc::Buffer stagingBuffer;
 
@@ -57,7 +57,7 @@ namespace core {
         stagingBuffer.destroy();
     }
 
-    void Mesh::createIndexBuffer(const std::vector<uint32_t> &indices, VkQueue transferQueue, const std::shared_ptr<vkc::Device>& device) {
+    void Mesh::createIndexBuffer(const std::vector<uint32_t> &indices, vk::Queue transferQueue, const std::shared_ptr<vkc::Device>& device) {
         vk::DeviceSize size = sizeof(uint32_t) * indices.size();
         vkc::Buffer stagingBuffer;
 

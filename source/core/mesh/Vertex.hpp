@@ -5,7 +5,8 @@
 #include <array>
 
 #include "glm/glm.hpp"
-#include "vulkan/vulkan.h"
+#define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
+#include "vulkan/vulkan.hpp"
 
 
 namespace core {

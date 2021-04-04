@@ -9,8 +9,7 @@
 #include "../Utilities.hpp"
 
 
-
-
+#ifdef CORE_DEBUG
 PFN_vkCreateDebugUtilsMessengerEXT  pfnVkCreateDebugUtilsMessengerEXT;
 PFN_vkDestroyDebugUtilsMessengerEXT pfnVkDestroyDebugUtilsMessengerEXT;
 
@@ -80,6 +79,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(VkDebugUtilsMessageSeverityFlagB
 
     return false;
 }
+#endif
 
 std::vector<const char*> getRequiredExtensions() {
     uint32_t glfwExtensionCount = 0;

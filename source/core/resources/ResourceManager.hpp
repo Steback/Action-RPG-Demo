@@ -5,7 +5,8 @@
 #include <vector>
 #include <memory>
 
-#include "vulkan/vulkan.h"
+#define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
+#include "vulkan/vulkan.hpp"
 
 #include "Texture.hpp"
 #include "../renderer/Device.hpp"
@@ -17,7 +18,7 @@ namespace core {
 
     class ResourceManager {
     public:
-        explicit ResourceManager(std::shared_ptr<vkc::Device> device, VkQueue graphicsQueue);
+        explicit ResourceManager(std::shared_ptr<vkc::Device> device, vk::Queue graphicsQueue);
 
         ~ResourceManager();
 
@@ -27,13 +28,13 @@ namespace core {
 
         core::Texture& getTexture(uint64_t id);
 
-        VkDescriptorSetLayout& getTextureDescriptorSetLayout();
+        vk::DescriptorSetLayout& getTextureDescriptorSetLayout();
 
         void recreateResources();
 
         void cleanupResources();
 
-        void generateMipmaps(const core::Texture& texture, VkFormat format, VkExtent2D size, uint32_t mipLevels);
+        void generateMipmaps(const core::Texture& texture, vk::Format format, vk::Extent2D size, uint32_t mipLevels);
 
         uint64_t createModel(const std::string& uri, const std::string& name);
 
@@ -50,12 +51,12 @@ namespace core {
 
     private:
         std::shared_ptr<vkc::Device> m_device{};
-        VkQueue m_graphicsQueue{};
+        vk::Queue m_graphicsQueue{};
         std::unordered_map<uint64_t, core::Texture> m_textures;
         std::unordered_map<uint64_t, std::shared_ptr<core::Model>> m_models;
         std::unordered_map<uint64_t, core::Mesh> m_meshes;
-        VkDescriptorPool m_descriptorPool{};
-        VkDescriptorSetLayout m_descriptorSetLayout{};
+        vk::DescriptorPool m_descriptorPool{};
+        vk::DescriptorSetLayout m_descriptorSetLayout{};
     };
 
 } // namespace core
