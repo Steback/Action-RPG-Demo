@@ -9,7 +9,6 @@
 #include "glm/detail/type_quat.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
-#include "../renderer/Tools.hpp"
 
 namespace core {
 

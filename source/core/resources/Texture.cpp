@@ -1,7 +1,5 @@
 #include "Texture.hpp"
 
-#include "../Utilities.hpp"
-#include "../renderer/Tools.hpp"
 
 
 namespace core {

@@ -1,6 +1,7 @@
 #ifndef PROTOTYPE_ACTION_RPG_UTILITIES_HPP
 #define PROTOTYPE_ACTION_RPG_UTILITIES_HPP
 
+
 #include <string>
 #include <stdexcept>
 #include <vector>
@@ -9,6 +10,7 @@
 #include "vulkan/vulkan.h"
 #include "glm/glm.hpp"
 #include "stb_image.h"
+#include "fmt/format.h"
 
 #include "Constants.hpp"
 

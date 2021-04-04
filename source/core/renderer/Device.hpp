@@ -9,7 +9,6 @@
 
 #include "SwapChain.hpp"
 #include "Buffer.hpp"
-#include "Initializers.hpp"
 #include "../window/Window.hpp"
 
 

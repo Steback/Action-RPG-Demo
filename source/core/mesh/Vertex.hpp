@@ -16,9 +16,9 @@ namespace core {
         glm::vec3 color;
         glm::vec2 texCoord;
 
-        static VkVertexInputBindingDescription getBindingDescription();
+        static vk::VertexInputBindingDescription getBindingDescription();
 
-        static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions();
+        static std::array<vk::VertexInputAttributeDescription, 3> getAttributeDescriptions();
     };
 
 } // namesapce core

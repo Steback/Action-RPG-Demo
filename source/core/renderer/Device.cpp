@@ -1,7 +1,7 @@
 #include "Device.hpp"
 
-#include "Tools.hpp"
 #include "Instance.hpp"
+#include "../Utilities.hpp"
 
 
 namespace vkc {

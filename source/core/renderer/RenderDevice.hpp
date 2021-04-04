@@ -24,7 +24,7 @@ namespace core {
 
     class RenderDevice {
     public:
-        explicit RenderDevice(std::shared_ptr<Window> window, VkInstance instance, const std::string& appName, std::shared_ptr<vkc::Device> device, VkSurfaceKHR surface);
+        explicit RenderDevice(std::shared_ptr<Window> window, vk::Instance instance, const std::string& appName, std::shared_ptr<vkc::Device> device, vk::SurfaceKHR surface);
 
         ~RenderDevice();
 
@@ -60,11 +60,11 @@ namespace core {
 
         void createPushConstants();
 
-        void createGridPipeline(VkGraphicsPipelineCreateInfo& createInfo);
+        void createGridPipeline(vk::GraphicsPipelineCreateInfo& createInfo);
 
         void updateVP(const glm::mat4& view, const glm::mat4& proj);
 
-        VkQueue& getGraphicsQueue();
+        vk::Queue& getGraphicsQueue();
 
         void renderMesh(const core::Mesh& mesh, const glm::mat4& matrix);
 
@@ -80,37 +80,37 @@ namespace core {
         std::shared_ptr<Window> m_window;
 
         std::shared_ptr<vkc::Device> m_device{};
-        VkPhysicalDevice m_physicalDevice{};
-        VkDevice m_logicalDevice{};
+        vk::PhysicalDevice m_physicalDevice{};
+        vk::Device m_logicalDevice{};
 
-        VkQueue m_graphicsQueue{};
+        vk::Queue m_graphicsQueue{};
 
         core::WindowSize m_windowSize;
 
         vkc::SwapChain m_swapChain{};
-        std::vector<VkFramebuffer> m_framebuffers;
+        std::vector<vk::Framebuffer> m_framebuffers;
 
-        VkRenderPass m_renderPass{};
+        vk::RenderPass m_renderPass{};
 
-        VkPipelineLayout m_pipelineLayout{};
-        VkPipeline m_graphicsPipeline{};
+        vk::PipelineLayout m_pipelineLayout{};
+        vk::Pipeline m_graphicsPipeline{};
 
         vk::CommandPool m_commandPool{};
-        std::vector<VkCommandBuffer> m_commandBuffers;
+        std::vector<vk::CommandBuffer> m_commandBuffers;
 
-        std::vector<VkSemaphore> m_imageAvailableSemaphores{};
-        std::vector<VkSemaphore> m_renderFinishedSemaphores{};
-        std::vector<VkFence> m_fences;
-        std::vector<VkFence> m_imageFences;
+        std::vector<vk::Semaphore> m_imageAvailableSemaphores{};
+        std::vector<vk::Semaphore> m_renderFinishedSemaphores{};
+        std::vector<vk::Fence> m_fences;
+        std::vector<vk::Fence> m_imageFences;
 
         size_t m_currentFrame = 0;
         uint32_t m_indexImage{};
 
-        VkPushConstantRange m_mvpRange{};
+        vk::PushConstantRange m_mvpRange{};
 
-        VkDescriptorSetLayout m_descriptorSetLayout{};
-        VkDescriptorPool m_descriptorPool{};
-        std::vector<VkDescriptorSet> m_descriptorSets;
+        vk::DescriptorSetLayout m_descriptorSetLayout{};
+        vk::DescriptorPool m_descriptorPool{};
+        std::vector<vk::DescriptorSet> m_descriptorSets;
 
         // ImGui
         core::UIImGui m_ui;
@@ -123,14 +123,14 @@ namespace core {
 
         // TODO: Check for optimising in depth buffer
         vkc::Image m_depthBuffer;
-        VkFormat m_depthFormat{};
+        vk::Format m_depthFormat{};
 
         MVP m_mvp{};
 
         // Editor grid
         bool m_drawGrid{};
-        VkPipeline m_gridPipeline{};
-        VkPipelineLayout m_gridPipelineLayout{};
+        vk::Pipeline m_gridPipeline{};
+        vk::PipelineLayout m_gridPipelineLayout{};
     };
 
 } // End namespace core

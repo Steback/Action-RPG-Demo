@@ -3,32 +3,32 @@
 
 namespace core {
 
-    VkVertexInputBindingDescription Vertex::getBindingDescription() {
+    vk::VertexInputBindingDescription Vertex::getBindingDescription() {
         return {
                 .binding = 0,
                 .stride = sizeof(Vertex),
-                .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
+                .inputRate = vk::VertexInputRate::eVertex
         };
     }
 
-    std::array<VkVertexInputAttributeDescription, 3> Vertex::getAttributeDescriptions() {
+    std::array<vk::VertexInputAttributeDescription, 3> Vertex::getAttributeDescriptions() {
         return {
                 { {
                           .location = 0,
                           .binding = 0,
-                          .format = VK_FORMAT_R32G32B32_SFLOAT,
+                          .format = vk::Format::eR32G32B32Sfloat,
                           .offset = offsetof(Vertex, position)
                   },
                   {
                           .location = 1,
                           .binding = 0,
-                          .format = VK_FORMAT_R32G32B32_SFLOAT,
+                          .format = vk::Format::eR32G32B32Sfloat,
                           .offset = offsetof(Vertex, color)
                   },
                   {
                           .location = 2,
                           .binding = 0,
-                          .format = VK_FORMAT_R32G32_SFLOAT,
+                          .format = vk::Format::eR32G32Sfloat,
                           .offset = offsetof(Vertex, texCoord)
                   } }
         };
