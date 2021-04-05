@@ -13,6 +13,7 @@
 #include "Buffer.hpp"
 #include "Image.hpp"
 #include "UIImGui.hpp"
+#include "GraphicsPipeline.hpp"
 #include "../Utilities.hpp"
 #include "../camera/Camera.hpp"
 #include "../window/Window.hpp"
@@ -60,7 +61,7 @@ namespace core {
 
         void createPushConstants();
 
-        void createGridPipeline(vk::GraphicsPipelineCreateInfo& createInfo);
+        void createGridPipeline();
 
         void updateVP(const glm::mat4& view, const glm::mat4& proj);
 
@@ -71,8 +72,6 @@ namespace core {
         void beginRenderPass(const glm::vec4& clearColor);
 
         void endRenderPass();
-
-        void setPipeline();
 
         void drawGrid();
 
@@ -92,8 +91,7 @@ namespace core {
 
         vk::RenderPass m_renderPass{};
 
-        vk::PipelineLayout m_pipelineLayout{};
-        vk::Pipeline m_graphicsPipeline{};
+        std::shared_ptr<vkc::GraphicsPipeline> m_pipeline;
 
         vk::CommandPool m_commandPool{};
         std::vector<vk::CommandBuffer> m_commandBuffers;
@@ -129,8 +127,7 @@ namespace core {
 
         // Editor grid
         bool m_drawGrid{};
-        vk::Pipeline m_gridPipeline{};
-        vk::PipelineLayout m_gridPipelineLayout{};
+        std::shared_ptr<vkc::GraphicsPipeline> m_gridPipeline;
     };
 
 } // End namespace core

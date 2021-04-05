@@ -55,6 +55,9 @@ namespace core {
                                            vk::FormatFeatureFlagBits::eDepthStencilAttachment);
 
         m_ui = core::UIImGui(m_swapChain, m_device, m_window->getWindow(), instance, m_graphicsQueue);
+
+        m_pipeline = std::make_shared<vkc::GraphicsPipeline>("shaders/model.vert.spv", "shaders/model.frag.spv", m_device->m_logicalDevice);
+        m_gridPipeline = std::make_shared<vkc::GraphicsPipeline>("shaders/grid.vert.spv", "shaders/grid.frag.spv", m_device->m_logicalDevice);
     }
 
     RenderDevice::~RenderDevice() = default;
@@ -117,7 +120,7 @@ namespace core {
 
         beginRenderPass(clearColor);
         {
-            setPipeline();
+            m_pipeline->bind(m_commandBuffers[m_indexImage]);
             core::Application::m_scene->render();
             drawGrid();
         }
@@ -243,165 +246,15 @@ namespace core {
     }
 
     void RenderDevice::createGraphicsPipeline() {
-        vk::ShaderModule vertexShaderModule = loadShader(core::tools::readFile("shaders/model.vert.spv"), m_logicalDevice);
-        vk::ShaderModule fragmentShaderModule = loadShader(core::tools::readFile("shaders/model.frag.spv"), m_logicalDevice);
-
-        std::vector<vk::PipelineShaderStageCreateInfo> shaderStages = {
-                {
-                        .stage = vk::ShaderStageFlagBits::eVertex,
-                        .module = vertexShaderModule,
-                        .pName = "main"
-                },
-                {
-                        .stage = vk::ShaderStageFlagBits::eFragment,
-                        .module = fragmentShaderModule,
-                        .pName = "main"
-                }
-        };
-
-        vk::VertexInputBindingDescription bindingDescription = Vertex::getBindingDescription();
-        std::array<vk::VertexInputAttributeDescription, 3> attributeDescriptions = Vertex::getAttributeDescriptions();
-
-        vk::PipelineVertexInputStateCreateInfo vertexInputInfo{
-            .vertexBindingDescriptionCount = 1,
-            .pVertexBindingDescriptions = &bindingDescription,
-            .vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size()),
-            .pVertexAttributeDescriptions = attributeDescriptions.data()
-        };
-
-        vk::PipelineInputAssemblyStateCreateInfo inputAssembly{
-            .topology = vk::PrimitiveTopology::eTriangleList,
-            .primitiveRestartEnable = VK_FALSE
-        };
-
-        vk::Viewport viewport{
-            .x = 0.0f,
-            .y = 0.0f,
-            .width = static_cast<float>(m_swapChain.getExtent().width),
-            .height = static_cast<float>(m_swapChain.getExtent().height),
-            .minDepth = 0.0f,
-            .maxDepth = 1.0f
-        };
-
-        vk::Rect2D scissor{
-            .offset = {0, 0},
-            .extent = m_swapChain.getExtent()
-        };
-
-        vk::PipelineViewportStateCreateInfo viewportState{
-            .viewportCount = 1,
-            .pViewports = &viewport,
-            .scissorCount = 1,
-            .pScissors = &scissor,
-        };
-
-        vk::PipelineRasterizationStateCreateInfo rasterizer{
-            .depthClampEnable = VK_FALSE,
-            .rasterizerDiscardEnable = VK_FALSE,
-            .polygonMode = vk::PolygonMode::eFill,
-            .cullMode = vk::CullModeFlagBits::eBack,
-            .frontFace = vk::FrontFace::eCounterClockwise,
-            .depthBiasEnable = VK_FALSE,
-            .depthBiasConstantFactor = 0.0f,
-            .depthBiasClamp = 0.0f,
-            .depthBiasSlopeFactor = 0.0f,
-            .lineWidth = 1.0f
-        };
-
-        vk::PipelineMultisampleStateCreateInfo multisampling{
-            .rasterizationSamples = m_msaaSamples,
-            .sampleShadingEnable = VK_FALSE,
-            .minSampleShading = 1.0f,
-            .pSampleMask = nullptr,
-            .alphaToCoverageEnable = VK_FALSE,
-            .alphaToOneEnable = VK_FALSE
-        };
-
-        vk::PipelineColorBlendAttachmentState colorBlendAttachment{
-            .blendEnable = VK_TRUE,
-            .srcColorBlendFactor = vk::BlendFactor::eSrcAlpha,
-            .dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha,
-            .colorBlendOp = vk::BlendOp::eAdd,
-            .srcAlphaBlendFactor = vk::BlendFactor::eOne,
-            .dstAlphaBlendFactor = vk::BlendFactor::eZero,
-            .alphaBlendOp = vk::BlendOp::eAdd,
-            .colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
-                    vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
-        };
-
-        vk::PipelineColorBlendStateCreateInfo colorBlending{
-            .logicOpEnable = VK_FALSE,
-            .logicOp = vk::LogicOp::eCopy,
-            .attachmentCount = 1,
-            .pAttachments = &colorBlendAttachment,
-            .blendConstants = {{0.0f, 0.0f, 0.0f, 0.0}}
-        };
-
-        std::array<vk::DescriptorSetLayout, 2> layouts = {
+        std::vector<vk::DescriptorSetLayout> layouts = {
                 m_descriptorSetLayout,
                 core::Application::m_resourceManager->getTextureDescriptorSetLayout()
         };
 
-        m_pipelineLayout = m_logicalDevice.createPipelineLayout({
-            .setLayoutCount = static_cast<uint32_t>(layouts.size()),
-            .pSetLayouts = layouts.data(),
-            .pushConstantRangeCount = 1,
-            .pPushConstantRanges = &m_mvpRange
-        });
+        m_pipeline->create(Vertex::getBindingDescription(), Vertex::getAttributeDescriptions(), {m_mvpRange}, layouts, m_swapChain,
+                           m_renderPass, m_msaaSamples);
 
-        vk::PipelineDepthStencilStateCreateInfo depthStencil{
-            .depthTestEnable = VK_TRUE,
-            .depthWriteEnable = VK_TRUE,
-            .depthCompareOp = vk::CompareOp::eLess,
-            .depthBoundsTestEnable = VK_FALSE,
-            .stencilTestEnable = VK_FALSE,
-            .minDepthBounds = 0.0f,
-            .maxDepthBounds = 1.0f,
-        };
-
-        vk::GraphicsPipelineCreateInfo pipelineInfo{
-            .stageCount = static_cast<uint32_t>(shaderStages.size()),
-            .pStages = shaderStages.data(),
-            .pVertexInputState = &vertexInputInfo,
-            .pInputAssemblyState = &inputAssembly,
-            .pViewportState = &viewportState,
-            .pRasterizationState = &rasterizer,
-            .pMultisampleState = &multisampling,
-            .pDepthStencilState = &depthStencil,
-            .pColorBlendState = &colorBlending,
-            .pDynamicState = nullptr,
-            .layout = m_pipelineLayout,
-            .renderPass = m_renderPass,
-            .subpass = 0,
-            .basePipelineHandle = nullptr,
-            .basePipelineIndex = -1
-        };
-
-        vk::Result result;
-        std::tie(result, m_graphicsPipeline) = m_logicalDevice.createGraphicsPipeline(nullptr, {
-            .stageCount = static_cast<uint32_t>(shaderStages.size()),
-            .pStages = shaderStages.data(),
-            .pVertexInputState = &vertexInputInfo,
-            .pInputAssemblyState = &inputAssembly,
-            .pViewportState = &viewportState,
-            .pRasterizationState = &rasterizer,
-            .pMultisampleState = &multisampling,
-            .pDepthStencilState = &depthStencil,
-            .pColorBlendState = &colorBlending,
-            .pDynamicState = nullptr,
-            .layout = m_pipelineLayout,
-            .renderPass = m_renderPass,
-            .subpass = 0,
-            .basePipelineHandle = nullptr,
-            .basePipelineIndex = -1
-        });
-
-        VK_CHECK_RESULT_HPP(result)
-
-        m_logicalDevice.destroy(vertexShaderModule);
-        m_logicalDevice.destroy(fragmentShaderModule);
-
-        if (m_drawGrid) createGridPipeline(pipelineInfo);
+        if (m_drawGrid) createGridPipeline();
     }
 
     void RenderDevice::createFramebuffers() {
@@ -492,12 +345,10 @@ namespace core {
         m_logicalDevice.free(m_commandPool, static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
 
         if (m_drawGrid) {
-            m_logicalDevice.destroy(m_graphicsPipeline);
-            m_logicalDevice.destroy(m_gridPipelineLayout);
+            m_gridPipeline->cleanup();
         }
 
-        m_logicalDevice.destroy(m_graphicsPipeline);
-        m_logicalDevice.destroy(m_pipelineLayout);
+        m_pipeline->cleanup();
         m_logicalDevice.destroy(m_renderPass);
 
         m_swapChain.cleanup();
@@ -537,12 +388,6 @@ namespace core {
 
     void RenderDevice::createDescriptorSets() {
         std::vector<vk::DescriptorSetLayout> layouts(m_swapChain.getImageCount(), m_descriptorSetLayout);
-
-        vk::DescriptorSetAllocateInfo allocInfo{
-            .descriptorPool = m_descriptorPool,
-            .descriptorSetCount = m_swapChain.getImageCount(),
-            .pSetLayouts = layouts.data()
-        };
 
         m_descriptorSets = m_logicalDevice.allocateDescriptorSets({
             .descriptorPool = m_descriptorPool,
@@ -610,40 +455,13 @@ namespace core {
         m_mvpRange.size = sizeof(MVP);
     }
 
-    void RenderDevice::createGridPipeline(vk::GraphicsPipelineCreateInfo& createInfo) {
-        vk::ShaderModule vertexShaderModule = loadShader(core::tools::readFile("shaders/model.vert.spv"), m_logicalDevice);
-        vk::ShaderModule fragmentShaderModule = loadShader(core::tools::readFile("shaders/model.frag.spv"), m_logicalDevice);
-
-        std::vector<vk::PipelineShaderStageCreateInfo> shaderStages = {
-                {
-                        .stage = vk::ShaderStageFlagBits::eVertex,
-                        .module = vertexShaderModule,
-                        .pName = "main"
-                },
-                {
-                        .stage = vk::ShaderStageFlagBits::eFragment,
-                        .module = fragmentShaderModule,
-                        .pName = "main"
-                }
+    void RenderDevice::createGridPipeline() {
+        std::vector<vk::DescriptorSetLayout> layouts = {
+                m_descriptorSetLayout,
+                core::Application::m_resourceManager->getTextureDescriptorSetLayout()
         };
 
-        vk::PipelineVertexInputStateCreateInfo vertexInputInfo{};
-        createInfo.pVertexInputState = &vertexInputInfo;
-
-        m_gridPipelineLayout = m_logicalDevice.createPipelineLayout({
-            .pushConstantRangeCount = 1,
-            .pPushConstantRanges = &m_mvpRange
-        });
-
-        createInfo.pStages = shaderStages.data();
-        createInfo.layout = m_gridPipelineLayout;
-
-        vk::Result result;
-        std::tie(result, m_gridPipeline) = m_logicalDevice.createGraphicsPipeline(nullptr, createInfo);
-        VK_CHECK_RESULT_HPP(result);
-
-        m_logicalDevice.destroy(vertexShaderModule);
-        m_logicalDevice.destroy(fragmentShaderModule);
+        m_gridPipeline->create({}, {}, {m_mvpRange}, layouts, m_swapChain, m_renderPass, m_msaaSamples);
     }
 
     void RenderDevice::updateVP(const glm::mat4& view, const glm::mat4& proj) {
@@ -664,18 +482,18 @@ namespace core {
         cmdBuffer.bindVertexBuffers(0, 1, vertexBuffer, offsets);
         cmdBuffer.bindIndexBuffer(mesh.getIndexBuffer(), 0, vk::IndexType::eUint32);
 
-        cmdBuffer.pushConstants(m_pipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(MVP), &m_mvp);
+        cmdBuffer.pushConstants(m_pipeline->getLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(MVP), &m_mvp);
 
         std::array<vk::DescriptorSet, 2> descriptorSetGroup = {
                 m_descriptorSets[m_indexImage],
                 core::Application::m_resourceManager->getTexture(mesh.getTextureId()).getDescriptorSet()
         };
 
-        cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout, 0,
+        cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipeline->getLayout(), 0,
                                      static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0,
                                      nullptr);
 
-        cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineLayout, 0, 1, &m_descriptorSets[m_indexImage], 0,
+        cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipeline->getLayout(), 0, 1, &m_descriptorSets[m_indexImage], 0,
                                      nullptr);
 
         cmdBuffer.drawIndexed(mesh.getIndexCount(), 1, 0, 0, 0);
@@ -707,19 +525,16 @@ namespace core {
         m_commandBuffers[m_indexImage].end();
     }
 
-    void RenderDevice::setPipeline() {
-        m_commandBuffers[m_indexImage].bindPipeline(vk::PipelineBindPoint::eGraphics, m_graphicsPipeline);
-    }
 
     void RenderDevice::drawGrid() {
         if (m_drawGrid) {
             vk::CommandBuffer& cmdBuffer = m_commandBuffers[m_indexImage];
 
-            cmdBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_graphicsPipeline);
+            m_gridPipeline->bind(cmdBuffer);
 
             m_mvp.model = glm::mat4(1.0f);
 
-            cmdBuffer.pushConstants(m_gridPipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(MVP), &m_mvp);
+            cmdBuffer.pushConstants(m_gridPipeline->getLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(MVP), &m_mvp);
             cmdBuffer.draw(6, 1, 0, 0);
         }
     }

@@ -2,7 +2,7 @@
 #define PROTOTYPE_ACTION_RPG_VERTEX_HPP
 
 
-#include <array>
+#include <vector>
 
 #include "glm/glm.hpp"
 #define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
@@ -18,7 +18,7 @@ namespace core {
 
         static vk::VertexInputBindingDescription getBindingDescription();
 
-        static std::array<vk::VertexInputAttributeDescription, 3> getAttributeDescriptions();
+        static std::vector<vk::VertexInputAttributeDescription> getAttributeDescriptions();
     };
 
 } // namesapce core

@@ -11,26 +11,26 @@ namespace core {
         };
     }
 
-    std::array<vk::VertexInputAttributeDescription, 3> Vertex::getAttributeDescriptions() {
+    std::vector<vk::VertexInputAttributeDescription> Vertex::getAttributeDescriptions() {
         return {
-                { {
-                          .location = 0,
-                          .binding = 0,
-                          .format = vk::Format::eR32G32B32Sfloat,
-                          .offset = offsetof(Vertex, position)
-                  },
-                  {
-                          .location = 1,
-                          .binding = 0,
-                          .format = vk::Format::eR32G32B32Sfloat,
-                          .offset = offsetof(Vertex, color)
-                  },
-                  {
-                          .location = 2,
-                          .binding = 0,
-                          .format = vk::Format::eR32G32Sfloat,
-                          .offset = offsetof(Vertex, texCoord)
-                  } }
+            {
+                .location = 0,
+                .binding = 0,
+                .format = vk::Format::eR32G32B32Sfloat,
+                .offset = offsetof(Vertex, position)
+            },
+            {
+                .location = 1,
+                .binding = 0,
+                .format = vk::Format::eR32G32B32Sfloat,
+                .offset = offsetof(Vertex, color)
+            },
+            {
+                .location = 2,
+                .binding = 0,
+                .format = vk::Format::eR32G32Sfloat,
+                .offset = offsetof(Vertex, texCoord)
+            }
         };
     }
 
