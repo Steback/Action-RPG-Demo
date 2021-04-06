@@ -8,6 +8,8 @@
 #define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
 #include "vulkan/vulkan.hpp"
 
+#include "../resources/Shader.hpp"
+
 
 namespace vkc {
 
@@ -15,10 +17,9 @@ namespace vkc {
 
     class GraphicsPipeline {
     public:
-        GraphicsPipeline(std::string vertShader, std::string fragShader, const vk::Device& device);
+        GraphicsPipeline(std::shared_ptr<core::Shader> shader, const vk::Device& device);
 
-        void create(const vk::VertexInputBindingDescription& binding, const std::vector<vk::VertexInputAttributeDescription>& attributes,
-                    const std::vector<vk::PushConstantRange>& pushConstants, const std::vector<vk::DescriptorSetLayout>& layouts,
+        void create(const std::vector<vk::PushConstantRange>& pushConstants, const std::vector<vk::DescriptorSetLayout>& layouts,
                     const vkc::SwapChain& swapChain, const vk::RenderPass& renderPass, vk::SampleCountFlagBits sampleCount);
 
         void cleanup();
@@ -35,6 +36,7 @@ namespace vkc {
         vk::Device m_device;
         std::string m_vertShader;
         std::string m_fragShader;
+        std::shared_ptr<core::Shader> m_shader;
     };
 
 } // namespace vkc

@@ -9,6 +9,8 @@
 #include "glm/detail/type_quat.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
+#include "Shader.hpp"
+
 
 namespace core {
 
@@ -24,6 +26,8 @@ namespace core {
         for (auto& mesh : m_meshes) mesh.second.cleanup();
 
         for (auto& texture : m_textures) texture.second.cleanup(m_device->m_logicalDevice);
+
+        for (auto& shader : m_shaders) shader->cleanup(m_device->m_logicalDevice);
 
         vkDestroyDescriptorSetLayout(m_device->m_logicalDevice, m_descriptorSetLayout, nullptr);
     }
@@ -324,6 +328,12 @@ namespace core {
         m_meshes[meshID] = core::Mesh(vertices, indices, m_graphicsQueue, texturesID, m_device);
 
         return meshID;
+    }
+
+    std::shared_ptr<core::Shader> ResourceManager::createShader(const std::string &vert, const std::string &frag, bool vertexInfo) {
+        m_shaders.push_back(std::make_shared<core::Shader>(vert, frag, m_device->m_logicalDevice, vertexInfo));
+
+        return m_shaders.back();
     }
 
 } // namespace core

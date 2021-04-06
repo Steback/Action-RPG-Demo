@@ -55,15 +55,17 @@ namespace core {
                                            vk::FormatFeatureFlagBits::eDepthStencilAttachment);
 
         m_ui = core::UIImGui(m_swapChain, m_device, m_window->getWindow(), instance, m_graphicsQueue);
-
-        m_pipeline = std::make_shared<vkc::GraphicsPipeline>("shaders/model.vert.spv", "shaders/model.frag.spv", m_device->m_logicalDevice);
-        m_gridPipeline = std::make_shared<vkc::GraphicsPipeline>("shaders/grid.vert.spv", "shaders/grid.frag.spv", m_device->m_logicalDevice);
     }
 
     RenderDevice::~RenderDevice() = default;
 
     void RenderDevice::init(bool drawGrid) {
         m_drawGrid = drawGrid;
+
+        m_pipeline = std::make_shared<vkc::GraphicsPipeline>(core::Application::m_resourceManager->createShader("shaders/model.vert.spv", "shaders/model.frag.spv"), m_device->m_logicalDevice);
+
+        if (drawGrid)
+            m_gridPipeline = std::make_shared<vkc::GraphicsPipeline>(core::Application::m_resourceManager->createShader("shaders/grid.vert.spv", "shaders/grid.frag.spv", false), m_device->m_logicalDevice);
 
         createCommandPool();
         createRenderPass();
@@ -110,7 +112,7 @@ namespace core {
             recreateSwapchain();
             return;
         } else if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR) {
-            throw_ex("Failed to acquire swap chain image");
+            throw std::runtime_error("Failed to acquire swap chain image");
         }
 
         if (m_imageFences[m_indexImage])
@@ -158,6 +160,7 @@ namespace core {
             .pResults = nullptr
         });
 
+        // TODO: Check error in resize window
         if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR || m_window->resize()) {
             m_window->resize() = false;
             recreateSwapchain();
@@ -251,8 +254,7 @@ namespace core {
                 core::Application::m_resourceManager->getTextureDescriptorSetLayout()
         };
 
-        m_pipeline->create(Vertex::getBindingDescription(), Vertex::getAttributeDescriptions(), {m_mvpRange}, layouts, m_swapChain,
-                           m_renderPass, m_msaaSamples);
+        m_pipeline->create({m_mvpRange}, layouts, m_swapChain, m_renderPass, m_msaaSamples);
 
         if (m_drawGrid) createGridPipeline();
     }
@@ -461,7 +463,7 @@ namespace core {
                 core::Application::m_resourceManager->getTextureDescriptorSetLayout()
         };
 
-        m_gridPipeline->create({}, {}, {m_mvpRange}, layouts, m_swapChain, m_renderPass, m_msaaSamples);
+        m_gridPipeline->create({m_mvpRange}, layouts, m_swapChain, m_renderPass, m_msaaSamples);
     }
 
     void RenderDevice::updateVP(const glm::mat4& view, const glm::mat4& proj) {
