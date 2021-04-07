@@ -46,7 +46,9 @@ namespace core {
 
         uint64_t loadMesh(const std::string& name, const tinygltf::Mesh& mesh, const tinygltf::Model& model, uint64_t texturesID);
 
-        std::shared_ptr<core::Shader> createShader(const std::string &vert, const std::string &frag, bool vertexInfo = true);
+        uint createShader(const std::string &vert, const std::string &frag, bool vertexInfo = true);
+
+        core::Shader& getShader(uint id);
 
     private:
         void createDescriptorPool();
@@ -59,7 +61,7 @@ namespace core {
         std::unordered_map<uint64_t, core::Texture> m_textures;
         std::unordered_map<uint64_t, std::shared_ptr<core::Model>> m_models;
         std::unordered_map<uint64_t, core::Mesh> m_meshes;
-        std::vector<std::shared_ptr<core::Shader>> m_shaders;
+        std::vector<core::Shader> m_shaders;
         vk::DescriptorPool m_descriptorPool{};
         vk::DescriptorSetLayout m_descriptorSetLayout{};
     };

@@ -17,7 +17,7 @@ namespace vkc {
 
     class GraphicsPipeline {
     public:
-        GraphicsPipeline(std::shared_ptr<core::Shader> shader, const vk::Device& device);
+        GraphicsPipeline(uint shaderID, const vk::Device& device);
 
         void create(const std::vector<vk::PushConstantRange>& pushConstants, const std::vector<vk::DescriptorSetLayout>& layouts,
                     const vkc::SwapChain& swapChain, const vk::RenderPass& renderPass, vk::SampleCountFlagBits sampleCount);
@@ -34,9 +34,7 @@ namespace vkc {
         vk::Pipeline m_pipeline;
         vk::PipelineLayout m_layout;
         vk::Device m_device;
-        std::string m_vertShader;
-        std::string m_fragShader;
-        std::shared_ptr<core::Shader> m_shader;
+        uint m_shaderID;
     };
 
 } // namespace vkc

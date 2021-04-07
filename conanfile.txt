@@ -9,6 +9,8 @@
  entt/3.6.0
  tinygltf/2.5.0
  nlohmann_json/3.9.1
+ spirv-cross/20210115
+ physx/4.1.1
 
  [generators]
  cmake

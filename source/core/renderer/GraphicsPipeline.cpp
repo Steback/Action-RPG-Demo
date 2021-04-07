@@ -4,29 +4,24 @@
 
 #include "SwapChain.hpp"
 #include "../Utilities.hpp"
+#include "../Application.hpp"
 
-
-inline vk::ShaderModule loadShader(const std::vector<char> &code, vk::Device device) {
-    return device.createShaderModule({
-        .codeSize = code.size(),
-        .pCode = reinterpret_cast<const uint32_t*>(code.data()),
-    });
-}
 
 namespace vkc {
 
-    GraphicsPipeline::GraphicsPipeline(std::shared_ptr<core::Shader> shader, const vk::Device& device)
-            : m_shader(std::move(shader)), m_device(device) {
+    GraphicsPipeline::GraphicsPipeline(uint shaderID, const vk::Device& device)
+            : m_shaderID(shaderID), m_device(device) {
 
     }
 
     void GraphicsPipeline::create(const std::vector<vk::PushConstantRange> &pushConstants, const std::vector<vk::DescriptorSetLayout>& layouts,
                                   const vkc::SwapChain& swapChain, const vk::RenderPass& renderPass, vk::SampleCountFlagBits sampleCount) {
-        auto attributes = m_shader->getAttributes();
+        core::Shader& shader = core::Application::m_resourceManager->getShader(m_shaderID);
+        auto attributes = shader.getAttributes();
 
         vk::PipelineVertexInputStateCreateInfo vertexInputInfo{
                 .vertexBindingDescriptionCount = 1,
-                .pVertexBindingDescriptions = &m_shader->getBinding(),
+                .pVertexBindingDescriptions = &shader.getBinding(),
                 .vertexAttributeDescriptionCount = static_cast<uint32_t>(attributes.size()),
                 .pVertexAttributeDescriptions = attributes.data()
         };
@@ -116,7 +111,7 @@ namespace vkc {
                 .maxDepthBounds = 1.0f,
         };
 
-        auto shaderStages = m_shader->getShaderstages();
+        auto shaderStages = shader.getShaderstages();
         vk::Result result;
         std::tie(result, m_pipeline) = m_device.createGraphicsPipeline(nullptr, {
                 .stageCount = static_cast<uint32_t>(shaderStages.size()),

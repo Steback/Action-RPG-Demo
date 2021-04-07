@@ -34,7 +34,7 @@ namespace core {
 
     namespace tools {
 
-        std::vector<char> readFile(const std::string& fileName);
+        std::vector<uint32_t> readFile(const std::string& fileName);
 
         stbi_uc* loadTextureFile(const std::string& fileName, int* width, int* height, VkDeviceSize* size);
 

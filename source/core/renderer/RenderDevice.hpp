@@ -91,7 +91,7 @@ namespace core {
 
         vk::RenderPass m_renderPass{};
 
-        std::shared_ptr<vkc::GraphicsPipeline> m_pipeline;
+        std::unique_ptr<vkc::GraphicsPipeline> m_pipeline;
 
         vk::CommandPool m_commandPool{};
         std::vector<vk::CommandBuffer> m_commandBuffers;
@@ -127,7 +127,7 @@ namespace core {
 
         // Editor grid
         bool m_drawGrid{};
-        std::shared_ptr<vkc::GraphicsPipeline> m_gridPipeline;
+        std::unique_ptr<vkc::GraphicsPipeline> m_gridPipeline;
     };
 
 } // End namespace core

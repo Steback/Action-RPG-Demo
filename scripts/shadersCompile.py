@@ -2,9 +2,9 @@
 import sys
 import os
 
-GLSLC = '../bin/glslc'
+GLSLC = '../bin/glslangValidator'
 SHADERS_DIR = '../data/shaders/'
-BUILD_DIR = sys.argv[1] + '/shaders/'
+BUILD_DIR = '../bin/shaders/'
 
 if __name__ == "__main__":
     print("Compile Shaders!")
@@ -13,7 +13,7 @@ if __name__ == "__main__":
         os.mkdir(BUILD_DIR)
 
     for shader in os.listdir(SHADERS_DIR):
-        cmd = GLSLC + ' -o ' + BUILD_DIR + shader + '.spv ' + SHADERS_DIR + shader
+        cmd = GLSLC + ' -V -o ' + (BUILD_DIR + shader + '.spv') + ' ' + (SHADERS_DIR + shader)
         print(cmd)
         os.system(cmd)
 

@@ -4,10 +4,10 @@
 #include "../mesh/Vertex.hpp"
 
 
-inline vk::ShaderModule loadShader(const std::vector<char> &code, vk::Device device) {
+inline vk::ShaderModule loadShader(const std::vector<uint32_t> &code, vk::Device device) {
     return device.createShaderModule({
         .codeSize = code.size(),
-        .pCode = reinterpret_cast<const uint32_t*>(code.data()),
+        .pCode = code.data(),
     });
 }
 

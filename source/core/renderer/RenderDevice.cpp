@@ -62,10 +62,10 @@ namespace core {
     void RenderDevice::init(bool drawGrid) {
         m_drawGrid = drawGrid;
 
-        m_pipeline = std::make_shared<vkc::GraphicsPipeline>(core::Application::m_resourceManager->createShader("shaders/model.vert.spv", "shaders/model.frag.spv"), m_device->m_logicalDevice);
+        m_pipeline = std::make_unique<vkc::GraphicsPipeline>(core::Application::m_resourceManager->createShader("shaders/model.vert.spv", "shaders/model.frag.spv"), m_device->m_logicalDevice);
 
         if (drawGrid)
-            m_gridPipeline = std::make_shared<vkc::GraphicsPipeline>(core::Application::m_resourceManager->createShader("shaders/grid.vert.spv", "shaders/grid.frag.spv", false), m_device->m_logicalDevice);
+            m_gridPipeline = std::make_unique<vkc::GraphicsPipeline>(core::Application::m_resourceManager->createShader("shaders/grid.vert.spv", "shaders/grid.frag.spv", false), m_device->m_logicalDevice);
 
         createCommandPool();
         createRenderPass();
@@ -135,6 +135,8 @@ namespace core {
         vk::Semaphore waitSemaphores[] = { m_imageAvailableSemaphores[m_currentFrame] };
         vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
         vk::Semaphore signalSemaphores[] = { m_renderFinishedSemaphores[m_currentFrame] };
+
+        // TODO: Check to dynamic add command buffer to summit queue
         std::array<vk::CommandBuffer, 2> cmdBuffers = {
                 m_commandBuffers[m_indexImage],
                 m_ui.getCommandBuffer(m_indexImage)
