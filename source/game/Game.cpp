@@ -32,4 +32,8 @@ namespace game {
 
     }
 
+    void Game::renderCommands(vk::CommandBuffer &cmdBuffer) {
+
+    }
+
 } // namespace core

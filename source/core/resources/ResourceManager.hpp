@@ -20,7 +20,7 @@ namespace core {
 
     class ResourceManager {
     public:
-        explicit ResourceManager(std::shared_ptr<vkc::Device> device, vk::Queue graphicsQueue);
+        explicit ResourceManager(std::shared_ptr<core::Device> device, vk::Queue graphicsQueue);
 
         ~ResourceManager();
 
@@ -56,7 +56,7 @@ namespace core {
         void createDescriptorSetLayout();
 
     private:
-        std::shared_ptr<vkc::Device> m_device{};
+        std::shared_ptr<core::Device> m_device{};
         vk::Queue m_graphicsQueue{};
         std::unordered_map<uint64_t, core::Texture> m_textures;
         std::unordered_map<uint64_t, std::shared_ptr<core::Model>> m_models;

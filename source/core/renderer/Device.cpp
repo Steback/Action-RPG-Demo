@@ -1,10 +1,11 @@
 #include "Device.hpp"
 
 #include "Instance.hpp"
+#include "CommandList.hpp"
 #include "../Utilities.hpp"
 
 
-namespace vkc {
+namespace core {
 
     Device::Device(const std::shared_ptr<Instance>& instance, vk::QueueFlags requestedQueueTypes) {
         std::vector<const char*> reqExtensions = {
@@ -73,7 +74,7 @@ namespace vkc {
         });
 
         // Create a default command pool for graphics command buffers
-        m_commandPool = createCommandPool(m_queueFamilyIndices.graphics);
+        m_commandPool = createCommandPool();
     }
 
     Device::~Device() = default;
@@ -97,8 +98,6 @@ namespace vkc {
         }
 
         throw std::runtime_error("Failed to find suitable memory type");
-
-        return -1;
     }
 
     uint32_t Device::getQueueFamilyIndex(vk::QueueFlags queueFlags) const {
@@ -132,14 +131,14 @@ namespace vkc {
         }
 
         throw std::runtime_error("Could not find a matching queue family index");
-
-        return -1;
     }
 
-    vk::CommandPool Device::createCommandPool(uint32_t queueFamilyIndex, vk::CommandPoolCreateFlags createFlags) const {
+    vk::CommandPool Device::createCommandPool(const uint32_t* queueFamilyIndex, vk::CommandPoolCreateFlags createFlags) const {
+        uint32_t index = (queueFamilyIndex ? *queueFamilyIndex : m_queueFamilyIndices.graphics);
+
         return m_logicalDevice.createCommandPool({
             .flags = createFlags,
-            .queueFamilyIndex = queueFamilyIndex
+            .queueFamilyIndex = index
         });
     }
 
@@ -195,9 +194,9 @@ namespace vkc {
         return flushCommandBuffer(commandBuffer, queue, m_commandPool, free);
     }
 
-     vkc::Buffer Device::createBuffer(vk::BufferUsageFlags usageFlags, vk::MemoryPropertyFlags memoryPropertyFlags,
-                                      vk::DeviceSize size, void *data) const {
-        vkc::Buffer buffer;
+     core::Buffer Device::createBuffer(vk::BufferUsageFlags usageFlags, vk::MemoryPropertyFlags memoryPropertyFlags,
+                                       vk::DeviceSize size, void *data) const {
+        core::Buffer buffer;
         buffer.m_device = m_logicalDevice;
 
         // Create the buffer handle
@@ -244,7 +243,7 @@ namespace vkc {
          return buffer;
     }
 
-    void Device::copyBuffer(vkc::Buffer *src, vkc::Buffer *dst, vk::Queue queue, vk::BufferCopy *copyRegion) const {
+    void Device::copyBuffer(core::Buffer *src, core::Buffer *dst, vk::Queue queue, vk::BufferCopy *copyRegion) const {
         vk::CommandBuffer copyCmd = createCommandBuffer(vk::CommandBufferLevel::ePrimary, true);
         vk::BufferCopy bufferCopy{};
 

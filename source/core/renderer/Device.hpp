@@ -12,9 +12,10 @@
 #include "../window/Window.hpp"
 
 
-namespace vkc {
+namespace core {
 
     class Instance;
+    class CommandList;
 
     struct QueueFamilyIndices {
         uint32_t graphics;
@@ -37,7 +38,7 @@ namespace vkc {
 
         [[nodiscard]] uint32_t getQueueFamilyIndex(vk::QueueFlags queueFlags) const;
 
-        [[nodiscard]] vk::CommandPool createCommandPool(uint32_t queueFamilyIndex, vk::CommandPoolCreateFlags createFlags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer) const;
+        [[nodiscard]] vk::CommandPool createCommandPool(const uint32_t* queueFamilyIndex = nullptr, vk::CommandPoolCreateFlags createFlags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer) const;
 
         [[nodiscard]] vk::CommandBuffer createCommandBuffer(vk::CommandBufferLevel level, vk::CommandPool pool, bool begin = false) const;
 
@@ -47,10 +48,10 @@ namespace vkc {
 
         void flushCommandBuffer(vk::CommandBuffer commandBuffer, vk::Queue queue, bool free = true) const;
 
-        vkc::Buffer createBuffer(vk::BufferUsageFlags usageFlags, vk::MemoryPropertyFlags memoryPropertyFlags,
-                                 vk::DeviceSize size, void *data = nullptr) const;
+        core::Buffer createBuffer(vk::BufferUsageFlags usageFlags, vk::MemoryPropertyFlags memoryPropertyFlags,
+                                  vk::DeviceSize size, void *data = nullptr) const;
 
-        void copyBuffer(vkc::Buffer *src, vkc::Buffer *dst, vk::Queue queue, vk::BufferCopy *copyRegion = nullptr) const;
+        void copyBuffer(core::Buffer *src, core::Buffer *dst, vk::Queue queue, vk::BufferCopy *copyRegion = nullptr) const;
 
         void transitionImageLayout(vk::Image image, vk::Format format, vk::Queue queue, vk::ImageLayout oldLayout,
                                    vk::ImageLayout newLayout, uint32_t mipLevels = 1) const;

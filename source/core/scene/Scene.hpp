@@ -48,7 +48,7 @@ namespace core {
 
         void update(float deltaTime);
 
-        void render();
+        void render(vk::CommandBuffer& cmdBuffer, const vk::PipelineLayout& layout, const vk::DescriptorSet& set, MVP& mvp);
 
         void cleanup();
 

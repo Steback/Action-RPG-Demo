@@ -14,7 +14,7 @@
 
 namespace core {
 
-    ResourceManager::ResourceManager(std::shared_ptr<vkc::Device> device, vk::Queue graphicsQueue)
+    ResourceManager::ResourceManager(std::shared_ptr<core::Device> device, vk::Queue graphicsQueue)
             : m_device(std::move(device)), m_graphicsQueue(graphicsQueue) {
         createDescriptorSetLayout();
         createDescriptorPool();
@@ -36,7 +36,7 @@ namespace core {
         int width, height;
         vk::DeviceSize imageSize;
         stbi_uc* pixels = core::tools::loadTextureFile(fileName, &width, &height, &imageSize);
-        vkc::Buffer stagingBuffer;
+        core::Buffer stagingBuffer;
 
         stagingBuffer = m_device->createBuffer(vk::BufferUsageFlagBits::eTransferSrc,
                                vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,

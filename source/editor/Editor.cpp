@@ -392,4 +392,14 @@ namespace editor {
         }
     }
 
+    void Editor::renderCommands(vk::CommandBuffer &cmdBuffer) {
+        m_renderer->m_gridPipeline->bind(cmdBuffer);
+
+        core::MVP mvp = m_renderer->m_mvp;
+        mvp.model = glm::mat4(1.0f);
+
+        cmdBuffer.pushConstants(m_renderer->m_gridPipeline->getLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(mvp), &mvp);
+        cmdBuffer.draw(6, 1, 0, 0);
+    }
+
 } // namespace editor

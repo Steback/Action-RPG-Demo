@@ -11,7 +11,7 @@
 #include "../window/Window.hpp"
 
 
-namespace vkc {
+namespace core {
     class Device;
 
     struct SwapChainSupportDetails {
@@ -31,7 +31,7 @@ namespace vkc {
 
         ~SwapChain();
 
-        void connect(const std::shared_ptr<vkc::Device>& device, vk::SurfaceKHR surface);
+        void connect(const std::shared_ptr<core::Device>& device, vk::SurfaceKHR surface);
 
         void create(uint32_t& width, uint32_t& height, uint32_t graphicsFamilyIndex, uint32_t presetFamilyIndex);
 

@@ -11,7 +11,7 @@
 #include "../Constants.hpp"
 
 
-namespace vkc {
+namespace core {
 
     class Instance {
     public:

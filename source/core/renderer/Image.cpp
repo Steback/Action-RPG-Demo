@@ -1,7 +1,7 @@
 #include "Image.hpp"
 
 
-namespace vkc {
+namespace core {
 
     Image::Image() = default;
 

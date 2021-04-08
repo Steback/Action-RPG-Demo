@@ -8,7 +8,7 @@
 #include "vulkan/vulkan.hpp"
 
 
-namespace vkc {
+namespace core {
 
     class Buffer {
     public:

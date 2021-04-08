@@ -8,7 +8,7 @@ namespace core {
 
     Texture::Texture(vk::Device logicalDevice, vk::Extent2D size, vk::Format format, vk::ImageTiling tiling,
                      vk::ImageUsageFlags usageFlags, uint32_t mipLevels) {
-        m_image = vkc::Image(logicalDevice, {
+        m_image = core::Image(logicalDevice, {
                 .imageType = vk::ImageType::e2D,
                 .format = format,
                 .extent = {
@@ -73,7 +73,7 @@ namespace core {
         return m_image.getHeight();
     }
 
-    vkc::Image Texture::getTextureImage() const {
+    core::Image Texture::getTextureImage() const {
         return m_image;
     }
 

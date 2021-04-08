@@ -16,6 +16,8 @@ namespace game {
         void drawUI() override;
 
         void cleanup() override;
+
+        void renderCommands(vk::CommandBuffer &cmdBuffer) override;
     };
 
 } // namespace core

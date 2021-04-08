@@ -52,6 +52,9 @@ namespace editor {
 
         void loadScene();
 
+    public:
+        void renderCommands(vk::CommandBuffer &cmdBuffer) override;
+
     private:
         size_t m_entitySelected = -1;
         bool m_gizmoDraw = true;

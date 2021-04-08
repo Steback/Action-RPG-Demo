@@ -18,6 +18,8 @@
 
 namespace core {
 
+    class CommandList;
+
     class Application {
     public:
         explicit Application(const std::string& appName, const glm::vec4& clearColor = {glm::vec3(0.0f), 1.0f}, bool drawGrid = false);
@@ -38,6 +40,8 @@ namespace core {
 
         virtual void cleanup() = 0;
 
+        virtual void renderCommands(vk::CommandBuffer& cmdBuffer) = 0;
+
     public:
         static std::unique_ptr<core::RenderDevice> m_renderer;
         static std::unique_ptr<core::ResourceManager> m_resourceManager;
@@ -45,10 +49,11 @@ namespace core {
 
     protected:
         std::shared_ptr<core::Window> m_window;
-        std::shared_ptr<vkc::Device> m_device;
-        std::shared_ptr<vkc::Instance> m_instance;
+        std::shared_ptr<core::Device> m_device;
+        std::shared_ptr<core::Instance> m_instance;
         float m_lastTime{}, m_deltaTime{};
         glm::vec4 m_clearColor;
+        std::shared_ptr<CommandList> m_commands;
     };
 
 } // namespace core

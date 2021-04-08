@@ -33,11 +33,11 @@ namespace core {
         }
     }
 
-    void Scene::render() {
+    void Scene::render(vk::CommandBuffer& cmdBuffer, const vk::PipelineLayout& layout, const vk::DescriptorSet& set, MVP& mvp) {
         auto view = m_registry.view<core::Render>();
 
         for (auto& entity : view) {
-            view.get<core::Render>(entity).render();
+            view.get<core::Render>(entity).render(cmdBuffer, layout, set, mvp);
         }
     }
 

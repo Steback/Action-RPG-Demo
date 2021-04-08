@@ -7,7 +7,7 @@
 #include "../Application.hpp"
 
 
-namespace vkc {
+namespace core {
 
     GraphicsPipeline::GraphicsPipeline(uint shaderID, const vk::Device& device)
             : m_shaderID(shaderID), m_device(device) {
@@ -15,7 +15,7 @@ namespace vkc {
     }
 
     void GraphicsPipeline::create(const std::vector<vk::PushConstantRange> &pushConstants, const std::vector<vk::DescriptorSetLayout>& layouts,
-                                  const vkc::SwapChain& swapChain, const vk::RenderPass& renderPass, vk::SampleCountFlagBits sampleCount) {
+                                  const core::SwapChain& swapChain, const vk::RenderPass& renderPass, vk::SampleCountFlagBits sampleCount) {
         core::Shader& shader = core::Application::m_resourceManager->getShader(m_shaderID);
         auto attributes = shader.getAttributes();
 

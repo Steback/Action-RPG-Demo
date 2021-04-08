@@ -17,11 +17,14 @@
 
 namespace core {
 
+    class CommandList;
+
     class UIImGui {
     public:
         UIImGui();
 
-        explicit UIImGui(vkc::SwapChain& swapChain, const std::shared_ptr<vkc::Device>& device, GLFWwindow* window, vk::Instance instance, vk::Queue graphicsQueue);
+        explicit UIImGui(core::SwapChain& swapChain, const std::shared_ptr<core::Device>& device, GLFWwindow* window,
+                         vk::Instance instance, vk::Queue graphicsQueue, std::shared_ptr<CommandList> commandList);
 
         ~UIImGui();
 
@@ -33,33 +36,25 @@ namespace core {
 
         static void render();
 
-        void resize(vkc::SwapChain& swapChain);
+        void resize(core::SwapChain& swapChain);
 
         void cleanupResources();
 
         void recordCommands(uint32_t imageIndex, vk::Extent2D swapChainExtent);
 
-        vk::CommandBuffer getCommandBuffer(uint32_t imageIndex);
-
     private:
         void createRenderPass(vk::Format swapChainFormat);
 
-        void createFrameBuffers(vkc::SwapChain& swapChain);
-
-        void createCommandPool();
-
-        void createCommandBuffers(uint32_t imageCount);
+        void createFrameBuffers(core::SwapChain& swapChain);
 
         void createDescriptorPool();
 
     private:
         vk::RenderPass m_renderPass{};
+        std::shared_ptr<CommandList> m_commands;
         std::vector<vk::Framebuffer> m_framebuffers{};
-        vk::CommandPool m_commandPool{};
-        std::vector<vk::CommandBuffer> m_commandBuffers{};
         vk::DescriptorPool m_descriptorPool{};
-        vk::Queue m_graphicsQueue{};
-        std::shared_ptr<vkc::Device> m_device{};
+        vk::Device m_device{};
     };
 
 } // namepsace core

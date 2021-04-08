@@ -11,7 +11,7 @@
 #include "../resources/Shader.hpp"
 
 
-namespace vkc {
+namespace core {
 
     class SwapChain;
 
@@ -20,7 +20,7 @@ namespace vkc {
         GraphicsPipeline(uint shaderID, const vk::Device& device);
 
         void create(const std::vector<vk::PushConstantRange>& pushConstants, const std::vector<vk::DescriptorSetLayout>& layouts,
-                    const vkc::SwapChain& swapChain, const vk::RenderPass& renderPass, vk::SampleCountFlagBits sampleCount);
+                    const core::SwapChain& swapChain, const vk::RenderPass& renderPass, vk::SampleCountFlagBits sampleCount);
 
         void cleanup();
 

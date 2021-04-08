@@ -30,7 +30,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageFunc(VkDebugUtilsMessageSeverityFlagB
                                                 VkDebugUtilsMessageTypeFlagsEXT messageTypes,
                                                 VkDebugUtilsMessengerCallbackDataEXT const *pCallbackData,
                                                 void* pUserData) {
-    auto* instance = reinterpret_cast<vkc::Instance*>(pUserData);
+    auto* instance = reinterpret_cast<core::Instance*>(pUserData);
     std::unordered_map<uint32_t, std::string>& debugMessages = instance->m_debugMessages;
 
     if (debugMessages.find(pCallbackData->messageIdNumber) == debugMessages.end()) {
@@ -95,7 +95,7 @@ std::vector<const char*> getRequiredExtensions() {
     return extensions;
 }
 
-namespace vkc {
+namespace core {
 
     Instance::Instance() = default;
 

@@ -6,7 +6,7 @@
 #include "vulkan/vulkan.hpp"
 
 
-namespace vkc {
+namespace core {
 
     class Image {
     public:

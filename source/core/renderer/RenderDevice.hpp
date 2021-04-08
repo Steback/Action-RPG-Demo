@@ -23,25 +23,27 @@
 
 namespace core {
 
+    class CommandList;
+
     class RenderDevice {
     public:
-        explicit RenderDevice(std::shared_ptr<Window> window, vk::Instance instance, const std::string& appName, std::shared_ptr<vkc::Device> device, vk::SurfaceKHR surface);
+        explicit RenderDevice(std::shared_ptr<Window> window, vk::Instance instance, const std::string& appName, std::shared_ptr<core::Device> device, vk::SurfaceKHR surface);
 
         ~RenderDevice();
 
         void init(bool drawGrid = false);
 
-        void cleanup(const std::shared_ptr<vkc::Instance>& instance);
+        void cleanup(const std::shared_ptr<core::Instance>& instance);
 
-        void render(const glm::vec4& clearColor);
+        void acquireNextImage();
+
+        void render();
 
         void createRenderPass();
 
         void createGraphicsPipeline();
 
         void createFramebuffers();
-
-        void createCommandPool();
 
         void createSyncObjects();
 
@@ -67,18 +69,25 @@ namespace core {
 
         vk::Queue& getGraphicsQueue();
 
-        void renderMesh(const core::Mesh& mesh, const glm::mat4& matrix);
+        std::shared_ptr<CommandList> addCommandList();
 
-        void beginRenderPass(const glm::vec4& clearColor);
+        vk::Framebuffer& getFrameBuffer();
 
-        void endRenderPass();
+        vk::Extent2D getSwapChainExtent();
 
-        void drawGrid();
+        vk::RenderPass& getRenderPass();
+
+        vk::DescriptorSet& getDescriptorSet();
+
+    public:
+        MVP m_mvp{};
+        std::unique_ptr<core::GraphicsPipeline> m_pipeline;
+        std::unique_ptr<core::GraphicsPipeline> m_gridPipeline;
 
     private:
         std::shared_ptr<Window> m_window;
 
-        std::shared_ptr<vkc::Device> m_device{};
+        std::shared_ptr<core::Device> m_device{};
         vk::PhysicalDevice m_physicalDevice{};
         vk::Device m_logicalDevice{};
 
@@ -86,15 +95,12 @@ namespace core {
 
         core::WindowSize m_windowSize;
 
-        vkc::SwapChain m_swapChain{};
+        core::SwapChain m_swapChain{};
         std::vector<vk::Framebuffer> m_framebuffers;
 
         vk::RenderPass m_renderPass{};
 
-        std::unique_ptr<vkc::GraphicsPipeline> m_pipeline;
-
-        vk::CommandPool m_commandPool{};
-        std::vector<vk::CommandBuffer> m_commandBuffers;
+        std::vector<std::shared_ptr<CommandList>> m_commands;
 
         std::vector<vk::Semaphore> m_imageAvailableSemaphores{};
         std::vector<vk::Semaphore> m_renderFinishedSemaphores{};
@@ -117,17 +123,15 @@ namespace core {
         vk::SampleCountFlagBits m_msaaSamples = vk::SampleCountFlagBits::e1;
 
         // Multisampling anti-aliasing
-        vkc::Image m_colorImage;
+        core::Image m_colorImage;
 
         // TODO: Check for optimising in depth buffer
-        vkc::Image m_depthBuffer;
+        core::Image m_depthBuffer;
         vk::Format m_depthFormat{};
 
-        MVP m_mvp{};
 
         // Editor grid
         bool m_drawGrid{};
-        std::unique_ptr<vkc::GraphicsPipeline> m_gridPipeline;
     };
 
 } // End namespace core

@@ -3,7 +3,7 @@
 #include "../Utilities.hpp"
 
 
-namespace vkc {
+namespace core {
 
     Buffer::Buffer() = default;
 

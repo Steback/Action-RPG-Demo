@@ -1,13 +1,18 @@
 #include "UIImGui.hpp"
 
+#include <utility>
+
 #include "../Constants.hpp"
+#include "CommandList.hpp"
 
 
 namespace core {
 
     UIImGui::UIImGui() = default;
 
-    UIImGui::UIImGui(vkc::SwapChain &swapChain, const std::shared_ptr<vkc::Device>& device, GLFWwindow* window, vk::Instance instance, vk::Queue graphicsQueue) {
+    UIImGui::UIImGui(core::SwapChain &swapChain, const std::shared_ptr<core::Device>& device, GLFWwindow* window,
+                     vk::Instance instance, vk::Queue graphicsQueue, std::shared_ptr<CommandList> commandList) {
+        m_commands = std::move(commandList);
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImGui::StyleColorsDark();
@@ -15,12 +20,10 @@ namespace core {
         ImGuiIO& io = ImGui::GetIO(); (void)io;
         io.Fonts->AddFontFromFileTTF(std::string(FONTS_DIR + "Roboto-Medium.ttf").c_str(), 16.0f);
 
-        m_device = device;
+        m_device = device->m_logicalDevice;
 
         createDescriptorPool();
         createRenderPass(static_cast<vk::Format>(swapChain.getFormat()));
-        createCommandPool();
-        createCommandBuffers(swapChain.getImageCount());
         createFrameBuffers(swapChain);
 
         // Provide bind points from Vulkan API
@@ -38,18 +41,17 @@ namespace core {
         ImGui_ImplVulkan_Init(&init_info, m_renderPass);
 
         // Upload the fonts for Dear ImGui
-        vk::CommandBuffer commandBuffer = device->createCommandBuffer(vk::CommandBufferLevel::ePrimary, m_commandPool, true);
+        vk::CommandBuffer commandBuffer = device->createCommandBuffer(vk::CommandBufferLevel::ePrimary, m_commands->getPool(), true);
         ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
-        device->flushCommandBuffer(commandBuffer, graphicsQueue, m_commandPool);
+        device->flushCommandBuffer(commandBuffer, graphicsQueue, m_commands->getPool());
         ImGui_ImplVulkan_DestroyFontUploadObjects();
     }
 
     UIImGui::~UIImGui() = default;
 
     void UIImGui::cleanup() {
-        vkDestroyDescriptorPool(m_device->m_logicalDevice, m_descriptorPool, nullptr);
-        vkDestroyCommandPool(m_device->m_logicalDevice, m_commandPool, nullptr);
-        vkDestroyRenderPass(m_device->m_logicalDevice, m_renderPass, nullptr);
+        m_device.destroy(m_descriptorPool);
+        m_device.destroy(m_renderPass);
     }
 
     void UIImGui::cleanupImGui() {
@@ -68,27 +70,20 @@ namespace core {
         ImGui::Render();
     }
 
-    void UIImGui::resize(vkc::SwapChain& swapChain) {
+    void UIImGui::resize(core::SwapChain& swapChain) {
         ImGui_ImplVulkan_SetMinImageCount(swapChain.getImageCount());
         m_framebuffers.resize(swapChain.getImageCount());
         createFrameBuffers(swapChain);
-        createCommandBuffers(swapChain.getImageCount());
     }
 
     void UIImGui::cleanupResources() {
         for (auto& framebuffer : m_framebuffers) {
-            vkDestroyFramebuffer(m_device->m_logicalDevice, framebuffer, nullptr);
+            m_device.destroy(framebuffer);
         }
-
-        m_device->m_logicalDevice.freeCommandBuffers(m_commandPool, static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
-    }
-
-    vk::CommandBuffer UIImGui::getCommandBuffer(uint32_t imageIndex) {
-        return m_commandBuffers[imageIndex];
     }
 
     void UIImGui::recordCommands(uint32_t imageIndex, vk::Extent2D swapChainExtent) {
-        vk::CommandBuffer cmdBuffer = m_commandBuffers[imageIndex];
+        vk::CommandBuffer& cmdBuffer = m_commands->getBuffer();
 
         cmdBuffer.begin({
             .flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit
@@ -106,7 +101,7 @@ namespace core {
             .pClearValues = &clearColor
         }, vk::SubpassContents::eInline);
         {
-            ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_commandBuffers[imageIndex]);
+            ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_commands->getBuffer());
         }
         cmdBuffer.endRenderPass();
 
@@ -144,7 +139,7 @@ namespace core {
                 .dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite
         };
 
-        m_renderPass = m_device->m_logicalDevice.createRenderPass({
+        m_renderPass = m_device.createRenderPass({
             .attachmentCount = 1,
             .pAttachments = &attachmentDescription,
             .subpassCount = 1,
@@ -154,7 +149,7 @@ namespace core {
         });
     }
 
-    void UIImGui::createFrameBuffers(vkc::SwapChain& swapChain) {
+    void UIImGui::createFrameBuffers(core::SwapChain& swapChain) {
         m_framebuffers.resize(swapChain.getImageCount());
 
         vk::ImageView attachment[1];
@@ -170,19 +165,7 @@ namespace core {
         for (uint32_t i = 0; i < swapChain.getImageCount(); ++i) {
             attachment[0] = swapChain.getImageView(i);
 
-            m_framebuffers[i] = m_device->m_logicalDevice.createFramebuffer(info);
-        }
-    }
-
-    void UIImGui::createCommandPool() {
-        m_commandPool = m_device->createCommandPool(m_device->m_queueFamilyIndices.graphics);
-    }
-
-    void UIImGui::createCommandBuffers(uint32_t imageCount) {
-        m_commandBuffers.resize(imageCount);
-
-        for (int i = 0; i < imageCount; ++i) {
-            m_commandBuffers[i] = m_device->createCommandBuffer(vk::CommandBufferLevel::ePrimary, m_commandPool);
+            m_framebuffers[i] = m_device.createFramebuffer(info);
         }
     }
 
@@ -201,7 +184,7 @@ namespace core {
                 { vk::DescriptorType::eInputAttachment, 1000 }
         };
 
-        m_descriptorPool = m_device->m_logicalDevice.createDescriptorPool({
+        m_descriptorPool = m_device.createDescriptorPool({
             .flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
             .maxSets = 100 * static_cast<uint32_t>(poolSizes.size()),
             .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),

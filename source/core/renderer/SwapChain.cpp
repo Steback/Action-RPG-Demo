@@ -3,8 +3,8 @@
 #include "Device.hpp"
 
 
-vkc::SwapChainSupportDetails querySwapChainSupport(const vk::PhysicalDevice& device, const vk::SurfaceKHR& surface) {
-    vkc::SwapChainSupportDetails details;
+core::SwapChainSupportDetails querySwapChainSupport(const vk::PhysicalDevice& device, const vk::SurfaceKHR& surface) {
+    core::SwapChainSupportDetails details;
     details.capabilities = device.getSurfaceCapabilitiesKHR(surface);
 
     uint32_t formatsCount;
@@ -60,13 +60,13 @@ vk::Extent2D chooseSwapExtend(const uint32_t& width, const uint32_t& height, con
     }
 }
 
-namespace vkc {
+namespace core {
 
     SwapChain::SwapChain() = default;
 
     SwapChain::~SwapChain() = default;
 
-    void SwapChain::connect(const std::shared_ptr<vkc::Device>& device, vk::SurfaceKHR surface) {
+    void SwapChain::connect(const std::shared_ptr<core::Device>& device, vk::SurfaceKHR surface) {
         m_physicalDevice = device->m_physicalDevice,
         m_device = device->m_logicalDevice;
 
@@ -78,7 +78,7 @@ namespace vkc {
     }
 
     void SwapChain::create(uint32_t& width, uint32_t& height, uint32_t graphicsFamilyIndex, uint32_t presetFamilyIndex) {
-        vkc::SwapChainSupportDetails swapChainSupport = querySwapChainSupport(m_physicalDevice, m_surface);
+        core::SwapChainSupportDetails swapChainSupport = querySwapChainSupport(m_physicalDevice, m_surface);
 
         vk::SurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
         vk::PresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
