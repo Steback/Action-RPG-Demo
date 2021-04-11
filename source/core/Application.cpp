@@ -32,7 +32,7 @@ namespace core {
         vk::PushConstantRange constantRange{
             .stageFlags = vk::ShaderStageFlagBits::eVertex,
             .offset = 0,
-            .size = sizeof(MVP)
+            .size = sizeof(glm::mat4)
         };
 
         m_pipeline = m_renderer->addPipeline(core::Application::m_resourceManager->createShader("model.vert.spv", "model.frag.spv", {constantRange}),

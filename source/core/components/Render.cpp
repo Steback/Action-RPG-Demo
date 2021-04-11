@@ -47,7 +47,8 @@ namespace core {
                 cmdBuffer.bindVertexBuffers(0, 1, vertexBuffer, offsets);
                 cmdBuffer.bindIndexBuffer(mesh.getIndexBuffer(), 0, vk::IndexType::eUint32);
 
-                cmdBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(MVP), &mvp);
+                glm::mat4 mvpMatrix = mvp.getMatrix();
+                cmdBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(mvpMatrix), &mvpMatrix);
 
                 std::array<vk::DescriptorSet, 2> descriptorSetGroup = {
                         set,

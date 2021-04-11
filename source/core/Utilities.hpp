@@ -26,6 +26,8 @@ namespace core {
         alignas(16) glm::mat4 model;
         alignas(16) glm::mat4 view;
         alignas(16) glm::mat4 proj;
+
+        glm::mat4 getMatrix() const;
     };
 
     inline void throw_ex(const std::string& message) {

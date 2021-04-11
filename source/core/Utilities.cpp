@@ -55,4 +55,7 @@ namespace core {
 
    } // namespace tools
 
+    glm::mat4 MVP::getMatrix() const {
+        return proj * view * model;
+    }
 } // namespace core
