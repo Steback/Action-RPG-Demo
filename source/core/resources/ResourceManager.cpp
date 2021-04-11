@@ -217,7 +217,7 @@ namespace core {
 
         if (fileLoaded) {
             uint64_t modelName = core::tools::hashString(name);
-            m_models[modelName] = std::make_shared<core::Model>(name);
+            m_models[modelName] = std::make_shared<core::ModelInterface>(name);
 
             for (auto& image : inputModel.images) createTexture(image.uri, image.name);
 
@@ -232,7 +232,7 @@ namespace core {
         }
     }
 
-    std::shared_ptr<core::Model> ResourceManager::getModel(uint64_t id) {
+    std::shared_ptr<core::ModelInterface> ResourceManager::getModel(uint64_t id) {
         return m_models[id];
     }
 

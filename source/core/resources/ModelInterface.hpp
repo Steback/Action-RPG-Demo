@@ -29,7 +29,7 @@ namespace core {
             "skeleton_mesh"
     };
 
-    class Model {
+    class ModelInterface {
     public:
         struct Node {
             uint id;
@@ -41,13 +41,13 @@ namespace core {
         };
 
     public:
-        Model();
+        ModelInterface();
 
-        Model(std::string  name);
+        ModelInterface(std::string  name);
 
-        explicit Model(std::vector<Node> nodes, std::string  name);
+        explicit ModelInterface(std::vector<Node> nodes, std::string  name);
 
-        ~Model();
+        ~ModelInterface();
 
         Node& getNode(uint id);
 

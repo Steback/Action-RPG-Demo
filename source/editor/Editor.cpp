@@ -5,7 +5,7 @@
 #include "fmt/format.h"
 #include <glm/gtx/matrix_decompose.inl>
 
-#include "components/Render.hpp"
+#include "components/Model.hpp"
 #include "renderer/UIImGui.hpp"
 #include "Gizmos.hpp"
 
@@ -34,7 +34,7 @@ namespace editor {
         m_scene->loadScene("../data/basicScene.json", true);
 
         for (auto& entity : m_scene->getEntities()) {
-            auto& model = m_scene->getComponent<core::Render>(entity.id);
+            auto& model = m_scene->getComponent<core::Model>(entity.id);
             int modelID;
 
             for (int i = 0; i < m_modelsNames.size(); ++i) {
@@ -180,7 +180,7 @@ namespace editor {
 
                 if (entity.components & core::MODEL) {
                     if (ImGui::CollapsingHeader("Model")) {
-                        auto& render = m_scene->getComponent<core::Render>(entity.id);
+                        auto& render = m_scene->getComponent<core::Model>(entity.id);
 
                         int currentModel = m_entitiesInfo[m_entitySelected].model;
 
@@ -289,7 +289,7 @@ namespace editor {
         auto& entity = m_scene->addEntity("Object", core::EntityFlags::OBJECT);
         uint64_t modelID = core::tools::hashString("cube");
 
-        m_scene->registry().emplace<core::Render>(entity.enttID, modelID, entity.id);
+        m_scene->registry().emplace<core::Model>(entity.enttID, modelID, entity.id);
         m_scene->registry().emplace<core::Transform>(entity.enttID, m_scene->getCamera().getCenter(), DEFAULT_SIZE, SPEED_ZERO, DEFAULT_ROTATION);
         entity.components = core::MODEL | core::TRANSFORM;
 
@@ -319,7 +319,7 @@ namespace editor {
         }
     }
 
-    void Editor::loadNode(core::Model::Node& node, core::Model& model) {
+    void Editor::loadNode(core::ModelInterface::Node& node, core::ModelInterface& model) {
         if (ImGui::TreeNode(node.name.c_str())) {
             ImGui::Text("ID: %u", node.id);
 
@@ -384,7 +384,7 @@ namespace editor {
                 m_scene->loadScene(filePathName, true);
 
                 for (auto& entity : m_scene->getEntities()) {
-                    auto& render = m_scene->getComponent<core::Render>(entity.id);
+                    auto& render = m_scene->getComponent<core::Model>(entity.id);
                     int modelID;
 
                     for (int i = 0; i < m_modelsNames.size(); ++i) {

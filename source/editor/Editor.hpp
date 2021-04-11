@@ -47,7 +47,7 @@ namespace editor {
 
         void addModel();
 
-        void loadNode(core::Model::Node& node, core::Model& model);
+        void loadNode(core::ModelInterface::Node& node, core::ModelInterface& model);
 
         void saveScene();
 

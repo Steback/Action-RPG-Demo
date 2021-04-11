@@ -17,7 +17,7 @@
 #include "../Utilities.hpp"
 #include "../camera/Camera.hpp"
 #include "../window/Window.hpp"
-#include "../resources/Model.hpp"
+#include "../resources/ModelInterface.hpp"
 #include "../resources/ResourceManager.hpp"
 
 

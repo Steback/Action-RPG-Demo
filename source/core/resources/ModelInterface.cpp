@@ -1,4 +1,4 @@
-#include "Model.hpp"
+#include "ModelInterface.hpp"
 
 #include <utility>
 
@@ -13,34 +13,34 @@
 
 namespace core {
 
-    Model::Model() = default;
+    ModelInterface::ModelInterface() = default;
 
-    Model::Model(std::string name) : m_name(std::move(name)) {
+    ModelInterface::ModelInterface(std::string name) : m_name(std::move(name)) {
 
     }
 
-    Model::Model(std::vector<Node> nodes, std::string name)
+    ModelInterface::ModelInterface(std::vector<Node> nodes, std::string name)
             : m_nodes(std::move(nodes)), m_name(std::move(name)) {
 
     }
 
-    Model::~Model() = default;
+    ModelInterface::~ModelInterface() = default;
 
-    Model::Node &Model::getNode(uint id) {
+    ModelInterface::Node &ModelInterface::getNode(uint id) {
         return m_nodes[id];
     }
 
-    Model::Node &Model::getBaseMesh() {
+    ModelInterface::Node &ModelInterface::getBaseMesh() {
         return m_nodes[m_baseMesh];
     }
 
-    std::vector<Model::Node>& Model::getNodes() {
+    std::vector<ModelInterface::Node>& ModelInterface::getNodes() {
         return m_nodes;
     }
 
-    void Model::loadNode(const tinygltf::Node &inputNode, const tinygltf::Model &inputModel, int parentID) {
+    void ModelInterface::loadNode(const tinygltf::Node &inputNode, const tinygltf::Model &inputModel, int parentID) {
         glm::mat4 matrix(1.0f);
-        Model::Node node{};
+        ModelInterface::Node node{};
         node.id = m_nodes.size();
         node.name = inputNode.name;
 
@@ -98,7 +98,7 @@ namespace core {
         }
     }
 
-    std::string &Model::getName() {
+    std::string &ModelInterface::getName() {
         return m_name;
     }
 

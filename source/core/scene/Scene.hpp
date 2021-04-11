@@ -12,7 +12,7 @@
 #include "../resources/ResourceManager.hpp"
 #include "../Constants.hpp"
 #include "../components/Transform.hpp"
-#include "../components/Render.hpp"
+#include "../components/Model.hpp"
 
 using json = nlohmann::json;
 

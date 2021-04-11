@@ -1,4 +1,4 @@
-#include "Render.hpp"
+#include "Model.hpp"
 
 #include "../Utilities.hpp"
 #include "../Application.hpp"
@@ -6,28 +6,28 @@
 
 namespace core {
 
-    Render::Render(uint64_t modelID, uint32_t entityID)
+    Model::Model(uint64_t modelID, uint32_t entityID)
             : m_model(core::Application::m_resourceManager->getModel(modelID)), m_entityID(entityID) {
 
     }
 
-    core::Model::Node &Render::getNode(uint id) {
+    core::ModelInterface::Node &Model::getNode(uint id) {
         return m_model->getNode(id);
     }
 
-    core::Model::Node &Render::getBaseMesh() {
+    core::ModelInterface::Node &Model::getBaseMesh() {
         return m_model->getBaseMesh();
     }
 
-    std::vector<core::Model::Node> &Render::getNodes() {
+    std::vector<core::ModelInterface::Node> &Model::getNodes() {
         return m_model->getNodes();
     }
 
-    std::string &Render::getName() {
+    std::string &Model::getName() {
         return m_model->getName();
     }
 
-    void Render::render(vk::CommandBuffer& cmdBuffer, const vk::PipelineLayout& layout, const vk::DescriptorSet& set, MVP& mvp) {
+    void Model::render(vk::CommandBuffer& cmdBuffer, const vk::PipelineLayout& layout, const vk::DescriptorSet& set, MVP& mvp) {
         for (auto& node : m_model->getNodes()) {
             if (node.mesh > 0) {
                 auto& transform = core::Application::m_scene->getComponent<core::Transform>(m_entityID);
@@ -59,15 +59,12 @@ namespace core {
                                              static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0,
                                              nullptr);
 
-                cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, 0, 1, &set, 0,
-                                             nullptr);
-
                 cmdBuffer.drawIndexed(mesh.getIndexCount(), 1, 0, 0, 0);
             }
         }
     }
 
-    void Render::setModel(uint64_t modelID) {
+    void Model::setModel(uint64_t modelID) {
         m_model = core::Application::m_resourceManager->getModel(modelID);
     }
 

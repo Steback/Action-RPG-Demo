@@ -10,7 +10,7 @@
 
 #include "Texture.hpp"
 #include "../renderer/Device.hpp"
-#include "Model.hpp"
+#include "ModelInterface.hpp"
 #include "../Utilities.hpp"
 
 
@@ -40,7 +40,7 @@ namespace core {
 
         uint64_t createModel(const std::string& uri, const std::string& name);
 
-        std::shared_ptr<core::Model> getModel(uint64_t id);
+        std::shared_ptr<core::ModelInterface> getModel(uint64_t id);
 
         core::Mesh& getMesh(uint64_t id);
 
@@ -57,7 +57,7 @@ namespace core {
         std::shared_ptr<core::Device> m_device{};
         vk::Queue m_graphicsQueue{};
         std::unordered_map<uint64_t, core::Texture> m_textures;
-        std::unordered_map<uint64_t, std::shared_ptr<core::Model>> m_models;
+        std::unordered_map<uint64_t, std::shared_ptr<core::ModelInterface>> m_models;
         std::unordered_map<uint64_t, core::Mesh> m_meshes;
         std::vector<std::shared_ptr<core::Shader>> m_shaders;
         vk::DescriptorPool m_descriptorPool{};

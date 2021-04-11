@@ -34,10 +34,10 @@ namespace core {
     }
 
     void Scene::render(vk::CommandBuffer& cmdBuffer, const vk::PipelineLayout& layout, const vk::DescriptorSet& set, MVP& mvp) {
-        auto view = m_registry.view<core::Render>();
+        auto view = m_registry.view<core::Model>();
 
         for (auto& entity : view) {
-            view.get<core::Render>(entity).render(cmdBuffer, layout, set, mvp);
+            view.get<core::Model>(entity).render(cmdBuffer, layout, set, mvp);
         }
     }
 
@@ -92,7 +92,7 @@ namespace core {
         if (editorBuild) {
             auto& entity = addEntity("Camera", EntityFlags::OBJECT | EntityFlags::CAMERA);
 
-            m_registry.emplace<core::Render>(entity.enttID, core::tools::hashString("cube"), entity.id);
+            m_registry.emplace<core::Model>(entity.enttID, core::tools::hashString("cube"), entity.id);
 
             glm::vec3 direction;
             float yaw = glm::radians(camera["angles"]["yaw"].get<float>());
@@ -132,9 +132,9 @@ namespace core {
             if (!e["model"].empty()) {
                 auto& model = e["model"];
 
-                m_registry.emplace<core::Render>(entity.enttID,
-                                                 core::Application::m_resourceManager->createModel(model["name"].get<std::string>() + ".gltf", model["name"]),
-                                                 entity.id);
+                m_registry.emplace<core::Model>(entity.enttID,
+                                                core::Application::m_resourceManager->createModel(model["name"].get<std::string>() + ".gltf", model["name"]),
+                                                entity.id);
             }
 
             entity.components = ComponentFlags::TRANSFORM | ComponentFlags::MODEL;
@@ -206,7 +206,7 @@ namespace core {
                 }
 
                 if (entity.components & core::MODEL) {
-                    auto& model = m_registry.get<core::Render>(entity.enttID);
+                    auto& model = m_registry.get<core::Model>(entity.enttID);
 
                     scene["entities"][entitiesCount]["model"] = {
                             {"name", model.getName()}
