@@ -56,6 +56,7 @@ namespace engine {
         glm::vec4 m_clearColor;
         std::shared_ptr<GraphicsPipeline> m_pipeline;
         std::shared_ptr<CommandList> m_commands;
+        UIImGui m_ui;
     };
 
 } // namespace core

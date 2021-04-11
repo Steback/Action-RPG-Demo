@@ -39,6 +39,27 @@ namespace engine {
 
         void render();
 
+        void updateVP(const glm::mat4& view, const glm::mat4& proj);
+
+        vk::Queue& getGraphicsQueue();
+
+        std::shared_ptr<CommandList> addCommandList();
+
+        vk::Framebuffer& getFrameBuffer();
+
+        vk::Extent2D getSwapChainExtent();
+
+        vk::RenderPass& getRenderPass();
+
+        vk::DescriptorSet& getDescriptorSet();
+
+        std::shared_ptr<GraphicsPipeline> addPipeline(const std::shared_ptr<engine::Shader>& shaderID, vk::Device device, bool inited = false);
+
+        SwapChain& getSwapChain();
+
+        [[nodiscard]] uint32_t getImageIndex() const;
+
+    private:
         void createRenderPass();
 
         void createGraphicsPipeline();
@@ -60,22 +81,6 @@ namespace engine {
         void createDepthResources();
 
         void createMsaaResources();
-
-        void updateVP(const glm::mat4& view, const glm::mat4& proj);
-
-        vk::Queue& getGraphicsQueue();
-
-        std::shared_ptr<CommandList> addCommandList();
-
-        vk::Framebuffer& getFrameBuffer();
-
-        vk::Extent2D getSwapChainExtent();
-
-        vk::RenderPass& getRenderPass();
-
-        vk::DescriptorSet& getDescriptorSet();
-
-        std::shared_ptr<GraphicsPipeline> addPipeline(std::shared_ptr<engine::Shader> shaderID, vk::Device device, bool inited = false);
 
     public:
         MVP m_mvp{};
@@ -112,9 +117,6 @@ namespace engine {
 
         // Pipelines
         std::vector<std::shared_ptr<GraphicsPipeline>> m_pipelines;
-
-        // ImGui
-        engine::UIImGui m_ui;
 
         // Textures
         vk::SampleCountFlagBits m_msaaSamples = vk::SampleCountFlagBits::e1;

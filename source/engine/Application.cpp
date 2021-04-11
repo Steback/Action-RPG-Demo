@@ -42,6 +42,9 @@ namespace engine {
         m_scene = std::make_unique<engine::Scene>();
         m_commands = m_renderer->addCommandList();
 
+        m_ui = engine::UIImGui(m_renderer->getSwapChain(), m_device, m_window->getWindow(), m_instance->getInstance(), m_renderer->getGraphicsQueue(),
+                               m_renderer->addCommandList());
+
         spdlog::info("[App] Start");
     }
 
@@ -58,6 +61,8 @@ namespace engine {
 
         cleanup();
         m_scene->cleanup();
+        m_ui.cleanupResources();
+        m_ui.cleanup();
         m_renderer->cleanup(m_instance);
         m_resourceManager->cleanup();
         m_device->destroy();
@@ -96,6 +101,7 @@ namespace engine {
                 m_commands->endRenderPass();
             }
             m_commands->end();
+            m_ui.recordCommands(m_renderer->getImageIndex(), m_renderer->getSwapChainExtent());
             m_renderer->render();
         }
     }

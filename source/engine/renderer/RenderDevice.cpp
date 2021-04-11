@@ -47,9 +47,6 @@ namespace engine {
                                            {vk::Format::eD32Sfloat, vk::Format::eD32SfloatS8Uint, vk::Format::eD24UnormS8Uint},
                                            vk::ImageTiling::eOptimal,
                                            vk::FormatFeatureFlagBits::eDepthStencilAttachment);
-
-        m_ui = engine::UIImGui(m_swapChain, m_device, m_window->getWindow(), instance, m_graphicsQueue,
-                               addCommandList());
     }
 
     RenderDevice::~RenderDevice() = default;
@@ -73,7 +70,6 @@ namespace engine {
 
         cleanSwapChain();
 
-        m_ui.cleanup();
         instance->destroy(m_swapChain.getSurface());
 
         m_logicalDevice.destroy(m_descriptorSetLayout);
@@ -110,19 +106,15 @@ namespace engine {
     }
 
     void RenderDevice::render() {
-        m_ui.recordCommands(m_indexImage, m_swapChain.getExtent());
-
         VK_CHECK_RESULT_HPP(m_logicalDevice.resetFences(1, &m_fences[m_currentFrame]))
 
         vk::Semaphore waitSemaphores[] = { m_imageAvailableSemaphores[m_currentFrame] };
         vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
         vk::Semaphore signalSemaphores[] = { m_renderFinishedSemaphores[m_currentFrame] };
 
-        // TODO: Check to dynamic add command buffer to summit queue
-        std::vector<vk::CommandBuffer> cmdBuffers{
-            m_commands[1]->getBuffer(),
-            m_commands[0]->getBuffer()
-        };
+        std::vector<vk::CommandBuffer> cmdBuffers(m_commands.size());
+
+        for (int i = 0; i < m_commands.size(); ++i) cmdBuffers[i] = m_commands[i]->getBuffer();
 
         m_graphicsQueue.submit(vk::SubmitInfo{
             .waitSemaphoreCount = 1,
@@ -301,15 +293,14 @@ namespace engine {
 
         for (auto& cmd : m_commands) cmd->initBuffers(m_swapChain.getImageCount(), &m_indexImage);
 
-        m_ui.resize(m_swapChain);
+        // TODO: Include UIImGui in resize window
+//        m_ui.resize(m_swapChain);
         engine::Application::m_resourceManager->recreateResources();
     }
 
     void RenderDevice::cleanSwapChain() {
         m_depthBuffer.cleanup(m_logicalDevice);
         m_colorImage.cleanup(m_logicalDevice);
-
-        m_ui.cleanupResources();
 
         for (auto & framebuffer : m_framebuffers) m_logicalDevice.destroy(framebuffer);
 
@@ -451,7 +442,7 @@ namespace engine {
         return m_descriptorSets[m_indexImage];
     }
 
-    std::shared_ptr<GraphicsPipeline> RenderDevice::addPipeline(std::shared_ptr<engine::Shader> shaderID, vk::Device device, bool inited) {
+    std::shared_ptr<GraphicsPipeline> RenderDevice::addPipeline(const std::shared_ptr<engine::Shader>& shaderID, vk::Device device, bool inited) {
         m_pipelines.push_back(std::make_shared<GraphicsPipeline>(shaderID, device));
 
         if (inited) {
@@ -464,6 +455,14 @@ namespace engine {
         }
 
         return m_pipelines.back();
+    }
+
+    SwapChain &RenderDevice::getSwapChain() {
+        return m_swapChain;
+    }
+
+    uint32_t RenderDevice::getImageIndex() const {
+        return m_indexImage;
     }
 
 } // End namespace core
