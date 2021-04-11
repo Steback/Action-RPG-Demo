@@ -8,19 +8,18 @@
 #define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
 #include "vulkan/vulkan.hpp"
 
-#include "../resources/Shader.hpp"
-
 
 namespace core {
 
+    class Shader;
     class SwapChain;
 
     class GraphicsPipeline {
     public:
-        GraphicsPipeline(uint shaderID, const vk::Device& device);
+        GraphicsPipeline(std::shared_ptr<Shader> shader, const vk::Device& device);
 
-        void create(const std::vector<vk::PushConstantRange>& pushConstants, const std::vector<vk::DescriptorSetLayout>& layouts,
-                    const core::SwapChain& swapChain, const vk::RenderPass& renderPass, vk::SampleCountFlagBits sampleCount);
+        void create(const std::vector<vk::DescriptorSetLayout>& layouts, const core::SwapChain& swapChain,
+                    const vk::RenderPass& renderPass, vk::SampleCountFlagBits sampleCount);
 
         void cleanup();
 
@@ -34,7 +33,7 @@ namespace core {
         vk::Pipeline m_pipeline;
         vk::PipelineLayout m_layout;
         vk::Device m_device;
-        uint m_shaderID;
+        std::shared_ptr<Shader> m_shader;
     };
 
 } // namespace vkc

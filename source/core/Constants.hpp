@@ -17,7 +17,7 @@ const int MAX_FRAMES_IN_FLIGHT = 1;
 const int MAX_OBJECTS = 100;
 
 const std::string TEXTURES_DIR = "../Assets/textures/";
-const std::string SHADERS_DIR = "../bin/shaders/";
+const std::string SHADERS_DIR = "shaders/";
 const std::string FONTS_DIR = "../Assets/fonts/";
 const std::string MODELS_DIR = "../Assets/models/";
 

@@ -12,7 +12,7 @@ namespace core {
 
     class Shader {
     public:
-        explicit Shader(const std::string& vert, const std::string& frag, vk::Device device, bool vertexInfo = true);
+        explicit Shader(const std::string& vert, const std::string& frag, vk::Device device, std::vector<vk::PushConstantRange> pushConstants, bool vertexInfo = true);
 
         void cleanup(const vk::Device& device);
 
@@ -28,11 +28,14 @@ namespace core {
 
         std::vector<vk::VertexInputAttributeDescription>& getAttributes();
 
+        std::vector<vk::PushConstantRange> getPushConstants();
+
     private:
         vk::ShaderModule m_vertModule;
         vk::ShaderModule m_fragModule;
         vk::VertexInputBindingDescription m_binding;
         std::vector<vk::VertexInputAttributeDescription> m_attributes;
+        std::vector<vk::PushConstantRange> m_pushConstants;
     };
 
 } // namespace core

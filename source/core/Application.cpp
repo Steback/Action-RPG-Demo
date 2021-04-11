@@ -29,7 +29,14 @@ namespace core {
         m_renderer = std::make_unique<core::RenderDevice>(m_window, m_instance->getInstance(), appName, m_device, m_instance->createSurface(m_window->getWindow()));
         m_resourceManager = std::make_unique<core::ResourceManager>(m_device, m_renderer->getGraphicsQueue());
 
-        m_pipeline = m_renderer->addPipeline(core::Application::m_resourceManager->createShader("shaders/model.vert.spv", "shaders/model.frag.spv"), m_device->m_logicalDevice);
+        vk::PushConstantRange constantRange{
+            .stageFlags = vk::ShaderStageFlagBits::eVertex,
+            .offset = 0,
+            .size = sizeof(MVP)
+        };
+
+        m_pipeline = m_renderer->addPipeline(core::Application::m_resourceManager->createShader("model.vert.spv", "model.frag.spv", {constantRange}),
+                                             m_device->m_logicalDevice);
         m_renderer->init();
 
         m_scene = std::make_unique<core::Scene>();

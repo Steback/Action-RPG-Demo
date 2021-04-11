@@ -1,5 +1,8 @@
 #include "Shader.hpp"
 
+#include <utility>
+
+#include "../Constants.hpp"
 #include "../Utilities.hpp"
 #include "../mesh/Vertex.hpp"
 
@@ -13,9 +16,10 @@ inline vk::ShaderModule loadShader(const std::vector<uint32_t> &code, vk::Device
 
 namespace core {
 
-    Shader::Shader(const std::string &vert, const std::string &frag,vk::Device device, bool vertexInfo) {
-        m_vertModule = loadShader(core::tools::readFile(vert), device);
-        m_fragModule = loadShader(core::tools::readFile(frag), device);
+    Shader::Shader(const std::string &vert, const std::string &frag, vk::Device device, std::vector<vk::PushConstantRange> pushConstants, bool vertexInfo)
+            : m_pushConstants(std::move(pushConstants)) {
+        m_vertModule = loadShader(core::tools::readFile(SHADERS_DIR + vert), device);
+        m_fragModule = loadShader(core::tools::readFile(SHADERS_DIR + frag), device);
 
         if (vertexInfo) {
             m_binding = core::Vertex::getBindingDescription();
@@ -62,6 +66,10 @@ namespace core {
 
     std::vector<vk::VertexInputAttributeDescription>& Shader::getAttributes() {
         return m_attributes;
+    }
+
+    std::vector<vk::PushConstantRange> Shader::getPushConstants() {
+        return m_pushConstants;
     }
 
 } // namespace core

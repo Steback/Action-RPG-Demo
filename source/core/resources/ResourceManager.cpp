@@ -27,7 +27,7 @@ namespace core {
 
         for (auto& texture : m_textures) texture.second.cleanup(m_device->m_logicalDevice);
 
-        for (auto& shader : m_shaders) shader.cleanup(m_device->m_logicalDevice);
+        for (auto& shader : m_shaders) shader->cleanup(m_device->m_logicalDevice);
 
         vkDestroyDescriptorSetLayout(m_device->m_logicalDevice, m_descriptorSetLayout, nullptr);
     }
@@ -330,14 +330,10 @@ namespace core {
         return meshID;
     }
 
-    uint ResourceManager::createShader(const std::string &vert, const std::string &frag, bool vertexInfo) {
-        m_shaders.emplace_back(vert, frag, m_device->m_logicalDevice, vertexInfo);
+    std::shared_ptr<core::Shader> ResourceManager::createShader(const std::string &vert, const std::string &frag, const std::vector<vk::PushConstantRange>& pushConstants, bool vertexInfo) {
+        m_shaders.emplace_back(std::make_shared<Shader>(vert, frag, m_device->m_logicalDevice, pushConstants, vertexInfo));
 
-        return m_shaders.size() - 1;
-    }
-
-    core::Shader& ResourceManager::getShader(uint id) {
-        return m_shaders[id];
+        return m_shaders.back();
     }
 
 } // namespace core

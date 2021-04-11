@@ -61,8 +61,6 @@ namespace core {
 
         void createMsaaResources();
 
-        void createPushConstants();
-
         void updateVP(const glm::mat4& view, const glm::mat4& proj);
 
         vk::Queue& getGraphicsQueue();
@@ -77,7 +75,7 @@ namespace core {
 
         vk::DescriptorSet& getDescriptorSet();
 
-        std::shared_ptr<GraphicsPipeline> addPipeline(uint32_t shaderID, vk::Device device, bool inited = false);
+        std::shared_ptr<GraphicsPipeline> addPipeline(std::shared_ptr<core::Shader> shaderID, vk::Device device, bool inited = false);
 
     public:
         MVP m_mvp{};
@@ -107,8 +105,6 @@ namespace core {
 
         size_t m_currentFrame = 0;
         uint32_t m_indexImage{};
-
-        vk::PushConstantRange m_mvpRange{};
 
         vk::DescriptorSetLayout m_descriptorSetLayout{};
         vk::DescriptorPool m_descriptorPool{};

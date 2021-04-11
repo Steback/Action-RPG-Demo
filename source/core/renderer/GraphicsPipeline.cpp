@@ -5,23 +5,23 @@
 #include "SwapChain.hpp"
 #include "../Utilities.hpp"
 #include "../Application.hpp"
+#include "../resources/Shader.hpp"
 
 
 namespace core {
 
-    GraphicsPipeline::GraphicsPipeline(uint shaderID, const vk::Device& device)
-            : m_shaderID(shaderID), m_device(device) {
+    GraphicsPipeline::GraphicsPipeline(std::shared_ptr<Shader> shader, const vk::Device& device)
+            : m_shader(std::move(shader)), m_device(device) {
 
     }
 
-    void GraphicsPipeline::create(const std::vector<vk::PushConstantRange> &pushConstants, const std::vector<vk::DescriptorSetLayout>& layouts,
-                                  const core::SwapChain& swapChain, const vk::RenderPass& renderPass, vk::SampleCountFlagBits sampleCount) {
-        core::Shader& shader = core::Application::m_resourceManager->getShader(m_shaderID);
-        auto attributes = shader.getAttributes();
+    void GraphicsPipeline::create(const std::vector<vk::DescriptorSetLayout>& layouts, const core::SwapChain& swapChain,
+                                  const vk::RenderPass& renderPass, vk::SampleCountFlagBits sampleCount) {
+        auto attributes = m_shader->getAttributes();
 
         vk::PipelineVertexInputStateCreateInfo vertexInputInfo{
                 .vertexBindingDescriptionCount = 1,
-                .pVertexBindingDescriptions = &shader.getBinding(),
+                .pVertexBindingDescriptions = &m_shader->getBinding(),
                 .vertexAttributeDescriptionCount = static_cast<uint32_t>(attributes.size()),
                 .pVertexAttributeDescriptions = attributes.data()
         };
@@ -94,6 +94,8 @@ namespace core {
                 .blendConstants = {{0.0f, 0.0f, 0.0f, 0.0}}
         };
 
+        auto pushConstants = m_shader->getPushConstants();
+
         m_layout = m_device.createPipelineLayout({
             .setLayoutCount = static_cast<uint32_t>(layouts.size()),
             .pSetLayouts = layouts.empty() ? nullptr : layouts.data(),
@@ -111,7 +113,7 @@ namespace core {
                 .maxDepthBounds = 1.0f,
         };
 
-        auto shaderStages = shader.getShaderstages();
+        auto shaderStages = m_shader->getShaderstages();
         vk::Result result;
         std::tie(result, m_pipeline) = m_device.createGraphicsPipeline(nullptr, {
                 .stageCount = static_cast<uint32_t>(shaderStages.size()),

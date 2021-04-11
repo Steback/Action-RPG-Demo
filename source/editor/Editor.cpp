@@ -19,7 +19,14 @@ namespace editor {
     Editor::~Editor() = default;
 
     void Editor::init() {
-        m_gridPipeline = m_renderer->addPipeline(core::Application::m_resourceManager->createShader("shaders/grid.vert.spv", "shaders/grid.frag.spv", false), m_device->m_logicalDevice, true);
+        vk::PushConstantRange constantRange{
+                .stageFlags = vk::ShaderStageFlagBits::eVertex,
+                .offset = 0,
+                .size = sizeof(core::MVP)
+        };
+
+        m_gridPipeline = m_renderer->addPipeline(core::Application::m_resourceManager->createShader("grid.vert.spv", "grid.frag.spv", {constantRange}, false),
+                                                 m_device->m_logicalDevice, true);
 
         m_resourceManager->createModel("cube.gltf", "cube");
         m_modelsNames.emplace_back("cube");

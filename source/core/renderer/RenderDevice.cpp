@@ -57,7 +57,6 @@ namespace core {
     void RenderDevice::init() {
         createRenderPass();
         createDescriptorSetLayout();
-        createPushConstants();
         createGraphicsPipeline();
         createMsaaResources();
         createDepthResources();
@@ -240,7 +239,7 @@ namespace core {
         };
 
         for (auto& pipeline : m_pipelines)
-            pipeline->create({m_mvpRange}, layouts, m_swapChain, m_renderPass, m_msaaSamples);
+            pipeline->create(layouts, m_swapChain, m_renderPass, m_msaaSamples);
     }
 
     void RenderDevice::createFramebuffers() {
@@ -418,12 +417,6 @@ namespace core {
         m_colorImage.bind(m_logicalDevice, memType, memoryRequirements.size, vk::ImageAspectFlagBits::eColor);
     }
 
-    void RenderDevice::createPushConstants() {
-        m_mvpRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
-        m_mvpRange.offset = 0;
-        m_mvpRange.size = sizeof(MVP);
-    }
-
     void RenderDevice::updateVP(const glm::mat4& view, const glm::mat4& proj) {
         m_mvp.view = view;
         m_mvp.proj = proj;
@@ -458,7 +451,7 @@ namespace core {
         return m_descriptorSets[m_indexImage];
     }
 
-    std::shared_ptr<GraphicsPipeline> RenderDevice::addPipeline(uint32_t shaderID, vk::Device device, bool inited) {
+    std::shared_ptr<GraphicsPipeline> RenderDevice::addPipeline(std::shared_ptr<core::Shader> shaderID, vk::Device device, bool inited) {
         m_pipelines.push_back(std::make_shared<GraphicsPipeline>(shaderID, device));
 
         if (inited) {
@@ -467,7 +460,7 @@ namespace core {
                     core::Application::m_resourceManager->getTextureDescriptorSetLayout()
             };
 
-            m_pipelines.back()->create({m_mvpRange}, layouts, m_swapChain, m_renderPass, m_msaaSamples);
+            m_pipelines.back()->create(layouts, m_swapChain, m_renderPass, m_msaaSamples);
         }
 
         return m_pipelines.back();
