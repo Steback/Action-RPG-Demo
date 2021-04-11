@@ -365,8 +365,7 @@ namespace editor {
 
     void Editor::loadScene() {
         if (m_loadScene)
-            ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose a Directory", ".json", "../data/");
-
+            ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose a Directory", nullptr, "../data/");
 
         if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) {
             if (ImGuiFileDialog::Instance()->IsOk()) {
