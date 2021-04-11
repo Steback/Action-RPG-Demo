@@ -288,7 +288,6 @@ Example code :
 Load => ImGuiFileDialog::Instance()->DeserializeBookmarks(bookmarString);
 Save => std::string bookmarkString = ImGuiFileDialog::Instance()->SerializeBookmarks();
 
-
 -----------------------------------------------------------------------------------------------------------------
 ## Path Edition :
 -----------------------------------------------------------------------------------------------------------------
@@ -342,6 +341,14 @@ Example code :
 #define OverWriteDialogMessageString "Would you like to OverWrite it ?"
 #define OverWriteDialogConfirmButtonString "Confirm"
 #define OverWriteDialogCancelButtonString "Cancel"
+
+-----------------------------------------------------------------------------------------------------------------
+## Flags :
+-----------------------------------------------------------------------------------------------------------------
+
+flag must be specified in OpenDialog or OpenModal
+* ImGuiFileDialogFlags_ConfirmOverwrite 	=> show confirm to overwrite dialog
+* ImGuiFileDialogFlags_DontShowHiddenFiles 	=> dont show hidden file (file starting with a .)
 
 -----------------------------------------------------------------------------------------------------------------
 ## Open / Save dialog Behavior :
@@ -472,7 +479,7 @@ ImGuiFontStudio is using also ImGuiFileDialog.
 #ifndef IMGUIFILEDIALOG_H
 #define IMGUIFILEDIALOG_H
 
-#define IMGUIFILEDIALOG_VERSION "v0.5.5"
+#define IMGUIFILEDIALOG_VERSION "v0.5.6"
 
 #ifndef CUSTOM_IMGUIFILEDIALOG_CONFIG
 #include "ImGuiFileDialogConfig.h"
@@ -484,7 +491,12 @@ typedef int ImGuiFileDialogFlags; // -> enum ImGuiFileDialogFlags_
 enum ImGuiFileDialogFlags_
 {
 	ImGuiFileDialogFlags_None = 0,
-	ImGuiFileDialogFlags_ConfirmOverwrite = 1 << 0,
+	ImGuiFileDialogFlags_ConfirmOverwrite = 1 << 0,		// show confirm to overwrite dialog
+	ImGuiFileDialogFlags_DontShowHiddenFiles = 1 << 1,	// dont show hidden file (file starting with a .)
+	ImGuiFileDialogFlags_HideColumnType = 1 << 2,	// hide column file type
+	ImGuiFileDialogFlags_HideColumnSize = 1 << 3,	// hide column file size
+	ImGuiFileDialogFlags_HideColumnDate = 1 << 4,	// hide column file date
+	ImGuiFileDialogFlags_Default = ImGuiFileDialogFlags_None // for the moment we have no defualt options but its comming :)
 };
 
 #ifdef __cplusplus
@@ -659,13 +671,13 @@ namespace IGFD
 	public: 
 		static FileDialog* Instance()								// Singleton for easier accces form anywhere but only one dialog at a time
 		{
-			static auto* _instance = new FileDialog();
-			return _instance;
+			static FileDialog _instance;
+			return &_instance;
 		}
 
 	public:
 		FileDialog();												// ImGuiFileDialog Constructor. can be used for have many dialog at same tiem (not possible with singleton)
-		~FileDialog();												// ImGuiFileDialog Destructor
+		virtual ~FileDialog();										// ImGuiFileDialog Destructor
 
 		// standard dialog
 		void OpenDialog(											// open simple dialog (path and fileName can be specified)

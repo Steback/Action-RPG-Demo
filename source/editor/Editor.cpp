@@ -4,6 +4,8 @@
 #include "glm/gtc/type_ptr.hpp"
 #include "fmt/format.h"
 #include <glm/gtx/matrix_decompose.inl>
+#include "CustomImGuiFileDialogConfig.h"
+#include "ImGuiFileDialog.h"
 
 #include "components/Model.hpp"
 #include "renderer/UIImGui.hpp"
@@ -299,7 +301,7 @@ namespace editor {
 
     void Editor::addModel() {
         if (m_addModel)
-            ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose File", ".gltf", "../assets/");
+            ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose File", ".gltf", "../Assets/models");
 
         if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) {
             if (ImGuiFileDialog::Instance()->IsOk()) {
@@ -365,7 +367,7 @@ namespace editor {
 
     void Editor::loadScene() {
         if (m_loadScene)
-            ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose a Directory", nullptr, "../data/");
+            ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose a Directory", ".json", "../data/");
 
         if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) {
             if (ImGuiFileDialog::Instance()->IsOk()) {

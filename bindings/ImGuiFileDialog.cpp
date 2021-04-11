@@ -638,7 +638,7 @@ namespace IGFD
 			window->DC.LastItemStatusFlags |= ImGuiItemStatusFlags_ToggledSelection;
 
 		// Render
-		if (held && (flags & ImGuiSelectableFlags_DrawHoveredWhenHeld) || vFlashing)
+		if ((held && (flags & ImGuiSelectableFlags_DrawHoveredWhenHeld)) || vFlashing)
 			hovered = true;
 		if (hovered || selected)
 		{
@@ -724,7 +724,9 @@ namespace IGFD
 		if (ps.isOk)
 		{
 			dlg_path = ps.path;
-			SetDefaultFileName(vFilePathName);
+			SetDefaultFileName(ps.name + "." + ps.ext);
+			m_SelectedFileNames.clear();
+			m_SelectedFileNames.emplace(ps.name + "." + ps.ext);
 			dlg_defaultExt = "." + ps.ext;
 		}
 		else
@@ -812,7 +814,9 @@ namespace IGFD
 		if (ps.isOk)
 		{
 			dlg_path = ps.path;
-			SetDefaultFileName(vFilePathName);
+			SetDefaultFileName(ps.name + "." + ps.ext);
+			m_SelectedFileNames.clear();
+			m_SelectedFileNames.emplace(ps.name + "." + ps.ext);
 			dlg_defaultExt = "." + ps.ext;
 		}
 		else
@@ -1320,9 +1324,9 @@ namespace IGFD
 		{
 			ImGui::TableSetupScrollFreeze(0, 1); // Make header always visible
 			ImGui::TableSetupColumn(m_HeaderFileName.c_str(), ImGuiTableColumnFlags_WidthStretch, -1, 0);
-			ImGui::TableSetupColumn(m_HeaderFileType.c_str(), ImGuiTableColumnFlags_WidthFixed, -1, 1);
-			ImGui::TableSetupColumn(m_HeaderFileSize.c_str(), ImGuiTableColumnFlags_WidthFixed, -1, 2);
-			ImGui::TableSetupColumn(m_HeaderFileDate.c_str(), ImGuiTableColumnFlags_WidthFixed, -1, 3);
+			ImGui::TableSetupColumn(m_HeaderFileType.c_str(), ImGuiTableColumnFlags_WidthFixed | ((dlg_flags & ImGuiFileDialogFlags_HideColumnType) ? ImGuiTableColumnFlags_DefaultHide : 0), -1, 1);
+			ImGui::TableSetupColumn(m_HeaderFileSize.c_str(), ImGuiTableColumnFlags_WidthFixed | ((dlg_flags & ImGuiFileDialogFlags_HideColumnSize) ? ImGuiTableColumnFlags_DefaultHide : 0), -1, 2);
+			ImGui::TableSetupColumn(m_HeaderFileDate.c_str(), ImGuiTableColumnFlags_WidthFixed | ((dlg_flags & ImGuiFileDialogFlags_HideColumnDate) ? ImGuiTableColumnFlags_DefaultHide : 0), -1, 3);
 
 #ifndef USE_CUSTOM_SORTING_ICON
 			// Sort our data if sort specs have been changed!
@@ -1415,7 +1419,7 @@ namespace IGFD
 							}
 							else
 							{
-								ImGui::Text("");
+								ImGui::Text("%s ", "");
 							}
 						}
 						if (ImGui::TableNextColumn()) // file date + time
@@ -1594,9 +1598,11 @@ namespace IGFD
 		if (dlg_filters.empty()) // if directory mode
 		{
 			std::string selectedDirectory = FileNameBuffer;
-			if (!selectedDirectory.empty() && 
-				selectedDirectory != ".")
-				path += PATH_SEP + selectedDirectory;
+			if (!selectedDirectory.empty() && selectedDirectory != ".")
+				if (path.empty())
+					path = selectedDirectory;
+				else
+					path += PATH_SEP + selectedDirectory;
 		}
 
 		return path;
@@ -1611,13 +1617,16 @@ namespace IGFD
 			// if not a collection we can replace the filter by the extention we want
 			if (m_SelectedFilter.collectionfilters.empty())
 			{
-				size_t lastPoint = result.find_last_of('.');
-				if (lastPoint != std::string::npos)
+				if (m_SelectedFilter.filter.find('*') == std::string::npos && result != m_SelectedFilter.filter)
 				{
-					result = result.substr(0, lastPoint);
-				}
+					size_t lastPoint = result.find_last_of('.');
+					if (lastPoint != std::string::npos)
+					{
+						result = result.substr(0, lastPoint);
+					}
 
-				result += m_SelectedFilter.filter;
+					result += m_SelectedFilter.filter;
+				}
 			}
 
 			return result;
@@ -2004,6 +2013,15 @@ namespace IGFD
 				std::sort(m_FileList.begin(), m_FileList.end(),
 					[](const FileInfoStruct& a, const FileInfoStruct& b) -> bool
 					{
+					  	if (a.fileName[0] == '.' && b.fileName[0] != '.') return true;
+					  	if (a.fileName[0] != '.' && b.fileName[0] == '.') return false;
+					  	if (a.fileName[0] == '.' && b.fileName[0] == '.')
+					  	{
+						  	if (a.fileName.length() == 1) return false;
+						  	if (b.fileName.length() == 1) return true;
+						  	return (stricmp(a.fileName.c_str() + 1, b.fileName.c_str() + 1) < 0);
+					  	}
+
 						if (a.type != b.type) return (a.type == 'd'); // directory in first
 						return (stricmp(a.fileName.c_str(), b.fileName.c_str()) < 0); // sort in insensitive case
 					});
@@ -2016,6 +2034,15 @@ namespace IGFD
 				std::sort(m_FileList.begin(), m_FileList.end(),
 					[](const FileInfoStruct& a, const FileInfoStruct& b) -> bool
 					{
+					  	if (a.fileName[0] == '.' && b.fileName[0] != '.') return false;
+					  	if (a.fileName[0] != '.' && b.fileName[0] == '.') return true;
+					  	if (a.fileName[0] == '.' && b.fileName[0] == '.')
+					  	{
+						  	if (a.fileName.length() == 1) return true;
+						  	if (b.fileName.length() == 1) return false;
+						  	return (stricmp(a.fileName.c_str() + 1, b.fileName.c_str() + 1) > 0);
+					  	}
+
 						if (a.type != b.type) return (a.type != 'd'); // directory in last
 						return (stricmp(a.fileName.c_str(), b.fileName.c_str()) > 0); // sort in insensitive case
 					});
@@ -2154,45 +2181,46 @@ namespace IGFD
 					infos.fileName = ent->d_name;
 					infos.fileName_optimized = OptimizeFilenameForSearchOperations(infos.fileName);
 
-					if (infos.fileName != "." 
-						|| dlg_filters.empty()) // in directory mode we must display the curent dir "."
+					if (infos.fileName.empty() || (infos.fileName == "." && !dlg_filters.empty())) continue; // filename empty or filename is the current dir '.'
+					if (infos.fileName != ".." && (dlg_flags & ImGuiFileDialogFlags_DontShowHiddenFiles) && infos.fileName[0] == '.') // dont show hidden files
+						if (!dlg_filters.empty() || (dlg_filters.empty() && infos.fileName != ".")) // except "." if in directory mode
+							continue;
+					
+					switch (ent->d_type)
 					{
-						switch (ent->d_type)
-						{
-						case DT_REG:
-							infos.type = 'f'; break;
-						case DT_DIR:
-							infos.type = 'd'; break;
-						case DT_LNK:
-							infos.type = 'l'; break;
-						}
-
-						if (infos.type == 'f' ||
-							infos.type == 'l') // link can have the same extention of a file
-						{
-							size_t lpt = infos.fileName.find_last_of('.');
-							if (lpt != std::string::npos)
-							{
-								infos.ext = infos.fileName.substr(lpt);
-							}
-
-							if (!dlg_filters.empty())
-							{
-								// check if current file extention is covered by current filter
-								// we do that here, for avoid doing that during filelist display
-								// for better fps
-								if (!m_SelectedFilter.empty() && // selected filter exist
-									(!m_SelectedFilter.filterExist(infos.ext) && // filter not found
-										m_SelectedFilter.filter != ".*"))
-								{
-									continue;
-								}
-							}
-						}
-
-						CompleteFileInfos(&infos);
-						m_FileList.push_back(infos);
+					case DT_REG:
+						infos.type = 'f'; break;
+					case DT_DIR:
+						infos.type = 'd'; break;
+					case DT_LNK:
+						infos.type = 'l'; break;
 					}
+
+					if (infos.type == 'f' ||
+						infos.type == 'l') // link can have the same extention of a file
+					{
+						size_t lpt = infos.fileName.find_last_of('.');
+						if (lpt != std::string::npos)
+						{
+							infos.ext = infos.fileName.substr(lpt);
+						}
+
+						if (!dlg_filters.empty())
+						{
+							// check if current file extention is covered by current filter
+							// we do that here, for avoid doing that during filelist display
+							// for better fps
+							if (!m_SelectedFilter.empty() && // selected filter exist
+								(!m_SelectedFilter.filterExist(infos.ext) && // filter not found
+									m_SelectedFilter.filter != ".*"))
+							{
+								continue;
+							}
+						}
+					}
+
+					CompleteFileInfos(&infos);
+					m_FileList.push_back(infos);
 				}
 
 				for (i = 0; i < n; i++)
