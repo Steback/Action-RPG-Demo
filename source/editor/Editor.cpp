@@ -3,12 +3,11 @@
 #include "imgui.h"
 #include "glm/gtc/type_ptr.hpp"
 #include "fmt/format.h"
-#include <glm/gtx/matrix_decompose.inl>
-#include "CustomImGuiFileDialogConfig.h"
-#include "ImGuiFileDialog.h"
+#include "glm/gtx/matrix_decompose.hpp"
+#include "ImGuiFileDialog/CustomImGuiFileDialogConfig.h"
+#include "ImGuiFileDialog/ImGuiFileDialog.h"
 
 #include "components/Model.hpp"
-#include "renderer/UIImGui.hpp"
 #include "Gizmos.hpp"
 
 

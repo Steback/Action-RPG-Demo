@@ -4,7 +4,7 @@
 
 #include "glm/glm.hpp"
 #include "imgui.h"
-#include "ImGuizmo.h"
+#include "ImGuizmos/ImGuizmo.h"
 
 
 #include "components/Transform.hpp"

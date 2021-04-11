@@ -51,7 +51,7 @@
 Comment theses line if you not want to have customization, like icon font here
 */
 
-#include <CustomFont.h>
+#include "CustomFont.h"
 
 // locales string
 #define createDirButtonString ICON_IGFD_ADD
