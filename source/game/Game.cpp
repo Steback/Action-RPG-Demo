@@ -5,7 +5,7 @@
 
 namespace game {
 
-    Game::Game() : core::Application("Action RPG") {
+    Game::Game() : engine::Application("Action RPG") {
 
     }
 

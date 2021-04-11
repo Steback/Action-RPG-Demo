@@ -5,7 +5,7 @@
 
 namespace game {
 
-    class Game : public core::Application {
+    class Game : public engine::Application {
     public:
         Game();
 

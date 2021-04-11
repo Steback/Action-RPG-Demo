@@ -17,7 +17,7 @@ namespace editor {
         int model;
     };
 
-    class Editor : public core::Application {
+    class Editor : public engine::Application {
     public:
         Editor();
 
@@ -46,7 +46,7 @@ namespace editor {
 
         void addModel();
 
-        void loadNode(core::ModelInterface::Node& node, core::ModelInterface& model);
+        void loadNode(engine::ModelInterface::Node& node, engine::ModelInterface& model);
 
         void saveScene();
 
@@ -70,7 +70,7 @@ namespace editor {
         std::vector<EntityInfo> m_entitiesInfo;
         std::string m_sceneName{};
         bool m_sceneLoaded =  false;
-        std::shared_ptr<core::GraphicsPipeline> m_gridPipeline;
+        std::shared_ptr<engine::GraphicsPipeline> m_gridPipeline;
     };
 
 } // namespace editor

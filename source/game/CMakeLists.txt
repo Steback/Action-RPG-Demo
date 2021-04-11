@@ -1,4 +1,4 @@
-include_directories(../core)
+include_directories(../engine)
 
 file(GLOB_RECURSE EDITOR_HEADER_FILES *.hpp)
 file(GLOB_RECURSE EDITOR_SOURCE_FILES *.cpp)

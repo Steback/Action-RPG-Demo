@@ -9,7 +9,7 @@ namespace editor {
 
     namespace gizmo {
 
-        void transform(core::Transform& transform, ImGuizmo::OPERATION operation, const glm::mat4& view, const glm::mat4& proj) {
+        void transform(engine::Transform& transform, ImGuizmo::OPERATION operation, const glm::mat4& view, const glm::mat4& proj) {
             ImGuiIO& io = ImGui::GetIO();
 
             glm::mat4 modelMatrix;

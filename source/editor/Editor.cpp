@@ -13,7 +13,7 @@
 
 namespace editor {
 
-    Editor::Editor() : core::Application("Editor", {0.24f, 0.24f, 0.24f, 1.0f}), m_currentOperation(ImGuizmo::OPERATION::TRANSLATE) {
+    Editor::Editor() : engine::Application("Editor", {0.24f, 0.24f, 0.24f, 1.0f}), m_currentOperation(ImGuizmo::OPERATION::TRANSLATE) {
 
     }
 
@@ -23,10 +23,10 @@ namespace editor {
         vk::PushConstantRange constantRange{
                 .stageFlags = vk::ShaderStageFlagBits::eVertex,
                 .offset = 0,
-                .size = sizeof(core::MVP)
+                .size = sizeof(engine::MVP)
         };
 
-        m_gridPipeline = m_renderer->addPipeline(core::Application::m_resourceManager->createShader("grid.vert.spv", "grid.frag.spv", {constantRange}, false),
+        m_gridPipeline = m_renderer->addPipeline(engine::Application::m_resourceManager->createShader("grid.vert.spv", "grid.frag.spv", {constantRange}, false),
                                                  m_device->m_logicalDevice, true);
 
         m_resourceManager->createModel("cube.gltf", "cube");
@@ -35,7 +35,7 @@ namespace editor {
         m_scene->loadScene("../data/basicScene.json", true);
 
         for (auto& entity : m_scene->getEntities()) {
-            auto& model = m_scene->getComponent<core::Model>(entity.id);
+            auto& model = m_scene->getComponent<engine::Model>(entity.id);
             int modelID;
 
             for (int i = 0; i < m_modelsNames.size(); ++i) {
@@ -45,7 +45,7 @@ namespace editor {
             m_entitiesInfo.push_back({entity.id, entity.name, modelID});
         }
 
-        m_scene->getCamera() = core::Camera({45.0f, 45.0f}, {0.0f, 0.0f, 0.0f}, 0.5f, 10.0f, 10.0f);
+        m_scene->getCamera() = engine::Camera({45.0f, 45.0f}, {0.0f, 0.0f, 0.0f}, 0.5f, 10.0f, 10.0f);
     }
 
     void Editor::update() {
@@ -133,7 +133,7 @@ namespace editor {
         {
             if (m_entitySelected != -1) {
                 auto& entity = m_scene->getEntity(m_entitySelected);
-                auto& transform = m_scene->getComponent<core::Transform>(entity.id);
+                auto& transform = m_scene->getComponent<engine::Transform>(entity.id);
 
                 ImGui::Text("Entity ID: %i", entity.id);
 
@@ -145,9 +145,9 @@ namespace editor {
 
                 std::vector<const char*> entityTypes = {"CAMERA", "PLAYER"};
 
-                if (entity.flags & core::EntityFlags::CAMERA) {
+                if (entity.flags & engine::EntityFlags::CAMERA) {
                     if (ImGui::CollapsingHeader("Camera")) {
-                        auto& camera = m_scene->getComponent<core::Camera>(entity.id);
+                        auto& camera = m_scene->getComponent<engine::Camera>(entity.id);
 
                         ImGui::InputFloat3("Eye", glm::value_ptr(camera.getEye()));
                         ImGui::InputFloat3("Front", glm::value_ptr(camera.getCenter()));
@@ -179,9 +179,9 @@ namespace editor {
                     }
                 }
 
-                if (entity.components & core::MODEL) {
+                if (entity.components & engine::MODEL) {
                     if (ImGui::CollapsingHeader("Model")) {
-                        auto& render = m_scene->getComponent<core::Model>(entity.id);
+                        auto& render = m_scene->getComponent<engine::Model>(entity.id);
 
                         int currentModel = m_entitiesInfo[m_entitySelected].model;
 
@@ -191,7 +191,7 @@ namespace editor {
 
                                 if (ImGui::Selectable(m_modelsNames[i].c_str(), is_selected)) {
                                     m_entitiesInfo[m_entitySelected].model = currentModel = i;
-                                    uint64_t modelID = core::tools::hashString(m_modelsNames[currentModel]);
+                                    uint64_t modelID = engine::tools::hashString(m_modelsNames[currentModel]);
                                     render.setModel(modelID);
 
                                     glm::vec3 tempTranslate, tempScale, tempSkew;
@@ -281,18 +281,18 @@ namespace editor {
                 m_window->setKeyValue(GLFW_KEY_S, false);
             }
 
-            auto& transform = m_scene->getComponent<core::Transform>(m_entitySelected);
+            auto& transform = m_scene->getComponent<engine::Transform>(m_entitySelected);
             editor::gizmo::transform(transform, m_currentOperation, m_scene->getCamera().getView(), projMatrix);
         }
     }
 
     void Editor::addEntity() {
-        auto& entity = m_scene->addEntity("Object", core::EntityFlags::OBJECT);
-        uint64_t modelID = core::tools::hashString("cube");
+        auto& entity = m_scene->addEntity("Object", engine::EntityFlags::OBJECT);
+        uint64_t modelID = engine::tools::hashString("cube");
 
-        m_scene->registry().emplace<core::Model>(entity.enttID, modelID, entity.id);
-        m_scene->registry().emplace<core::Transform>(entity.enttID, m_scene->getCamera().getCenter(), DEFAULT_SIZE, SPEED_ZERO, DEFAULT_ROTATION);
-        entity.components = core::MODEL | core::TRANSFORM;
+        m_scene->registry().emplace<engine::Model>(entity.enttID, modelID, entity.id);
+        m_scene->registry().emplace<engine::Transform>(entity.enttID, m_scene->getCamera().getCenter(), DEFAULT_SIZE, SPEED_ZERO, DEFAULT_ROTATION);
+        entity.components = engine::MODEL | engine::TRANSFORM;
 
         m_entitiesInfo.push_back({entity.id, entity.name, 0});
         m_addEntity = !m_addEntity;
@@ -320,7 +320,7 @@ namespace editor {
         }
     }
 
-    void Editor::loadNode(core::ModelInterface::Node& node, core::ModelInterface& model) {
+    void Editor::loadNode(engine::ModelInterface::Node& node, engine::ModelInterface& model) {
         if (ImGui::TreeNode(node.name.c_str())) {
             ImGui::Text("ID: %u", node.id);
 
@@ -385,7 +385,7 @@ namespace editor {
                 m_scene->loadScene(filePathName, true);
 
                 for (auto& entity : m_scene->getEntities()) {
-                    auto& render = m_scene->getComponent<core::Model>(entity.id);
+                    auto& render = m_scene->getComponent<engine::Model>(entity.id);
                     int modelID;
 
                     for (int i = 0; i < m_modelsNames.size(); ++i) {
@@ -404,7 +404,7 @@ namespace editor {
     void Editor::renderCommands(vk::CommandBuffer &cmdBuffer) {
         m_gridPipeline->bind(cmdBuffer);
 
-        core::MVP mvp = m_renderer->m_mvp;
+        engine::MVP mvp = m_renderer->m_mvp;
         mvp.model = glm::mat4(1.0f);
 
         cmdBuffer.pushConstants(m_gridPipeline->getLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(mvp), &mvp);

@@ -11,7 +11,7 @@ include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup(NO_OUTPUT_DIRS)
 
 # Source code and link
-add_subdirectory(source/core)
+add_subdirectory(source/engine)
 add_subdirectory(source/editor)
 add_subdirectory(source/game)
 

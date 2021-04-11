@@ -11,6 +11,8 @@
  nlohmann_json/3.9.1
  spirv-cross/20210115
  physx/4.1.1
+ sol2/3.2.3
+ lua/5.4.1
 
  [generators]
  cmake
