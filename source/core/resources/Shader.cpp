@@ -32,17 +32,9 @@ namespace core {
         device.destroy(m_fragModule);
     }
 
-    void Shader::setupAtrributes(const vk::VertexInputBindingDescription &binding, const std::vector<vk::VertexInputAttributeDescription> &attributes) {
+    void Shader::setAtrributes(const vk::VertexInputBindingDescription &binding, const std::vector<vk::VertexInputAttributeDescription> &attributes) {
         m_binding = binding;
         m_attributes = attributes;
-    }
-
-    vk::ShaderModule Shader::getVertex() {
-        return m_vertModule;
-    }
-
-    vk::ShaderModule Shader::getFragment() {
-        return m_fragModule;
     }
 
     std::vector<vk::PipelineShaderStageCreateInfo> Shader::getShaderstages() {

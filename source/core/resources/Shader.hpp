@@ -16,11 +16,7 @@ namespace core {
 
         void cleanup(const vk::Device& device);
 
-        void setupAtrributes(const vk::VertexInputBindingDescription &binding, const std::vector<vk::VertexInputAttributeDescription> &attributes);
-
-        vk::ShaderModule getVertex();
-
-        vk::ShaderModule getFragment();
+        void setAtrributes(const vk::VertexInputBindingDescription &binding, const std::vector<vk::VertexInputAttributeDescription> &attributes);
 
         std::vector<vk::PipelineShaderStageCreateInfo> getShaderstages();
 
