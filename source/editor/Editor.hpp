@@ -7,6 +7,7 @@
 #include "ImGuiFileDialog.h"
 
 #include "Application.hpp"
+#include "renderer/GraphicsPipeline.hpp"
 
 
 namespace editor {
@@ -70,6 +71,7 @@ namespace editor {
         std::vector<EntityInfo> m_entitiesInfo;
         std::string m_sceneName{};
         bool m_sceneLoaded =  false;
+        std::shared_ptr<core::GraphicsPipeline> m_gridPipeline;
     };
 
 } // namespace editor

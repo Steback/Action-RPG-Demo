@@ -31,7 +31,7 @@ namespace core {
 
         ~RenderDevice();
 
-        void init(bool drawGrid = false);
+        void init();
 
         void cleanup(const std::shared_ptr<core::Instance>& instance);
 
@@ -63,8 +63,6 @@ namespace core {
 
         void createPushConstants();
 
-        void createGridPipeline();
-
         void updateVP(const glm::mat4& view, const glm::mat4& proj);
 
         vk::Queue& getGraphicsQueue();
@@ -79,10 +77,10 @@ namespace core {
 
         vk::DescriptorSet& getDescriptorSet();
 
+        std::shared_ptr<GraphicsPipeline> addPipeline(uint32_t shaderID, vk::Device device, bool inited = false);
+
     public:
         MVP m_mvp{};
-        std::unique_ptr<core::GraphicsPipeline> m_pipeline;
-        std::unique_ptr<core::GraphicsPipeline> m_gridPipeline;
 
     private:
         std::shared_ptr<Window> m_window;
@@ -116,6 +114,9 @@ namespace core {
         vk::DescriptorPool m_descriptorPool{};
         std::vector<vk::DescriptorSet> m_descriptorSets;
 
+        // Pipelines
+        std::vector<std::shared_ptr<GraphicsPipeline>> m_pipelines;
+
         // ImGui
         core::UIImGui m_ui;
 
@@ -128,10 +129,6 @@ namespace core {
         // TODO: Check for optimising in depth buffer
         core::Image m_depthBuffer;
         vk::Format m_depthFormat{};
-
-
-        // Editor grid
-        bool m_drawGrid{};
     };
 
 } // End namespace core

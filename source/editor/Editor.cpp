@@ -12,13 +12,15 @@
 
 namespace editor {
 
-    Editor::Editor() : core::Application("Editor", {0.24f, 0.24f, 0.24f, 1.0f}, true), m_currentOperation(ImGuizmo::OPERATION::TRANSLATE) {
+    Editor::Editor() : core::Application("Editor", {0.24f, 0.24f, 0.24f, 1.0f}), m_currentOperation(ImGuizmo::OPERATION::TRANSLATE) {
 
     }
 
     Editor::~Editor() = default;
 
     void Editor::init() {
+        m_gridPipeline = m_renderer->addPipeline(core::Application::m_resourceManager->createShader("shaders/grid.vert.spv", "shaders/grid.frag.spv", false), m_device->m_logicalDevice, true);
+
         m_resourceManager->createModel("cube.gltf", "cube");
         m_modelsNames.emplace_back("cube");
 
@@ -393,12 +395,12 @@ namespace editor {
     }
 
     void Editor::renderCommands(vk::CommandBuffer &cmdBuffer) {
-        m_renderer->m_gridPipeline->bind(cmdBuffer);
+        m_gridPipeline->bind(cmdBuffer);
 
         core::MVP mvp = m_renderer->m_mvp;
         mvp.model = glm::mat4(1.0f);
 
-        cmdBuffer.pushConstants(m_renderer->m_gridPipeline->getLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(mvp), &mvp);
+        cmdBuffer.pushConstants(m_gridPipeline->getLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(mvp), &mvp);
         cmdBuffer.draw(6, 1, 0, 0);
     }
 

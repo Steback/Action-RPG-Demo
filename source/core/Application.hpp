@@ -19,10 +19,11 @@
 namespace core {
 
     class CommandList;
+    class GraphicsPipeline;
 
     class Application {
     public:
-        explicit Application(const std::string& appName, const glm::vec4& clearColor = {glm::vec3(0.0f), 1.0f}, bool drawGrid = false);
+        explicit Application(const std::string& appName, const glm::vec4& clearColor = {glm::vec3(0.0f), 1.0f});
 
         ~Application();
 
@@ -53,6 +54,7 @@ namespace core {
         std::shared_ptr<core::Instance> m_instance;
         float m_lastTime{}, m_deltaTime{};
         glm::vec4 m_clearColor;
+        std::shared_ptr<GraphicsPipeline> m_pipeline;
         std::shared_ptr<CommandList> m_commands;
     };
 

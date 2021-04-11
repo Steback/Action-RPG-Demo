@@ -3,6 +3,7 @@
 #include "spdlog/spdlog.h"
 
 #include "renderer/CommandList.hpp"
+#include "renderer/GraphicsPipeline.hpp"
 
 
 namespace core {
@@ -11,7 +12,7 @@ namespace core {
     std::unique_ptr<core::ResourceManager> Application::m_resourceManager;
     std::unique_ptr<core::Scene> Application::m_scene;
 
-    Application::Application(const std::string& appName, const glm::vec4& clearColor, bool drawGrid)
+    Application::Application(const std::string& appName, const glm::vec4& clearColor)
             : m_clearColor(clearColor) {
         spdlog::info("[App] Start");
 
@@ -28,7 +29,8 @@ namespace core {
         m_renderer = std::make_unique<core::RenderDevice>(m_window, m_instance->getInstance(), appName, m_device, m_instance->createSurface(m_window->getWindow()));
         m_resourceManager = std::make_unique<core::ResourceManager>(m_device, m_renderer->getGraphicsQueue());
 
-        m_renderer->init(drawGrid);
+        m_pipeline = m_renderer->addPipeline(core::Application::m_resourceManager->createShader("shaders/model.vert.spv", "shaders/model.frag.spv"), m_device->m_logicalDevice);
+        m_renderer->init();
 
         m_scene = std::make_unique<core::Scene>();
         m_commands = m_renderer->addCommandList();
@@ -80,8 +82,8 @@ namespace core {
             {
                 m_commands->beginRenderPass(m_renderer->getRenderPass(), m_clearColor, m_renderer->getFrameBuffer(), m_renderer->getSwapChainExtent());
                 {
-                    m_renderer->m_pipeline->bind(m_commands->getBuffer());
-                    m_scene->render(m_commands->getBuffer(), m_renderer->m_pipeline->getLayout(), m_renderer->getDescriptorSet(), m_renderer->m_mvp);
+                    m_pipeline->bind(m_commands->getBuffer());
+                    m_scene->render(m_commands->getBuffer(), m_pipeline->getLayout(), m_renderer->getDescriptorSet(), m_renderer->m_mvp);
                     renderCommands(m_commands->getBuffer());
                 }
                 m_commands->endRenderPass();

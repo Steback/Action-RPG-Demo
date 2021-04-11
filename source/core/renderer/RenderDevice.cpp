@@ -54,14 +54,7 @@ namespace core {
 
     RenderDevice::~RenderDevice() = default;
 
-    void RenderDevice::init(bool drawGrid) {
-        m_drawGrid = drawGrid;
-
-        m_pipeline = std::make_unique<core::GraphicsPipeline>(core::Application::m_resourceManager->createShader("shaders/model.vert.spv", "shaders/model.frag.spv"), m_device->m_logicalDevice);
-
-        if (drawGrid)
-            m_gridPipeline = std::make_unique<core::GraphicsPipeline>(core::Application::m_resourceManager->createShader("shaders/grid.vert.spv", "shaders/grid.frag.spv", false), m_device->m_logicalDevice);
-
+    void RenderDevice::init() {
         createRenderPass();
         createDescriptorSetLayout();
         createPushConstants();
@@ -246,9 +239,8 @@ namespace core {
                 core::Application::m_resourceManager->getTextureDescriptorSetLayout()
         };
 
-        m_pipeline->create({m_mvpRange}, layouts, m_swapChain, m_renderPass, m_msaaSamples);
-
-        if (m_drawGrid) createGridPipeline();
+        for (auto& pipeline : m_pipelines)
+            pipeline->create({m_mvpRange}, layouts, m_swapChain, m_renderPass, m_msaaSamples);
     }
 
     void RenderDevice::createFramebuffers() {
@@ -324,9 +316,8 @@ namespace core {
 
         for (auto& cmd : m_commands) cmd->free();
 
-        if (m_drawGrid) m_gridPipeline->cleanup();
+        for (auto& pipeline : m_pipelines) pipeline->cleanup();
 
-        m_pipeline->cleanup();
         m_logicalDevice.destroy(m_renderPass);
 
         m_swapChain.cleanup();
@@ -433,15 +424,6 @@ namespace core {
         m_mvpRange.size = sizeof(MVP);
     }
 
-    void RenderDevice::createGridPipeline() {
-        std::vector<vk::DescriptorSetLayout> layouts = {
-                m_descriptorSetLayout,
-                core::Application::m_resourceManager->getTextureDescriptorSetLayout()
-        };
-
-        m_gridPipeline->create({m_mvpRange}, layouts, m_swapChain, m_renderPass, m_msaaSamples);
-    }
-
     void RenderDevice::updateVP(const glm::mat4& view, const glm::mat4& proj) {
         m_mvp.view = view;
         m_mvp.proj = proj;
@@ -474,6 +456,21 @@ namespace core {
 
     vk::DescriptorSet &RenderDevice::getDescriptorSet() {
         return m_descriptorSets[m_indexImage];
+    }
+
+    std::shared_ptr<GraphicsPipeline> RenderDevice::addPipeline(uint32_t shaderID, vk::Device device, bool inited) {
+        m_pipelines.push_back(std::make_shared<GraphicsPipeline>(shaderID, device));
+
+        if (inited) {
+            std::vector<vk::DescriptorSetLayout> layouts = {
+                    m_descriptorSetLayout,
+                    core::Application::m_resourceManager->getTextureDescriptorSetLayout()
+            };
+
+            m_pipelines.back()->create({m_mvpRange}, layouts, m_swapChain, m_renderPass, m_msaaSamples);
+        }
+
+        return m_pipelines.back();
     }
 
 } // End namespace core
