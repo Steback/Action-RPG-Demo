@@ -42,7 +42,7 @@ namespace engine {
         m_scene = std::make_unique<engine::Scene>();
         m_commands = m_renderer->addCommandList();
 
-        m_ui = engine::UIImGui(m_renderer->getSwapChain(), m_device, m_window->getWindow(), m_instance->getInstance(), m_renderer->getGraphicsQueue(),
+        m_ui = engine::UIRender(m_renderer->getSwapChain(), m_device, m_window->getWindow(), m_instance->getInstance(), m_renderer->getGraphicsQueue(),
                                m_renderer->addCommandList());
 
         spdlog::info("[App] Start");
@@ -85,9 +85,10 @@ namespace engine {
 
             update();
 
-            engine::UIImGui::newFrame();
+            engine::UIRender::newFrame();
+            m_luaManager.executeFunction("drawUI");
             drawUI();
-            engine::UIImGui::render();
+            engine::UIRender::render();
 
             m_renderer->acquireNextImage();
             m_commands->begin();

@@ -1,5 +1,5 @@
-#ifndef PROTOTYPE_ACTION_RPG_UIIMGUI_HPP
-#define PROTOTYPE_ACTION_RPG_UIIMGUI_HPP
+#ifndef PROTOTYPE_ACTION_RPG_UIRENDER_HPP
+#define PROTOTYPE_ACTION_RPG_UIRENDER_HPP
 
 
 #include <vector>
@@ -9,24 +9,26 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
+#define SOL_ALL_SAFETIES_ON 1
+#include "sol/sol.hpp"
 
-
-#include "SwapChain.hpp"
-#include "Device.hpp"
+#include "Window.hpp"
+#include "../renderer/SwapChain.hpp"
+#include "../renderer/Device.hpp"
 
 
 namespace engine {
 
     class CommandList;
 
-    class UIImGui {
+    class UIRender {
     public:
-        UIImGui();
+        UIRender();
 
-        explicit UIImGui(engine::SwapChain& swapChain, const std::shared_ptr<engine::Device>& device, GLFWwindow* window,
+        explicit UIRender(engine::SwapChain& swapChain, const std::shared_ptr<engine::Device>& device, GLFWwindow* window,
                          vk::Instance instance, vk::Queue graphicsQueue, std::shared_ptr<CommandList> commandList);
 
-        ~UIImGui();
+        ~UIRender();
 
         void cleanup();
 
@@ -42,6 +44,10 @@ namespace engine {
 
         void recordCommands(uint32_t imageIndex, vk::Extent2D swapChainExtent);
 
+        void setLuaBindings(sol::state& state);
+
+        engine::ui::Window creteWindow(const std::string& name, float with, float height, uint32_t flags);
+
     private:
         void createRenderPass(vk::Format swapChainFormat);
 
@@ -55,9 +61,10 @@ namespace engine {
         std::vector<vk::Framebuffer> m_framebuffers{};
         vk::DescriptorPool m_descriptorPool{};
         vk::Device m_device{};
+        std::vector<engine::ui::Window> m_windows;
     };
 
 } // namepsace core
 
 
-#endif //PROTOTYPE_ACTION_RPG_UIIMGUI_HPP
+#endif //PROTOTYPE_ACTION_RPG_UIRENDER_HPP

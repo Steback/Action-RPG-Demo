@@ -31,7 +31,7 @@ namespace engine {
            std::string fileLoc = TEXTURES_DIR + fileName;
            stbi_uc* image = stbi_load(fileLoc.c_str(), width, height, &channels, STBI_rgb_alpha);
 
-           if (!image) throw std::runtime_error("Failed to load a Texture file: " + fileName);
+           if (!image) throw std::runtime_error("Failed to scriptFile a Texture file: " + fileName);
 
            // Calculate image m_size using given and known data
            *size = *width * *height * static_cast<int>(STBI_rgb_alpha);

@@ -66,7 +66,7 @@ namespace engine {
     }
 
     void RenderDevice::cleanup(const std::shared_ptr<engine::Instance>& instance) {
-        UIImGui::cleanupImGui();
+        UIRender::cleanupImGui();
 
         cleanSwapChain();
 

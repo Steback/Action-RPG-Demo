@@ -67,7 +67,7 @@ cmake d:\dirent
 where ``d:\dirent`` is the root directory of the Dirent package (containing
 this README.md and LICENSE file).
 
-Once CMake is finished, open Visual Studio, load the generated dirent.sln file
+Once CMake is finished, open Visual Studio, scriptFile the generated dirent.sln file
 from the build directory and build the solution.  Once the build completes, run
 the example programs from the command prompt as
 

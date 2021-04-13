@@ -14,6 +14,7 @@
 #include "scene/Scene.hpp"
 #include "components/Transform.hpp"
 #include "resources/ResourceManager.hpp"
+#include "lua/LuaManager.hpp"
 
 
 namespace engine {
@@ -56,7 +57,8 @@ namespace engine {
         glm::vec4 m_clearColor;
         std::shared_ptr<GraphicsPipeline> m_pipeline;
         std::shared_ptr<CommandList> m_commands;
-        UIImGui m_ui;
+        UIRender m_ui;
+        LuaManager m_luaManager;
     };
 
 } // namespace core

@@ -20,6 +20,7 @@ const std::string TEXTURES_DIR = "../Assets/textures/";
 const std::string SHADERS_DIR = "shaders/";
 const std::string FONTS_DIR = "../Assets/fonts/";
 const std::string MODELS_DIR = "../Assets/models/";
+const std::string SCRIPTS_DIR = "../scripts/";
 
 const glm::vec3 DEFAULT_SIZE = {1.0f, 1.0f, 1.0f};
 const float SPEED_ZERO = 0.0f;

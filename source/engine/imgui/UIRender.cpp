@@ -1,16 +1,16 @@
-#include "UIImGui.hpp"
+#include "UIRender.hpp"
 
 #include <utility>
 
 #include "../Constants.hpp"
-#include "CommandList.hpp"
+#include "../renderer/CommandList.hpp"
 
 
 namespace engine {
 
-    UIImGui::UIImGui() = default;
+    UIRender::UIRender() = default;
 
-    UIImGui::UIImGui(engine::SwapChain &swapChain, const std::shared_ptr<engine::Device>& device, GLFWwindow* window,
+    UIRender::UIRender(engine::SwapChain &swapChain, const std::shared_ptr<engine::Device>& device, GLFWwindow* window,
                      vk::Instance instance, vk::Queue graphicsQueue, std::shared_ptr<CommandList> commandList) {
         m_commands = std::move(commandList);
         IMGUI_CHECKVERSION();
@@ -47,42 +47,42 @@ namespace engine {
         ImGui_ImplVulkan_DestroyFontUploadObjects();
     }
 
-    UIImGui::~UIImGui() = default;
+    UIRender::~UIRender() = default;
 
-    void UIImGui::cleanup() {
+    void UIRender::cleanup() {
         m_device.destroy(m_descriptorPool);
         m_device.destroy(m_renderPass);
     }
 
-    void UIImGui::cleanupImGui() {
+    void UIRender::cleanupImGui() {
         ImGui_ImplVulkan_Shutdown();
         ImGui_ImplGlfw_Shutdown();
         ImGui::DestroyContext();
     }
 
-    void UIImGui::newFrame() {
+    void UIRender::newFrame() {
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
     }
 
-    void UIImGui::render() {
+    void UIRender::render() {
         ImGui::Render();
     }
 
-    void UIImGui::resize(engine::SwapChain& swapChain) {
+    void UIRender::resize(engine::SwapChain& swapChain) {
         ImGui_ImplVulkan_SetMinImageCount(swapChain.getImageCount());
         m_framebuffers.resize(swapChain.getImageCount());
         createFrameBuffers(swapChain);
     }
 
-    void UIImGui::cleanupResources() {
+    void UIRender::cleanupResources() {
         for (auto& framebuffer : m_framebuffers) {
             m_device.destroy(framebuffer);
         }
     }
 
-    void UIImGui::recordCommands(uint32_t imageIndex, vk::Extent2D swapChainExtent) {
+    void UIRender::recordCommands(uint32_t imageIndex, vk::Extent2D swapChainExtent) {
         vk::CommandBuffer& cmdBuffer = m_commands->getBuffer();
 
         cmdBuffer.begin({
@@ -108,7 +108,7 @@ namespace engine {
         cmdBuffer.end();
     }
 
-    void UIImGui::createRenderPass(vk::Format swapChainFormat) {
+    void UIRender::createRenderPass(vk::Format swapChainFormat) {
         vk::AttachmentDescription attachmentDescription{
             .format = swapChainFormat,
             .samples = vk::SampleCountFlagBits::e1,
@@ -149,7 +149,7 @@ namespace engine {
         });
     }
 
-    void UIImGui::createFrameBuffers(engine::SwapChain& swapChain) {
+    void UIRender::createFrameBuffers(engine::SwapChain& swapChain) {
         m_framebuffers.resize(swapChain.getImageCount());
 
         vk::ImageView attachment[1];
@@ -169,7 +169,7 @@ namespace engine {
         }
     }
 
-    void UIImGui::createDescriptorPool() {
+    void UIRender::createDescriptorPool() {
         std::vector<vk::DescriptorPoolSize> poolSizes = {
                 { vk::DescriptorType::eSampler, 1000 },
                 { vk::DescriptorType::eCombinedImageSampler, 1000 },
@@ -190,6 +190,19 @@ namespace engine {
             .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
             .pPoolSizes = poolSizes.data()
         });
+    }
+
+    void UIRender::setLuaBindings(sol::state& state) {
+        sol::table ui = state.create_table("ui");
+
+        ui::Window::setLuaClass(ui);
+        ui.set_function("createWindow", &UIRender::creteWindow, this);
+    }
+
+    ui::Window UIRender::creteWindow(const std::string& name, float with, float height, uint32_t flags) {
+        m_windows.emplace_back(name, with, height, flags);
+
+        return m_windows.back();
     }
 
 } // namespace core

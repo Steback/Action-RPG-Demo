@@ -1,13 +1,15 @@
 #ifndef PROTOTYPE_ACTION_RPG_EDITOR_HPP
 #define PROTOTYPE_ACTION_RPG_EDITOR_HPP
 
-
 #include "imgui.h"
 #include "ImGuizmos/ImGuizmo.h"
 
 #include "Application.hpp"
 #include "renderer/GraphicsPipeline.hpp"
 
+namespace engine::ui {
+    class Window;
+}
 
 namespace editor {
 
@@ -30,6 +32,7 @@ namespace editor {
         void drawUI() override;
 
         void cleanup() override;
+
 
     private:
         void menuBar();

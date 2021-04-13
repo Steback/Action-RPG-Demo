@@ -9,6 +9,7 @@
 
 #include "components/Model.hpp"
 #include "Gizmos.hpp"
+#include "imgui/Window.hpp"
 
 
 namespace editor {
@@ -46,6 +47,10 @@ namespace editor {
         }
 
         m_scene->getCamera() = engine::Camera({45.0f, 45.0f}, {0.0f, 0.0f, 0.0f}, 0.5f, 10.0f, 10.0f);
+
+        m_ui.setLuaBindings(m_luaManager.getState());
+        m_luaManager.scriptFile("editor/main.lua");
+        m_luaManager.executeFunction("init");
     }
 
     void Editor::update() {
