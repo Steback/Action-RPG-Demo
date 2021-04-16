@@ -72,7 +72,6 @@ namespace editor {
 
     void Editor::drawUI() {
         menuBar();
-//        entitiesPanel();
         drawGizmo();
     }
 

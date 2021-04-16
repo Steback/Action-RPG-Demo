@@ -53,6 +53,7 @@ namespace engine {
 
         sol::table tools = m_luaManager.getState()["tools"].get_or_create<sol::table>();
         tools.set_function("hashString", &tools::hashString);
+        tools.set_function("getDeltaTime", &Application::getDeltaTime, this);
 
         spdlog::info("[App] Start");
     }
@@ -114,6 +115,10 @@ namespace engine {
             m_ui.recordCommands(m_renderer->getImageIndex(), m_renderer->getSwapChainExtent());
             m_renderer->render();
         }
+    }
+
+    float Application::getDeltaTime() {
+        return m_deltaTime;
     }
 
 } // namespace core

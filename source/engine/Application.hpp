@@ -45,6 +45,8 @@ namespace engine {
 
         virtual void renderCommands(vk::CommandBuffer& cmdBuffer) = 0;
 
+        float getDeltaTime();
+
     public:
         static std::unique_ptr<engine::RenderDevice> m_renderer;
         static std::unique_ptr<engine::ResourceManager> m_resourceManager;
