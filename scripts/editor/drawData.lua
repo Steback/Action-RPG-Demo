@@ -31,6 +31,7 @@ function drawData.entitiesPanel()
     editor.setEntity(entitySelected)
 end
 
+
 function drawData.entitiesPropertiesPanel()
     if (entitySelected ~= 0) then
         local entity = scene.entities:get(entitySelected);
@@ -38,9 +39,20 @@ function drawData.entitiesPropertiesPanel()
         imgui.text("ID: "..entity.id)
         entity.name = imgui.inputText("Name", entity.name)
 
-        imgui.text("Components: "..entity.flags)
+        local entityTypes = {"Object", "Player", "Enemy", "Building", "Camera"}
+        local currentType = entity.type + 1
+        local currentTypeName = entityTypes[currentType]
 
-        if (entity.flags & scene.EntityType.camera) ~= 0 then
+        imgui.beginCombo("Type", currentTypeName, function()
+            for i = 1, #entityTypes do
+                if imgui.selectable(entityTypes[i], currentType == i) then
+                    currentType = i
+                    entity.type = currentType - 1
+                end
+            end
+        end)
+
+        if (entity.type == scene.EntityType.camera) ~= 0 then
             if imgui.collapsingHeader("Camera") then
                 local camera = scene.components.getCamera(entity.id)
 

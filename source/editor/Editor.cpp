@@ -1,9 +1,7 @@
 #include "Editor.hpp"
 
 #include "imgui.h"
-#include "glm/gtc/type_ptr.hpp"
 #include "fmt/format.h"
-#include "glm/gtx/matrix_decompose.hpp"
 #include "ImGuiFileDialog/CustomImGuiFileDialogConfig.h"
 #include "ImGuiFileDialog/ImGuiFileDialog.h"
 
@@ -145,7 +143,7 @@ namespace editor {
     }
 
     void Editor::addEntity(const std::string& name,  const std::string& model) {
-        auto& entity = m_scene->addEntity(name, engine::EntityFlags::OBJECT);
+        auto& entity = m_scene->addEntity(name, engine::EntityType::OBJECT);
         uint64_t modelID = engine::tools::hashString(model);
 
         m_scene->registry().emplace<engine::Model>(entity.enttID, modelID, entity.id);
@@ -185,6 +183,11 @@ namespace editor {
     void Editor::saveScene(const std::string& title, const std::string& filters, const std::string& path, const std::string& openName) {
         bool open = m_luaManager.get<bool>(openName);
 
+        if (m_sceneLoaded) {
+            m_scene->saveScene(m_sceneName, true);
+            return ;
+        }
+
         ImGui::SetNextWindowSize({500, 250});
 
         if (open)
@@ -194,6 +197,7 @@ namespace editor {
             if (ImGuiFileDialog::Instance()->IsOk()) {
                 std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
 
+                fmt::print("{}\n", filePathName);
                 m_scene->saveScene(filePathName, true);
             }
 
@@ -220,9 +224,7 @@ namespace editor {
 
                 m_entitiesInfo.clear();
 
-                idx = (int)fileName.rfind('.');
-                // TODO: Create functionality for scene loaded
-                m_sceneName  = fileName.substr(0, idx);
+                m_sceneName  = filePathName;
                 m_sceneLoaded = true;
 
                 m_scene->loadScene(filePathName, true, &m_modelsNames);

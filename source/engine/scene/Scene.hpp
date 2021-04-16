@@ -22,12 +22,12 @@ using json = nlohmann::json;
 
 namespace engine {
 
-    enum EntityFlags {
-        OBJECT = 1 << 0,
-        PLAYER = 1 << 1,
-        ENEMY = 1 << 2,
-        CAMERA = 1 << 3,
-        BUILDING = 1 << 4
+    enum EntityType {
+        OBJECT = 0,
+        PLAYER = 1,
+        ENEMY = 2,
+        BUILDING = 3,
+        CAMERA = 4
     };
 
     enum ComponentFlags {
@@ -40,7 +40,7 @@ namespace engine {
         uint32_t id;
         std::string name;
         uint32_t components;
-        uint64_t flags;
+        uint32_t type;
 
         static void setLuaBindings(sol::table& table);
     };
@@ -57,7 +57,7 @@ namespace engine {
 
         void cleanup();
 
-        engine::Entity& addEntity(const std::string& name, uint32_t flags);
+        engine::Entity& addEntity(const std::string& name, uint32_t type);
 
         engine::Entity& getEntity(size_t ID);
 

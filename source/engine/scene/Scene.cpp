@@ -16,7 +16,7 @@ namespace engine {
                                    "id", &Entity::id,
                                    "name", &Entity::name,
                                    "components", &Entity::components,
-                                   "flags", &Entity::flags);
+                                   "type", &Entity::type);
     }
 
     Scene::Scene() = default;
@@ -25,7 +25,7 @@ namespace engine {
 
     void Scene::update(float deltaTime) {
         for (auto& entity : m_entities) {
-            if (entity.flags & EntityFlags::CAMERA) {
+            if (entity.type == EntityType::CAMERA) {
                 auto& camera = m_registry.get<engine::Camera>(entity.enttID);
                 auto& transform = m_registry.get<engine::Transform>(entity.enttID);
 
@@ -57,13 +57,13 @@ namespace engine {
         m_entities.clear();
     }
 
-    engine::Entity& Scene::addEntity(const std::string &name, uint32_t flags) {
+    engine::Entity& Scene::addEntity(const std::string &name, uint32_t type) {
         engine::Entity entity;
         entity.enttID = m_registry.create();
         entity.name = name;
         entity.id = m_entities.size();
         entity.components = 0;
-        entity.flags = flags;
+        entity.type = type;
 
         m_entities.push_back(entity);
 
@@ -98,7 +98,7 @@ namespace engine {
         glm::vec3 target = {camera["target"]["x"].get<float>(), camera["target"]["y"].get<float>(), camera["target"]["z"].get<float>()};
 
         if (editorBuild) {
-            auto& entity = addEntity("Camera", EntityFlags::OBJECT | EntityFlags::CAMERA);
+            auto& entity = addEntity("Camera", EntityType::OBJECT | EntityType::CAMERA);
 
             m_registry.emplace<engine::Model>(entity.enttID, engine::tools::hashString("cube"), entity.id);
 
@@ -125,7 +125,7 @@ namespace engine {
         }
 
         for (auto& e : scene["entities"]) {
-            auto& entity = addEntity(e["name"], EntityFlags::OBJECT);
+            auto& entity = addEntity(e["name"], e["type"]);
 
             if (!e["transform"].empty()) {
                 auto& transform = e["transform"];
@@ -182,11 +182,12 @@ namespace engine {
         scene["entities"] = {};
 
         for (auto& entity : m_entities) {
-            if (!(entity.flags & EntityFlags::CAMERA)) {
+            if (entity.type != EntityType::CAMERA) {
                 size_t entitiesCount = scene["entities"].size();
 
                 scene["entities"].push_back({
                     {"name", entity.name},
+                    {"type", entity.type}
                 });
 
                 if (entity.components & engine::TRANSFORM) {
@@ -246,10 +247,10 @@ namespace engine {
                        "model", ComponentFlags::MODEL);
 
         scene.new_enum("EntityType",
-                       "player", EntityFlags::PLAYER,
-                       "enemy", EntityFlags::ENEMY,
-                       "building", EntityFlags::BUILDING,
-                       "camera", EntityFlags::CAMERA);
+                       "player", EntityType::PLAYER,
+                       "enemy", EntityType::ENEMY,
+                       "building", EntityType::BUILDING,
+                       "camera", EntityType::CAMERA);
 
         Camera::setLuaBindings(scene);
         Entity::setLuaBindings(scene);

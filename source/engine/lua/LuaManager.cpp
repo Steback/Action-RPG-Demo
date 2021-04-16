@@ -46,7 +46,7 @@ namespace engine {
             fmt::print("{}\n", error.what());
         }
 #else
-        m_state[name]();
+        f();
 #endif
     }
 

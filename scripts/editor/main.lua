@@ -89,7 +89,7 @@ function init()
     entitiesPanel:setState(true)
 
     -- Entity Properties Panel
-    entityPropertiesPanel = ui.createWindow("Test Properties", 350.0, ((windowSize.height * 0.5) - 22), ui.WindowFlags.fixPosition);
+    entityPropertiesPanel = ui.createWindow("Test Properties", 350.0, ((windowSize.height * 0.5)), ui.WindowFlags.fixPosition);
     entityPropertiesPanel:setPosition(0.0, windowSize.height * 0.5)
     entityPropertiesPanel:setState(true)
 end

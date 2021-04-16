@@ -39,5 +39,10 @@ namespace engine::lua {
                 ImGui::EndCombo();
             }
         });
+        imgui.set_function("checkBox", [](const std::string& label, bool check){
+            ImGui::Checkbox(label.c_str(), &check);
+
+            return check;
+        });
     }
 }
