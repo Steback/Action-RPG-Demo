@@ -4,6 +4,7 @@
 
 #include "renderer/CommandList.hpp"
 #include "renderer/GraphicsPipeline.hpp"
+#include "lua/MathBindings.hpp"
 
 
 namespace engine {
@@ -44,6 +45,14 @@ namespace engine {
 
         m_ui = engine::UIRender(m_renderer->getSwapChain(), m_device, m_window->getWindow(), m_instance->getInstance(), m_renderer->getGraphicsQueue(),
                                m_renderer->addCommandList());
+
+        m_window->setLuaBindings(m_luaManager.getState());
+        lua::setMathBindings(m_luaManager.getState());
+        m_ui.setLuaBindings(m_luaManager.getState());
+        m_scene->setLuaBindings(m_luaManager.getState());
+
+        sol::table tools = m_luaManager.getState()["tools"].get_or_create<sol::table>();
+        tools.set_function("hashString", &tools::hashString);
 
         spdlog::info("[App] Start");
     }
@@ -86,8 +95,8 @@ namespace engine {
             update();
 
             engine::UIRender::newFrame();
-            m_luaManager.executeFunction("drawUI");
             drawUI();
+            m_luaManager.executeFunction("drawUI");
             engine::UIRender::render();
 
             m_renderer->acquireNextImage();

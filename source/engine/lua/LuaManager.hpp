@@ -19,6 +19,10 @@ namespace engine {
 
         void executeFunction(const std::string& name);
 
+        static void executeFunction(const sol::function& f);
+
+        void setScriptsDir(const std::string& name);
+
         template<typename T>
         T get(const std::string& name) {
             return static_cast<T>(m_state[name]);
@@ -26,6 +30,7 @@ namespace engine {
 
     private:
         sol::state m_state;
+        std::string m_dirName{};
     };
 
 } // namespace engine

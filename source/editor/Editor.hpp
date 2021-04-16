@@ -13,8 +13,18 @@ namespace engine::ui {
 
 namespace editor {
 
+    struct MenuItem {
+        std::string name;
+        sol::function func;
+    };
+
+    struct MenuBar {
+        std::string name;
+        std::vector<MenuItem> items;
+    };
+
     struct EntityInfo {
-        uint32_t entityID;
+        uint32_t id;
         std::string name;
         int model;
     };
@@ -33,47 +43,44 @@ namespace editor {
 
         void cleanup() override;
 
+        void renderCommands(vk::CommandBuffer &cmdBuffer) override;
+
+        void loadMenuBar(sol::state& state);
+
+        void setLuaBindings(sol::table& state);
 
     private:
         void menuBar();
-
-        void entitiesPanel();
-
-        void cameraControls();
 
         void cameraMovement();
 
         void drawGizmo();
 
-        void addEntity();
+        void addEntity(const std::string& name,  const std::string& model);
 
-        void addModel();
+        void addModel(const std::string& title, const std::string& filters, const std::string& path, const std::string& openName);
 
-        void loadNode(engine::ModelInterface::Node& node, engine::ModelInterface& model);
+        void saveScene(const std::string& title, const std::string& filters, const std::string& path, const std::string& openName);
 
-        void saveScene();
+        void loadScene(const std::string& title, const std::string& filters, const std::string& path, const std::string& openName);
 
-        void loadScene();
+        void showImGuiDemo(const std::string& openName);
 
-    public:
-        void renderCommands(vk::CommandBuffer &cmdBuffer) override;
+        [[nodiscard]] int getEntity() const;
+
+        void setEntity(int entity);
 
     private:
         size_t m_entitySelected = -1;
         bool m_gizmoDraw = true;
-        bool m_cameraControls = false;
         ImGuizmo::OPERATION m_currentOperation;
-        bool m_addEntity = false;
-        bool m_imguiDemo = false;
-        bool m_addModel = false;
         bool m_widowOpen = false;
-        bool m_saveScene = false;
-        bool m_loadScene = false;
         std::vector<std::string> m_modelsNames;
         std::vector<EntityInfo> m_entitiesInfo;
         std::string m_sceneName{};
         bool m_sceneLoaded =  false;
         std::shared_ptr<engine::GraphicsPipeline> m_gridPipeline;
+        std::vector<MenuBar> m_menuBar;
     };
 
 } // namespace editor

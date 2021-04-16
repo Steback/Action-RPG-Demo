@@ -16,12 +16,12 @@
     "entities": [
         {
             "model": {
-                "name": "skeletons"
+                "name": "hero"
             },
-            "name": "Skeletons",
+            "name": "Hero",
             "transform": {
                 "position": [
-                    -1.5,
+                    1.5,
                     0.0,
                     0.0
                 ],
@@ -40,19 +40,19 @@
         },
         {
             "model": {
-                "name": "hero"
+                "name": "skeletons"
             },
-            "name": "Hero",
+            "name": "Skelet",
             "transform": {
                 "position": [
-                    1.5,
+                    -1.5,
                     0.0,
-                    -1.8044039507003617e-07
+                    0.0
                 ],
                 "rotation": [
-                    3.1415927410125732,
-                    3.1415927410125732,
-                    3.1415927410125732
+                    0.0,
+                    0.0,
+                    0.0
                 ],
                 "size": [
                     1.0,

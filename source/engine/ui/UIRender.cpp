@@ -2,8 +2,11 @@
 
 #include <utility>
 
+#include "fmt/format.h"
+
 #include "../Constants.hpp"
 #include "../renderer/CommandList.hpp"
+#include "../lua/ImGuiBindings.hpp"
 
 
 namespace engine {
@@ -193,6 +196,7 @@ namespace engine {
     }
 
     void UIRender::setLuaBindings(sol::state& state) {
+        engine::lua::setImGuiBindings(state);
         sol::table ui = state.create_table("ui");
 
         ui::Window::setLuaClass(ui);

@@ -1,7 +1,8 @@
 #include "Window.hpp"
 
 #include <spdlog/spdlog.h>
-
+#define SOL_ALL_SAFETIES_ON 1
+#include "sol/sol.hpp"
 
 namespace engine {
 
@@ -152,6 +153,16 @@ namespace engine {
 
         w->m_scrollOffset = {static_cast<float>(xOffset), static_cast<float>(yOffset)};
         w->m_scrolling = true;
+    }
+
+    void Window::setLuaBindings(sol::state& state) {
+        sol::table window = state["window"].get_or_create<sol::table>();
+
+        window.new_usertype<WindowSize>("WindowSize",
+                                        "width", &WindowSize::width,
+                                        "height", &WindowSize::height);
+
+        window.set_function("size", &Window::getSize, this);
     }
 
 } // End namespace core

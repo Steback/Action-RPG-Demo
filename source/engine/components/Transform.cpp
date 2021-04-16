@@ -61,4 +61,21 @@ namespace engine {
         m_rotation = rotation;
     }
 
+    float *Transform::getSpeedPtr(bool ptr) {
+        return &m_speed;
+    }
+
+    void Transform::setLuaBindings(sol::table &table) {
+        table.new_usertype<Transform>("Transform",
+                                      sol::call_constructor, sol::constructors<Transform(), Transform(const glm::vec3&, const glm::vec3&, float, const glm::vec3&)>(),
+                                      "getPosition", &Transform::getPosition,
+                                      "setPosition", &Transform::setPosition,
+                                      "getRotation", &Transform::getRotation,
+                                      "setRotation", &Transform::setRotation,
+                                      "getScale", &Transform::getSize,
+                                      "setScale", &Transform::setSize,
+                                      "getVelocity", sol::overload(&Transform::getSpeed, &Transform::getSpeedPtr),
+                                      "setVelocity", &Transform::setSpeed);
+    }
+
 }

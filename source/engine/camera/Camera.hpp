@@ -4,6 +4,10 @@
 
 #include "glm/glm.hpp"
 
+
+#define SOL_ALL_SAFETIES_ON 1
+#include "sol/sol.hpp"
+
 #include "../Constants.hpp"
 
 
@@ -50,7 +54,20 @@ namespace engine {
 
         float& getDistance();
 
-        glm::vec3 getDirection() const ;
+        glm::vec3 getDirection() const;
+
+        void setAngles(const glm::vec2& angles);
+
+        static void setLuaBindings(sol::table& table);
+
+    private:
+        float* getFovyPtr();
+
+        float* getSpeedPtr();
+
+        float* getTurnSpeedPtr();
+
+        float* getDistancePtr();
 
     private:
         glm::vec3 m_position{};

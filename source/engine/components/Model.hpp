@@ -9,6 +9,7 @@
 #include "vulkan/vulkan.hpp"
 
 #include "../resources/ModelInterface.hpp"
+#include "Transform.hpp"
 
 
 namespace engine {
@@ -30,6 +31,10 @@ namespace engine {
         void render(vk::CommandBuffer& cmdBuffer, const vk::PipelineLayout& layout, const vk::DescriptorSet& set, MVP& mvp);
 
         void setModel(uint64_t modelID);
+
+        void descomposeMatrix(Transform& transform);
+
+        static void setLuaBindings(sol::table& table);
 
     private:
         std::shared_ptr<engine::ModelInterface> m_model;

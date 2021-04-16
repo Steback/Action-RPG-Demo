@@ -12,7 +12,7 @@
 #include "SwapChain.hpp"
 #include "Buffer.hpp"
 #include "Image.hpp"
-#include "../imgui/UIRender.hpp"
+#include "../ui/UIRender.hpp"
 #include "GraphicsPipeline.hpp"
 #include "../Utilities.hpp"
 #include "../camera/Camera.hpp"

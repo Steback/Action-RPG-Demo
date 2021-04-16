@@ -16,6 +16,9 @@
 
 using json = nlohmann::json;
 
+#define SOL_ALL_SAFETIES_ON 1
+#include "sol/sol.hpp"
+
 
 namespace engine {
 
@@ -38,6 +41,8 @@ namespace engine {
         std::string name;
         uint32_t components;
         uint64_t flags;
+
+        static void setLuaBindings(sol::table& table);
     };
 
     class Scene {
@@ -62,16 +67,25 @@ namespace engine {
 
         engine::Camera& getCamera();
 
-        void loadScene(const std::string& uri, bool editorBuild = false);
+        void loadScene(const std::string& uri, bool editorBuild = false, std::vector<std::string>* modelNames = nullptr);
 
         void saveScene(const std::string& uri, bool editorBuild = false);
 
         entt::registry& registry();
 
+        void setLuaBindings(sol::state& state);
+
         template<typename T>
         T& getComponent(uint32_t id) {
             return m_registry.get<T>(m_entities[id].enttID);
         }
+
+    private:
+        Transform& getTransform(uint32_t id);
+
+        Camera& getCameraComponent(uint32_t id);
+
+        Model& getModel(uint32_t id);
 
     private:
         std::vector<engine::Entity> m_entities;

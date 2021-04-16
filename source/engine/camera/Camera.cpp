@@ -78,7 +78,7 @@ namespace engine {
         return m_eulerAngles;
     }
 
-    float &Camera::getFovy() {
+    float& Camera::getFovy() {
         return m_yFov;
     }
 
@@ -104,6 +104,44 @@ namespace engine {
 
     glm::vec3 Camera::getDirection() const {
         return m_direction;
+    }
+
+    void Camera::setLuaBindings(sol::table& table) {
+        table.new_usertype<Camera>("Camera",
+                                   sol::call_constructor, sol::constructors<Camera(), Camera(const glm::vec2&, const glm::vec3&, float, float, float)>(),
+                                   "eye", &Camera::getEye,
+                                   "center", &Camera::getCenter,
+                                   "up", &Camera::getUp,
+                                   "angles", &Camera::getEulerAngles,
+                                   "getFov", &Camera::getFovyPtr,
+                                   "getVelocity", &Camera::getSpeedPtr,
+                                   "getTurnVelocity", &Camera::getTurnSpeedPtr,
+                                   "getDistance", &Camera::getDistancePtr,
+                                   "setAngles", &Camera::setAngles,
+                                   "fov", &Camera::m_yFov,
+                                   "velocity", &Camera::m_speed,
+                                   "turnVelocity", &Camera::m_rotateSpeed,
+                                   "distance", &Camera::m_distance);
+    }
+
+    float *Camera::getFovyPtr() {
+        return &m_yFov;
+    }
+
+    float *Camera::getSpeedPtr() {
+        return &m_speed;
+    }
+
+    float *Camera::getTurnSpeedPtr() {
+        return &m_rotateSpeed;
+    }
+
+    float *Camera::getDistancePtr() {
+        return &m_distance;
+    }
+
+    void Camera::setAngles(const glm::vec2 &angles) {
+        m_eulerAngles = angles;
     }
 
 } // namespace core

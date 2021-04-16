@@ -87,7 +87,7 @@ Comment theses line if you not want to have customization, like icon font here
 #define tableHeaderFileDateString " Date"
 
 #define USE_BOOKMARK
-#define bookmarkPaneWith 150.0f
+#define bookmarkPaneWith 350.0f
 //#define IMGUI_TOGGLE_BUTTON ToggleButton
 #define bookmarksButtonString ICON_IGFD_BOOKMARK
 //#define bookmarksButtonHelpString "bookmark"

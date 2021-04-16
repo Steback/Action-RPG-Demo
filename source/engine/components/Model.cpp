@@ -1,5 +1,7 @@
 #include "Model.hpp"
 
+#include "glm/gtx/matrix_decompose.hpp"
+
 #include "../Utilities.hpp"
 #include "../Application.hpp"
 
@@ -66,6 +68,25 @@ namespace engine {
 
     void Model::setModel(uint64_t modelID) {
         m_model = engine::Application::m_resourceManager->getModel(modelID);
+    }
+
+    void Model::descomposeMatrix(Transform& transform) {
+        glm::vec3 tempTranslate, tempScale, tempSkew;
+        glm::vec4 tempPerspective;
+        glm::quat tempOrientation;
+
+        glm::decompose(m_model->getBaseMesh().matrix, tempScale, tempOrientation, tempTranslate, tempSkew, tempPerspective);
+
+        transform.getPosition() += tempTranslate;
+        transform.getRotation() += glm::eulerAngles(tempOrientation);
+    }
+
+    void Model::setLuaBindings(sol::table &table) {
+        table.new_usertype<Model>("Model",
+                                  sol::call_constructor, sol::constructors<Model(uint64_t, uint32_t)>(),
+                                  "setModel", &Model::setModel,
+                                  "getName", &Model::getName,
+                                  "descomposeMatrix", &Model::descomposeMatrix);
     }
 
 } // namespace core

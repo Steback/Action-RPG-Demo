@@ -9,7 +9,7 @@
 
 #include "components/Model.hpp"
 #include "Gizmos.hpp"
-#include "imgui/Window.hpp"
+#include "ui/Window.hpp"
 
 
 namespace editor {
@@ -48,8 +48,17 @@ namespace editor {
 
         m_scene->getCamera() = engine::Camera({45.0f, 45.0f}, {0.0f, 0.0f, 0.0f}, 0.5f, 10.0f, 10.0f);
 
-        m_ui.setLuaBindings(m_luaManager.getState());
-        m_luaManager.scriptFile("editor/main.lua");
+        // LUA
+        m_luaManager.setScriptsDir("editor");
+        auto imgui = m_luaManager.get<sol::table>("imgui");
+        imgui.set_function("showDemo", &Editor::showImGuiDemo, this);
+
+        sol::table editor = m_luaManager.getState().create_table("editor");
+        setLuaBindings(editor);
+
+        m_luaManager.scriptFile("main.lua");
+
+        loadMenuBar(m_luaManager.getState());
         m_luaManager.executeFunction("init");
     }
 
@@ -62,24 +71,8 @@ namespace editor {
     }
 
     void Editor::drawUI() {
-        if (m_imguiDemo) {
-            ImGui::ShowDemoWindow(&m_imguiDemo);
-            m_widowOpen = !m_widowOpen;
-        }
-
         menuBar();
-        entitiesPanel();
-
-        if (m_cameraControls) cameraControls();
-
-        if (m_addEntity) addEntity();
-
-        if (m_addModel) addModel();
-
-        if (m_saveScene) saveScene();
-
-        if (m_loadScene) loadScene();
-
+//        entitiesPanel();
         drawGizmo();
     }
 
@@ -89,163 +82,24 @@ namespace editor {
 
     void Editor::menuBar() {
         if (ImGui::BeginMainMenuBar()) {
-            if (ImGui::BeginMenu("File")) {
-                ImGui::MenuItem("New");
-                if (ImGui::MenuItem("Save")) m_widowOpen = m_saveScene = !m_saveScene;
-                if (ImGui::MenuItem("Open")) m_widowOpen = m_loadScene = !m_loadScene;
+            for (auto& menuBar : m_menuBar) {
+                if (ImGui::BeginMenu(menuBar.name.c_str())) {
 
-                ImGui::EndMenu();
-            }
-
-            if (ImGui::BeginMenu("Entity")) {
-                if (ImGui::MenuItem("Add Entity")) m_addEntity = !m_addEntity;
-
-                ImGui::EndMenu();
-            }
-
-            if (ImGui::BeginMenu("Assets")) {
-                if (ImGui::MenuItem("Add Model")) m_widowOpen = m_addModel = !m_addModel;
-
-                ImGui::EndMenu();
-            }
-
-            if (ImGui::BeginMenu("Tools")) {
-                if (ImGui::MenuItem("Camera Controls", nullptr)) m_cameraControls = !m_cameraControls;
-                if (ImGui::MenuItem("ImGui Demo", nullptr)) m_widowOpen = m_imguiDemo = !m_imguiDemo;
-
-                ImGui::EndMenu();
-            }
-        }
-    }
-
-    void Editor::entitiesPanel() {
-        ImGuiIO& io = ImGui::GetIO(); (void)io;
-
-        ImGui::SetNextWindowPos({0.0f, 22});
-        ImGui::SetNextWindowSize({350.0f, ((io.DisplaySize.y * 0.5f) - 22)});
-        ImGui::Begin("Entities", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
-        {
-            for (size_t i = 0; i < m_entitiesInfo.size(); ++i) {
-                if (ImGui::Selectable(m_entitiesInfo[i].name.c_str(), m_entitySelected == i)) m_entitySelected = i;
-            }
-
-        }
-        ImGui::End();
-
-        ImGui::SetNextWindowPos({0.0f, io.DisplaySize.y * 0.5f});
-        ImGui::SetNextWindowSize({350.0f, io.DisplaySize.y * 0.5f});
-        ImGui::Begin("Entity Properties", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize);
-        {
-            if (m_entitySelected != -1) {
-                auto& entity = m_scene->getEntity(m_entitySelected);
-                auto& transform = m_scene->getComponent<engine::Transform>(entity.id);
-
-                ImGui::Text("Entity ID: %i", entity.id);
-
-                char* name = const_cast<char *>(entity.name.c_str());
-                ImGui::InputText("Entity name", name, 30);
-                m_entitiesInfo[m_entitySelected].name = entity.name = name;
-
-                ImGui::Text("Flags %lu", entity.flags);
-
-                std::vector<const char*> entityTypes = {"CAMERA", "PLAYER"};
-
-                if (entity.flags & engine::EntityFlags::CAMERA) {
-                    if (ImGui::CollapsingHeader("Camera")) {
-                        auto& camera = m_scene->getComponent<engine::Camera>(entity.id);
-
-                        ImGui::InputFloat3("Eye", glm::value_ptr(camera.getEye()));
-                        ImGui::InputFloat3("Front", glm::value_ptr(camera.getCenter()));
-                        ImGui::Separator();
-
-                        glm::vec2 angles = glm::degrees(camera.getEulerAngles());
-                        ImGui::InputFloat2("Euler Angles", glm::value_ptr(angles));
-                        camera.getEulerAngles() = glm::radians(angles);
-
-                        ImGui::Separator();
-                        ImGui::InputFloat("FOV", &camera.getFovy());
-                        ImGui::Separator();
-                        ImGui::InputFloat("Velocity", &camera.getSpeed());
-                        ImGui::InputFloat("Turn Velocity", &camera.getTurnSpeed());
-                        ImGui::Separator();
-                        ImGui::InputFloat("Distances", &camera.getDistance());
+                    for (auto& item : menuBar.items) {
+                        if (ImGui::MenuItem(item.name.c_str())) engine::LuaManager::executeFunction(item.func);
                     }
-                } else {
-                    if (ImGui::CollapsingHeader("Transform")) {
 
-                        ImGui::InputFloat3("Position", glm::value_ptr(transform.getPosition()));
-                        ImGui::InputFloat3("Size", glm::value_ptr(transform.getSize()));
-
-                        glm::vec3 angles = glm::degrees(transform.getRotation());
-                        ImGui::InputFloat3("Rotation", glm::value_ptr(angles));
-                        transform.getRotation() = glm::radians(angles);
-
-                        ImGui::InputFloat("Velocity", &transform.getSpeed());
-                    }
-                }
-
-                if (entity.components & engine::MODEL) {
-                    if (ImGui::CollapsingHeader("Model")) {
-                        auto& render = m_scene->getComponent<engine::Model>(entity.id);
-
-                        int currentModel = m_entitiesInfo[m_entitySelected].model;
-
-                        if (ImGui::BeginCombo("Name", m_modelsNames[currentModel].c_str())) {
-                            for (int i = 0; i < m_modelsNames.size(); ++i) {
-                                const bool is_selected = (currentModel == i);
-
-                                if (ImGui::Selectable(m_modelsNames[i].c_str(), is_selected)) {
-                                    m_entitiesInfo[m_entitySelected].model = currentModel = i;
-                                    uint64_t modelID = engine::tools::hashString(m_modelsNames[currentModel]);
-                                    render.setModel(modelID);
-
-                                    glm::vec3 tempTranslate, tempScale, tempSkew;
-                                    glm::vec4 tempPerspective;
-                                    glm::quat tempOrientation;
-
-                                    glm::decompose(render.getBaseMesh().matrix, tempScale, tempOrientation, tempTranslate, tempSkew, tempPerspective);
-
-                                    transform.getPosition() += tempTranslate;
-                                    transform.getRotation() += glm::eulerAngles(tempOrientation);
-                                }
-
-                                if (is_selected) ImGui::SetItemDefaultFocus();
-                            }
-
-                            ImGui::EndCombo();
-                        }
-                    }
+                    ImGui::EndMenu();
                 }
             }
         }
-        ImGui::End();
-    }
-
-    void Editor::cameraControls() {
-        ImGui::SetNextWindowSize({-1, -1});
-        ImGui::Begin("Camera Controls", &m_cameraControls);
-        {
-            ImGui::InputFloat3("Eye", glm::value_ptr(m_scene->getCamera().getEye()));
-            ImGui::InputFloat3("Front", glm::value_ptr(m_scene->getCamera().getCenter()));
-            ImGui::InputFloat3("Up", glm::value_ptr(m_scene->getCamera().getUp()));
-            ImGui::Separator();
-            ImGui::InputFloat2("Euler Angles", glm::value_ptr(m_scene->getCamera().getEulerAngles()));
-            ImGui::Separator();
-            ImGui::InputFloat("FOV", &m_scene->getCamera().getFovy());
-            ImGui::Separator();
-            ImGui::InputFloat("Velocity", &m_scene->getCamera().getSpeed());
-            ImGui::InputFloat("Turn Velocity", &m_scene->getCamera().getTurnSpeed());
-            ImGui::Separator();
-            ImGui::InputFloat("Distances", &m_scene->getCamera().getDistance());
-        }
-        ImGui::End();
     }
 
     void Editor::cameraMovement() {
         auto& camera = m_scene->getCamera();
 
-        if (!m_widowOpen)
-            camera.setZoom(m_deltaTime, m_window->getScrollOffset(), m_window->isScrolling());
+//        if (!m_widowOpen)
+        camera.setZoom(m_deltaTime, m_window->getScrollOffset(), m_window->isScrolling());
 
         if (m_window->mouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT) && m_window->keyPressed(GLFW_KEY_LEFT_ALT)) {
             camera.rotate(m_deltaTime, m_window->getCursorPos());
@@ -275,13 +129,13 @@ namespace editor {
 
             m_gizmoDraw = false;
 
-            if (m_window->keyPressed(GLFW_KEY_T) && !m_addEntity) {
+            if (m_window->keyPressed(GLFW_KEY_T)) {
                 m_currentOperation = ImGuizmo::OPERATION::TRANSLATE;
                 m_window->setKeyValue(GLFW_KEY_T, false);
-            } else if (m_window->keyPressed(GLFW_KEY_R) && !m_addEntity) {
+            } else if (m_window->keyPressed(GLFW_KEY_R)) {
                 m_currentOperation = ImGuizmo::OPERATION::ROTATE;
                 m_window->setKeyValue(GLFW_KEY_R, false);
-            } else if (m_window->keyPressed(GLFW_KEY_S) && !m_addEntity) {
+            } else if (m_window->keyPressed(GLFW_KEY_S)) {
                 m_currentOperation = ImGuizmo::OPERATION::SCALE;
                 m_window->setKeyValue(GLFW_KEY_S, false);
             }
@@ -291,29 +145,32 @@ namespace editor {
         }
     }
 
-    void Editor::addEntity() {
-        auto& entity = m_scene->addEntity("Object", engine::EntityFlags::OBJECT);
-        uint64_t modelID = engine::tools::hashString("cube");
+    void Editor::addEntity(const std::string& name,  const std::string& model) {
+        auto& entity = m_scene->addEntity(name, engine::EntityFlags::OBJECT);
+        uint64_t modelID = engine::tools::hashString(model);
 
         m_scene->registry().emplace<engine::Model>(entity.enttID, modelID, entity.id);
         m_scene->registry().emplace<engine::Transform>(entity.enttID, m_scene->getCamera().getCenter(), DEFAULT_SIZE, SPEED_ZERO, DEFAULT_ROTATION);
         entity.components = engine::MODEL | engine::TRANSFORM;
 
         m_entitiesInfo.push_back({entity.id, entity.name, 0});
-        m_addEntity = !m_addEntity;
     }
 
-    void Editor::addModel() {
-        if (m_addModel)
-            ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose File", ".gltf", "../Assets/models");
+    void Editor::addModel(const std::string& title, const std::string& filters, const std::string& path, const std::string& openName) {
+        bool open = m_luaManager.get<bool>(openName);
+
+        ImGui::SetNextWindowSize({500, 250});
+
+        if (open)
+            ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", title, filters.c_str(), path);
 
         if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) {
             if (ImGuiFileDialog::Instance()->IsOk()) {
                 std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
-                int idx = filePathName.rfind('/');
+                int idx = (int)filePathName.rfind('/');
                 std::string fileName = filePathName.substr(idx + 1, filePathName.size());
 
-                idx = fileName.rfind('.');
+                idx = (int)fileName.rfind('.');
                 std::string modelName = fileName.substr(0, idx);
 
                 m_resourceManager->createModel(fileName, modelName);
@@ -321,41 +178,18 @@ namespace editor {
             }
 
             ImGuiFileDialog::Instance()->Close();
-            m_widowOpen = m_addModel = !m_addModel;
+
+            m_luaManager.getState()[openName] = !open;
         }
     }
 
-    void Editor::loadNode(engine::ModelInterface::Node& node, engine::ModelInterface& model) {
-        if (ImGui::TreeNode(node.name.c_str())) {
-            ImGui::Text("ID: %u", node.id);
+    void Editor::saveScene(const std::string& title, const std::string& filters, const std::string& path, const std::string& openName) {
+        bool open = m_luaManager.get<bool>(openName);
 
-            if (ImGui::CollapsingHeader("Data")) {
-                std::string matrix;
-                for (int i = 0; i < 4; ++i) {
-                    matrix.append("| ");
+        ImGui::SetNextWindowSize({500, 250});
 
-                    for (int j = 0; j < 4; ++j) {
-                        matrix.append(std::to_string(node.matrix[i][j]) + ' ');
-                    }
-
-                    matrix.append("|\n");
-                }
-                ImGui::Text("Matrix: \n%s", matrix.c_str());
-
-                ImGui::Text("Mesh ID: %lu", node.mesh);
-            }
-
-            for (auto& child : node.children) {
-                loadNode(model.getNode(child), model);
-            }
-
-            ImGui::TreePop();
-        }
-    }
-
-    void Editor::saveScene() {
-        if (m_saveScene)
-            ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose a Directory", ".json", "../data/");
+        if (open)
+            ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", title, filters.c_str(), path);
 
         if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) {
             if (ImGuiFileDialog::Instance()->IsOk()) {
@@ -365,36 +199,41 @@ namespace editor {
             }
 
             ImGuiFileDialog::Instance()->Close();
-            m_widowOpen = m_saveScene = !m_saveScene;
+
+            m_luaManager.getState()[openName] = !open;
         }
     }
 
-    void Editor::loadScene() {
-        if (m_loadScene)
-            ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose a Directory", ".json", "../data/");
+    void Editor::loadScene(const std::string& title, const std::string& filters, const std::string& path, const std::string& openName) {
+        bool open = m_luaManager.get<bool>(openName);
+
+        ImGui::SetNextWindowSize({500, 250});
+
+        if (open)
+            ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", title, filters.c_str(), path);
 
         if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) {
             if (ImGuiFileDialog::Instance()->IsOk()) {
                 std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
 
-                int idx = filePathName.rfind('/');
+                int idx = (int)filePathName.rfind('/');
                 std::string fileName = filePathName.substr(idx + 1, filePathName.size());
 
                 m_entitiesInfo.clear();
 
-                idx = fileName.rfind('.');
+                idx = (int)fileName.rfind('.');
+                // TODO: Create functionality for scene loaded
                 m_sceneName  = fileName.substr(0, idx);
-
                 m_sceneLoaded = true;
 
-                m_scene->loadScene(filePathName, true);
+                m_scene->loadScene(filePathName, true, &m_modelsNames);
 
                 for (auto& entity : m_scene->getEntities()) {
-                    auto& render = m_scene->getComponent<engine::Model>(entity.id);
+                    auto& model = m_scene->getComponent<engine::Model>(entity.id);
                     int modelID;
 
                     for (int i = 0; i < m_modelsNames.size(); ++i) {
-                        if (m_modelsNames[i] == render.getName()) modelID = i;
+                        if (m_modelsNames[i] == model.getName()) modelID = i;
                     }
 
                     m_entitiesInfo.push_back({entity.id, entity.name, modelID});
@@ -402,7 +241,7 @@ namespace editor {
             }
 
             ImGuiFileDialog::Instance()->Close();
-            m_widowOpen = m_loadScene = !m_loadScene;
+            m_luaManager.getState()[openName] = !open;
         }
     }
 
@@ -414,6 +253,79 @@ namespace editor {
 
         cmdBuffer.pushConstants(m_gridPipeline->getLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(mvp), &mvp);
         cmdBuffer.draw(6, 1, 0, 0);
+    }
+
+    void Editor::loadMenuBar(sol::state& state) {
+        sol::table menuBarTable = state["menuBar"];
+
+        uint menuIndex = 0;
+        while (true) {
+            sol::optional<sol::table> existsMenu = menuBarTable[menuIndex];
+
+            if (existsMenu == sol::nullopt) {
+                break;
+            } else {
+                sol::table menu = existsMenu.value();
+                MenuBar menuBar{
+                    .name = menu.get<std::string>("name")
+                };
+
+                uint itemIndex = 0;
+                while (true) {
+                    sol::optional<sol::table> existsItem = menu["items"][itemIndex];
+
+                    if (existsItem == sol::nullopt) {
+                        break;
+                    } else {
+                        sol::table menuItem = existsItem.value();
+
+                        menuBar.items.push_back({
+                            .name = menuItem.get<std::string>("name"),
+                            .func = menuItem.get<sol::function>("func"),
+                        });
+                    }
+
+                    ++itemIndex;
+                }
+
+                m_menuBar.push_back(menuBar);
+            }
+
+            ++menuIndex;
+        }
+    }
+
+    void Editor::setLuaBindings(sol::table &state) {
+        state.new_usertype<EntityInfo>("EntityInfo",
+                                       "id", &EntityInfo::id,
+                                       "name", &EntityInfo::name,
+                                       "model", &EntityInfo::model);
+
+        state["entitiesInfo"] = std::ref(m_entitiesInfo);
+        state["modelsNames"] = std::ref(m_modelsNames);
+
+        state.set_function("saveScene", &Editor::saveScene, this);
+        state.set_function("loadScene", &Editor::loadScene, this);
+        state.set_function("addEntity", &Editor::addEntity, this);
+        state.set_function("addModel", &Editor::addModel, this);
+        state.set_function("getEntity", &Editor::getEntity, this);
+        state.set_function("setEntity", &Editor::setEntity, this);
+    }
+
+    int Editor::getEntity() const {
+        return static_cast<int>(m_entitySelected);
+    }
+
+    void Editor::setEntity(int entity) {
+        m_entitySelected = entity - 1;
+    }
+
+    void Editor::showImGuiDemo(const std::string &openName) {
+        bool open = m_luaManager.get<bool>(openName);
+
+        ImGui::ShowDemoWindow(&open);
+
+        m_luaManager.getState()[openName] = open;
     }
 
 } // namespace editor

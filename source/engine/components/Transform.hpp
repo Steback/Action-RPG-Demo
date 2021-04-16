@@ -5,6 +5,9 @@
 #include "glm/glm.hpp"
 #include <glm/detail/type_quat.hpp>
 
+#define SOL_ALL_SAFETIES_ON 1
+#include "sol/sol.hpp"
+
 
 namespace engine {
 
@@ -33,6 +36,11 @@ namespace engine {
         [[nodiscard]] glm::vec3& getRotation();
 
         void setRotation(glm::vec3 rotation);
+
+        static void setLuaBindings(sol::table& table);
+
+    private:
+        float* getSpeedPtr(bool ptr);
 
     private:
         glm::vec3 m_position{};

@@ -5,20 +5,19 @@
 
 #define SOL_ALL_SAFETIES_ON 1
 #include "sol/sol.hpp"
-
-
-#define WINDOW_ARGS std::string name, float with, float height, uint32_t flags
+#include "glm/glm.hpp"
 
 
 namespace engine::ui {
 
     enum WindowFlags {
-        reqOpen = 1 << 0
+        close = 1 << 0,
+        fixPosition = 1 << 1,
     };
 
     class Window {
     public:
-        Window(WINDOW_ARGS);
+        Window(std::string name, float with, float height, uint32_t flags);
 
         std::string getName();
 
@@ -32,16 +31,21 @@ namespace engine::ui {
 
         void setHeight(float height);
 
-        void draw(const sol::function& f);
+        void draw(const sol::function& f, int flags = 0);
 
         bool isOpen() const;
+
+        void setState(bool state);
+
+        void setPosition(float x, float y);
 
         static void setLuaClass(sol::table& state);
 
     private:
         std::string m_name;
         float m_width{}, m_height{};
-        bool m_open{true};
+        glm::vec2 m_position{};
+        bool m_open{false};
         uint32_t m_flags{};
     };
 

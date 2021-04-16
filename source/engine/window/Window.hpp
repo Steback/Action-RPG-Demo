@@ -9,6 +9,10 @@
 #include "glm/glm.hpp"
 
 
+namespace sol {
+    class state;
+}
+
 namespace engine {
     struct WindowSize {
         uint32_t width{}, height{};
@@ -45,6 +49,8 @@ namespace engine {
         glm::vec2& getScrollOffset();
 
         bool& isScrolling();
+
+        void setLuaBindings(sol::state& state);
 
     private:
         static void framebufferResizeCallback(GLFWwindow* tWindow, int width, int height);

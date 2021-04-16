@@ -15,6 +15,7 @@
 #include "components/Transform.hpp"
 #include "resources/ResourceManager.hpp"
 #include "lua/LuaManager.hpp"
+#include "ui/UIRender.hpp"
 
 
 namespace engine {

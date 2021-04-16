@@ -11,6 +11,14 @@
 
 namespace engine {
 
+    void Entity::setLuaBindings(sol::table& table) {
+        table.new_usertype<Entity>("Entity",
+                                   "id", &Entity::id,
+                                   "name", &Entity::name,
+                                   "components", &Entity::components,
+                                   "flags", &Entity::flags);
+    }
+
     Scene::Scene() = default;
 
     Scene::~Scene() = default;
@@ -78,7 +86,7 @@ namespace engine {
         return m_camera;
     }
 
-    void Scene::loadScene(const std::string &uri, bool editorBuild) {
+    void Scene::loadScene(const std::string &uri, bool editorBuild, std::vector<std::string>* modelNames) {
         cleanup();
 
         json scene;
@@ -135,6 +143,8 @@ namespace engine {
                 m_registry.emplace<engine::Model>(entity.enttID,
                                                   engine::Application::m_resourceManager->createModel(model["name"].get<std::string>() + ".gltf", model["name"]),
                                                   entity.id);
+
+                if (modelNames) modelNames->push_back(model["name"].get<std::string>());
             }
 
             entity.components = ComponentFlags::TRANSFORM | ComponentFlags::MODEL;
@@ -222,6 +232,48 @@ namespace engine {
 
     entt::registry &Scene::registry() {
         return m_registry;
+    }
+
+    void Scene::setLuaBindings(sol::state &state) {
+        sol::table scene = state["scene"].get_or_create<sol::table>();
+        sol::table components = state["components"].get_or_create<sol::table>();
+
+        Transform::setLuaBindings(components);
+        Model::setLuaBindings(components);
+
+        components.new_enum("type",
+                       "transform", ComponentFlags::TRANSFORM,
+                       "model", ComponentFlags::MODEL);
+
+        scene.new_enum("EntityType",
+                       "player", EntityFlags::PLAYER,
+                       "enemy", EntityFlags::ENEMY,
+                       "building", EntityFlags::BUILDING,
+                       "camera", EntityFlags::CAMERA);
+
+        Camera::setLuaBindings(scene);
+        Entity::setLuaBindings(scene);
+
+        scene.set_function("getCamera", &Scene::getCamera, this);
+        scene.set_function("getEntity", &Scene::getEntity, this);
+        scene["entities"] = std::ref(m_entities);
+
+        sol::table entityComponents = scene["components"].get_or_create<sol::table>();
+        entityComponents.set_function("getTransform", &Scene::getTransform, this);
+        entityComponents.set_function("getCamera", &Scene::getCameraComponent, this);
+        entityComponents.set_function("getModel", &Scene::getModel, this);
+    }
+
+    Transform &Scene::getTransform(uint32_t id) {
+        return getComponent<Transform>(id);
+    }
+
+    Camera &Scene::getCameraComponent(uint32_t id) {
+        return getComponent<Camera>(id);
+    }
+
+    Model &Scene::getModel(uint32_t id) {
+        return getComponent<Model>(id);
     }
 
 } // namespace core
