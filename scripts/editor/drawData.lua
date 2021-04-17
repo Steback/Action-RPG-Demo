@@ -52,7 +52,7 @@ function drawData.entitiesPropertiesPanel()
             end
         end)
 
-        if (entity.type == scene.EntityType.camera) ~= 0 then
+        if (entity.type == scene.EntityType.camera) then
             if imgui.collapsingHeader("Camera") then
                 local camera = scene.components.getCamera(entity.id)
 

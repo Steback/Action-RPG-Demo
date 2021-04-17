@@ -33,6 +33,10 @@ namespace engine {
     }
 
     void ResourceManager::createTexture(const std::string &fileName, const std::string& name) {
+        if (m_textures.find(engine::tools::hashString(name)) != m_textures.end()) {
+            return ;
+        }
+
         int width, height;
         vk::DeviceSize imageSize;
         stbi_uc* pixels = engine::tools::loadTextureFile(fileName, &width, &height, &imageSize);
@@ -241,6 +245,12 @@ namespace engine {
     }
 
     uint64_t ResourceManager::loadMesh(const std::string& name, const tinygltf::Mesh &mesh, const tinygltf::Model &model, uint64_t texturesID) {
+        uint64_t meshID = engine::tools::hashString(name);
+
+        if (m_meshes.find(meshID) != m_meshes.end()) {
+            return meshID;
+        }
+
         std::vector<engine::Vertex> vertices;
         std::vector<uint32_t> indices;
 
@@ -324,7 +334,6 @@ namespace engine {
             }
         }
 
-        uint64_t meshID = engine::tools::hashString(name);
         m_meshes[meshID] = engine::Mesh(vertices, indices, m_graphicsQueue, texturesID, m_device);
 
         return meshID;
