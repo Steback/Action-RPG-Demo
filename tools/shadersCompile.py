@@ -2,7 +2,14 @@
 import sys
 import os
 
-GLSLC = '../bin/glslangValidator'
+
+GLSLC =''
+
+if sys.platform == "linux":
+    GLSLC = '../bin/glslangValidator'
+elif sys.platform == "win32":
+    GLSLC = '../bin/glslangValidator.exe'
+
 SHADERS_DIR = '../data/shaders/'
 BUILD_DIR = '../bin/shaders/'
 
