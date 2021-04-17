@@ -2,8 +2,7 @@
 import sys
 import os
 
-
-GLSLC =''
+GLSLC = ''
 
 if sys.platform == "linux":
     GLSLC = '../bin/glslangValidator'
@@ -23,4 +22,3 @@ if __name__ == "__main__":
         cmd = GLSLC + ' -V -o ' + (BUILD_DIR + shader + '.spv') + ' ' + (SHADERS_DIR + shader)
         print(cmd)
         os.system(cmd)
-
