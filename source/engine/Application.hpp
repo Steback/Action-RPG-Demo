@@ -16,6 +16,7 @@
 #include "resources/ResourceManager.hpp"
 #include "lua/LuaManager.hpp"
 #include "ui/UIRender.hpp"
+#include "threads/ThreadPool.hpp"
 
 
 namespace engine {
@@ -45,12 +46,13 @@ namespace engine {
 
         virtual void renderCommands(vk::CommandBuffer& cmdBuffer) = 0;
 
-        float getDeltaTime();
+        [[nodiscard]] float getDeltaTime() const;
 
     public:
         static std::unique_ptr<engine::RenderDevice> m_renderer;
         static std::unique_ptr<engine::ResourceManager> m_resourceManager;
         static std::unique_ptr<engine::Scene> m_scene;
+        static std::unique_ptr<ThreadPool> m_threadPool;
 
     protected:
         std::shared_ptr<engine::Window> m_window;

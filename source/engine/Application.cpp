@@ -12,6 +12,7 @@ namespace engine {
     std::unique_ptr<engine::RenderDevice> Application::m_renderer;
     std::unique_ptr<engine::ResourceManager> Application::m_resourceManager;
     std::unique_ptr<engine::Scene> Application::m_scene;
+    std::unique_ptr<ThreadPool> Application::m_threadPool;
 
     Application::Application(const std::string& appName, const glm::vec4& clearColor)
             : m_clearColor(clearColor) {
@@ -55,6 +56,8 @@ namespace engine {
         tools.set_function("hashString", &tools::hashString);
         tools.set_function("getDeltaTime", &Application::getDeltaTime, this);
 
+        m_threadPool = std::make_unique<ThreadPool>();
+
         spdlog::info("[App] Start");
     }
 
@@ -70,6 +73,7 @@ namespace engine {
         vkDeviceWaitIdle(m_device->m_logicalDevice);
 
         cleanup();
+        m_threadPool->stop();
         m_scene->cleanup();
         m_ui.cleanupResources();
         m_ui.cleanup();
@@ -117,7 +121,7 @@ namespace engine {
         }
     }
 
-    float Application::getDeltaTime() {
+    float Application::getDeltaTime() const {
         return m_deltaTime;
     }
 

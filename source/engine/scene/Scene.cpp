@@ -24,19 +24,21 @@ namespace engine {
     Scene::~Scene() = default;
 
     void Scene::update(float deltaTime) {
+        auto viewCamera = m_registry.view<Camera>();
+        for (auto& entity : viewCamera) {
+            Application::m_threadPool->submit([camera = &m_registry.get<Camera>(entity), transform = &m_registry.get<Transform>(entity)]{
+                glm::vec2 angles = camera->getEulerAngles();
+                camera->setDirection(angles.x, angles.y);
+                transform->getPosition() = camera->getCenter() + (camera->getDirection() * camera->getDistance());
+                camera->getEye() = transform->getPosition();
+            });
+        }
+
         for (auto& entity : m_entities) {
-            if (entity.type == EntityType::CAMERA) {
-                auto& camera = m_registry.get<engine::Camera>(entity.enttID);
-                auto& transform = m_registry.get<engine::Transform>(entity.enttID);
-
-                glm::vec2 angles = camera.getEulerAngles();
-
-                camera.setDirection(angles.x, angles.y);
-
-                transform.getPosition() = camera.getCenter() + (camera.getDirection() * camera.getDistance());
-                camera.getEye() = transform.getPosition();
-            } else {
-                m_registry.get<engine::Transform>(entity.enttID).update(deltaTime);
+            if (entity.type != EntityType::CAMERA) {
+                Application::m_threadPool->submit([transform = &m_registry.get<engine::Transform>(entity.enttID), deltaTime] {
+                    transform->update(deltaTime);
+                });
             }
         }
     }
