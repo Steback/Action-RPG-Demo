@@ -7,6 +7,7 @@
 #include "Application.hpp"
 #include "renderer/GraphicsPipeline.hpp"
 
+
 namespace engine::ui {
     class Window;
 }
@@ -62,7 +63,7 @@ namespace editor {
 
         void saveScene(const std::string& title, const std::string& filters, const std::string& path, const std::string& openName);
 
-        void loadScene(const std::string& title, const std::string& filters, const std::string& path, const std::string& openName);
+        void loadScene(const std::string& title, const std::string& filters, const std::string& path, const std::string& openName, const std::string& selected);
 
         void showImGuiDemo(const std::string& openName);
 

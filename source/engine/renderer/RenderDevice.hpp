@@ -84,6 +84,7 @@ namespace engine {
 
     public:
         MVP m_mvp{};
+        std::mutex m_queueMutex;
 
     private:
         std::shared_ptr<Window> m_window;

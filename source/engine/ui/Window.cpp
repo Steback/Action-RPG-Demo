@@ -39,7 +39,7 @@ namespace engine::ui {
         m_height = height;
     }
 
-    void Window::draw(const sol::function& f, int flags) {
+    void Window::drawLua(const sol::function& f, int flags) {
         if (m_flags & WindowFlags::fixPosition)
             ImGui::SetNextWindowPos({m_position.x, m_position.y});
 
@@ -58,6 +58,18 @@ namespace engine::ui {
             f();
 #endif
 
+        }
+        ImGui::End();
+    }
+
+    void Window::draw(std::function<void()> f, int flags) {
+        if (m_flags & WindowFlags::fixPosition)
+            ImGui::SetNextWindowPos({m_position.x, m_position.y});
+
+        ImGui::SetNextWindowSize({m_width, m_height});
+        ImGui::Begin(m_name.c_str(), (m_flags & WindowFlags::close ? &m_open : nullptr), flags);
+        {
+            f();
         }
         ImGui::End();
     }
@@ -87,7 +99,7 @@ namespace engine::ui {
                                    "setWidth", &Window::setWidth,
                                    "getHeight", &Window::getHeight,
                                    "setHeight", &Window::setHeight,
-                                   "draw", &Window::draw,
+                                   "draw", &Window::drawLua,
                                    "open", &Window::isOpen,
                                    "setState", &Window::setState,
                                    "setPosition", &Window::setPosition);

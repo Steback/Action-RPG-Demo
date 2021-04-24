@@ -2,6 +2,7 @@
 #define PROTOTYPE_ACTION_RPG_UI_WINDOW_HPP
 
 #include <string>
+#include <functional>
 
 #define SOL_ALL_SAFETIES_ON 1
 #include "sol/sol.hpp"
@@ -31,7 +32,9 @@ namespace engine::ui {
 
         void setHeight(float height);
 
-        void draw(const sol::function& f, int flags = 0);
+        void drawLua(const sol::function& f, int flags = 0);
+
+        void draw(std::function<void()> f, int flags = 0);
 
         bool isOpen() const;
 

@@ -3,6 +3,7 @@
 #include "Instance.hpp"
 #include "CommandList.hpp"
 #include "../Utilities.hpp"
+#include "../Application.hpp"
 
 
 namespace engine {
@@ -178,8 +179,12 @@ namespace engine {
         // Create fence to ensure that the command buffer has finished executing
         vk::Fence fence = m_logicalDevice.createFence({});
 
-        // Submit to the queue
-        VK_CHECK_RESULT_HPP(queue.submit(1, &submitInfo, fence))
+        {
+            std::unique_lock<std::mutex> lock(Application::m_renderer->m_queueMutex);
+
+            // Submit to the queue
+            VK_CHECK_RESULT_HPP(queue.submit(1, &submitInfo, fence))
+        }
 
         // Wait for the fence to signal that command buffer has finished executing
         VK_CHECK_RESULT_HPP(m_logicalDevice.waitForFences(1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max()))

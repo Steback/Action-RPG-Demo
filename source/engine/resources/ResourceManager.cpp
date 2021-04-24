@@ -6,7 +6,6 @@
 #define TINYGLTF_NO_STB_IMAGE_WRITE
 #include "tiny_gltf.h"
 #include "fmt/format.h"
-#include "glm/detail/type_quat.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
 #include "Shader.hpp"
@@ -334,7 +333,8 @@ namespace engine {
             }
         }
 
-        m_meshes[meshID] = engine::Mesh(vertices, indices, m_graphicsQueue, texturesID, m_device);
+        // TODO: Check validation layer for use CommandPool with different queue family index
+        m_meshes[meshID] = engine::Mesh(vertices, indices, m_device->m_logicalDevice.getQueue(m_device->m_queueFamilyIndices.transfer, 0), texturesID, m_device);
 
         return meshID;
     }

@@ -116,15 +116,19 @@ namespace engine {
 
         for (int i = 0; i < m_commands.size(); ++i) cmdBuffers[i] = m_commands[i]->getBuffer();
 
-        m_graphicsQueue.submit(vk::SubmitInfo{
-            .waitSemaphoreCount = 1,
-            .pWaitSemaphores = waitSemaphores,
-            .pWaitDstStageMask = waitStages,
-            .commandBufferCount = static_cast<uint32_t>(cmdBuffers.size()),
-            .pCommandBuffers = cmdBuffers.data(),
-            .signalSemaphoreCount = 1,
-            .pSignalSemaphores = signalSemaphores
-        }, m_fences[m_currentFrame]);
+        {
+            std::unique_lock<std::mutex> lock(m_queueMutex);
+
+            m_graphicsQueue.submit(vk::SubmitInfo{
+                    .waitSemaphoreCount = 1,
+                    .pWaitSemaphores = waitSemaphores,
+                    .pWaitDstStageMask = waitStages,
+                    .commandBufferCount = static_cast<uint32_t>(cmdBuffers.size()),
+                    .pCommandBuffers = cmdBuffers.data(),
+                    .signalSemaphoreCount = 1,
+                    .pSignalSemaphores = signalSemaphores
+            }, m_fences[m_currentFrame]);
+        }
 
         vk::SwapchainKHR swapChains[] = { m_swapChain.getSwapChain() };
         vk::Result result = m_graphicsQueue.presentKHR({

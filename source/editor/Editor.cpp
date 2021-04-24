@@ -58,6 +58,8 @@ namespace editor {
 
         loadMenuBar(m_luaManager.getState());
         m_luaManager.executeFunction("init");
+
+        auto windowSize = m_window->getSize();
     }
 
     void Editor::update() {
@@ -81,7 +83,6 @@ namespace editor {
         if (ImGui::BeginMainMenuBar()) {
             for (auto& menuBar : m_menuBar) {
                 if (ImGui::BeginMenu(menuBar.name.c_str())) {
-
                     for (auto& item : menuBar.items) {
                         if (ImGui::MenuItem(item.name.c_str())) engine::LuaManager::executeFunction(item.func);
                     }
@@ -197,8 +198,9 @@ namespace editor {
             if (ImGuiFileDialog::Instance()->IsOk()) {
                 std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
 
-                fmt::print("{}\n", filePathName);
-                m_scene->saveScene(filePathName, true);
+                m_threadPool->submit([scene = m_scene.get(), filePathName] {
+                    scene->saveScene(filePathName, true);
+                });
             }
 
             ImGuiFileDialog::Instance()->Close();
@@ -207,7 +209,7 @@ namespace editor {
         }
     }
 
-    void Editor::loadScene(const std::string& title, const std::string& filters, const std::string& path, const std::string& openName) {
+    void Editor::loadScene(const std::string& title, const std::string& filters, const std::string& path, const std::string& openName, const std::string& selected) {
         bool open = m_luaManager.get<bool>(openName);
 
         ImGui::SetNextWindowSize({500, 250});
@@ -217,28 +219,30 @@ namespace editor {
 
         if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) {
             if (ImGuiFileDialog::Instance()->IsOk()) {
+                m_luaManager.getState()[selected] = true;
                 std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
 
-                int idx = (int)filePathName.rfind('/');
-                std::string fileName = filePathName.substr(idx + 1, filePathName.size());
+                m_threadPool->submit([path = filePathName, entitiesInfo = &m_entitiesInfo, name = &m_sceneName, loaded = &m_sceneLoaded, scene = m_scene.get(), modelNames = &m_modelsNames]{
+                    int idx = (int)path.rfind('/');
+                    std::string fileName = path.substr(idx + 1, path.size());
 
-                m_entitiesInfo.clear();
+                    entitiesInfo->clear();
+                    scene->loadScene(path, true, modelNames);
 
-                m_sceneName  = filePathName;
-                m_sceneLoaded = true;
+                    for (auto& entity : m_scene->getEntities()) {
+                        auto& model = m_scene->getComponent<engine::Model>(entity.id);
+                        int modelID;
 
-                m_scene->loadScene(filePathName, true, &m_modelsNames);
+                        for (int i = 0; i < modelNames->size(); ++i) {
+                            if (modelNames->at(i) == model.getName()) modelID = i;
+                        }
 
-                for (auto& entity : m_scene->getEntities()) {
-                    auto& model = m_scene->getComponent<engine::Model>(entity.id);
-                    int modelID;
-
-                    for (int i = 0; i < m_modelsNames.size(); ++i) {
-                        if (m_modelsNames[i] == model.getName()) modelID = i;
+                        entitiesInfo->push_back({entity.id, entity.name, modelID});
                     }
 
-                    m_entitiesInfo.push_back({entity.id, entity.name, modelID});
-                }
+                    *name = path;
+                    *loaded = true;
+                });
             }
 
             ImGuiFileDialog::Instance()->Close();

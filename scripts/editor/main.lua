@@ -10,6 +10,7 @@ openDemoWindow = false
 local cameraControls
 local entitiesPanel
 local entityPropertiesPanel
+local progressBar
 
 menuBar = {
     [0] = {
@@ -76,7 +77,6 @@ menuBar = {
     }
 }
 
-
 function init()
     local windowSize = window.size()
 
@@ -92,17 +92,40 @@ function init()
     entityPropertiesPanel = ui.createWindow("Test Properties", 350.0, ((windowSize.height * 0.5)), ui.WindowFlags.fixPosition);
     entityPropertiesPanel:setPosition(0.0, windowSize.height * 0.5)
     entityPropertiesPanel:setState(true)
+
+    -- Progress Barr
+    local barWidth = 420
+    local barHeight = 60
+
+    progressBar = ui.createWindow("Loading..", barWidth, barHeight, ui.WindowFlags.fixPosition)
+    progressBar:setPosition((windowSize.width / 2) - (barWidth / 2), (windowSize.height / 2) - (barHeight / 2))
 end
 
+local progress = 0.0
+selectFile = false
 function drawUI()
     -- Windows
     if cameraControls:open() then cameraControls:draw(drawData.cameraControls, 0) end
     entitiesPanel:draw(drawData.entitiesPanel, imgui.flags.noCollapse | imgui.flags.noResize)
     entityPropertiesPanel:draw(drawData.entitiesPropertiesPanel, imgui.flags.noCollapse | imgui.flags.noResize)
 
+    if selectFile then
+        progressBar:setState(true)
+        progressBar:draw(function()
+            if (progress <= 1.1) then
+                progress = progress + 0.5 * tools.getDeltaTime()
+            else
+                progressBar:setState(false)
+                selectFile = false;
+            end
+
+            imgui.progressBar(progress, -1.0, -1.0);
+        end, imgui.flags.noCollapse | imgui.flags.noResize)
+    end
+
     -- Functions
     if openSaveScene then editor.saveScene("Select directory and file name", ".json", "../data/", "openSaveScene") end
-    if openLoadScene then editor.loadScene("Select a file", ".json", "../data/", "openLoadScene") end
+    if openLoadScene then editor.loadScene("Select a file", ".json", "../data/", "openLoadScene", "selectFile") end
     if openAddModel then editor.addModel("Choose File", ".gltf", "../Assets/models", "openAddModel") end
     if openDemoWindow then imgui.showDemo("openDemoWindow") end
 end
