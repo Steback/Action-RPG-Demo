@@ -4,6 +4,7 @@
 
 #include <string>
 #include <vector>
+#include <mutex>
 
 #include "entt/entt.hpp"
 #include "nlohmann/json.hpp"
@@ -13,6 +14,7 @@
 #include "../Constants.hpp"
 #include "../components/Transform.hpp"
 #include "../components/Model.hpp"
+#include "../renderer/GraphicsPipeline.hpp"
 
 using json = nlohmann::json;
 
@@ -53,7 +55,7 @@ namespace engine {
 
         void update(float deltaTime);
 
-        void render(vk::CommandBuffer& cmdBuffer, const vk::PipelineLayout& layout, const vk::DescriptorSet& set, MVP& mvp);
+        void render(vk::CommandBuffer& cmdBuffer, const std::shared_ptr<GraphicsPipeline>& pipeline);
 
         void cleanup();
 

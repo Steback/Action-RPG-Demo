@@ -29,6 +29,8 @@ namespace engine {
 
         bool empty();
 
+        std::vector<std::thread>& getThreads();
+
     private:
         void waitTask();
 

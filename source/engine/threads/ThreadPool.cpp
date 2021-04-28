@@ -60,4 +60,8 @@ namespace engine {
         m_condition.notify_one();
     }
 
+    std::vector<std::thread> &ThreadPool::getThreads() {
+        return m_pool;
+    }
+
 } // namespace engine

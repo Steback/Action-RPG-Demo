@@ -7,6 +7,7 @@
 #include "imgui.h"
 
 #include "../Application.hpp"
+#include "../renderer/CommandList.hpp"
 
 
 namespace engine {
@@ -43,11 +44,11 @@ namespace engine {
         }
     }
 
-    void Scene::render(vk::CommandBuffer& cmdBuffer, const vk::PipelineLayout& layout, const vk::DescriptorSet& set, MVP& mvp) {
+    void Scene::render(vk::CommandBuffer& cmdBuffer, const std::shared_ptr<GraphicsPipeline>& pipeline) {
         auto view = m_registry.view<engine::Model>();
 
         for (auto& entity : view) {
-            view.get<engine::Model>(entity).render(cmdBuffer, layout, set, mvp);
+            view.get<Model>(entity).render(cmdBuffer, pipeline->getLayout());;
         }
     }
 

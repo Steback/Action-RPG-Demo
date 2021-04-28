@@ -15,13 +15,13 @@ namespace engine {
         if (!m_sharedPool) m_device.destroy(m_pool);
     }
 
-    void CommandList::initBuffers(uint32_t imageCount, uint32_t *imageIndex) {
+    void CommandList::initBuffers(uint32_t imageCount, uint32_t *imageIndex, uint32_t level) {
         m_imageIndex = imageIndex;
         m_buffers.resize(imageCount);
 
         m_buffers = m_device.allocateCommandBuffers({
             .commandPool = m_pool,
-            .level = vk::CommandBufferLevel::ePrimary,
+            .level = (level == 0 ? vk::CommandBufferLevel::ePrimary : vk::CommandBufferLevel::eSecondary),
             .commandBufferCount = imageCount,
         });
     }
@@ -62,7 +62,7 @@ namespace engine {
         m_buffers[*m_imageIndex].endRenderPass();
     }
 
-    void CommandList::begin(vk::CommandBufferUsageFlagBits usage) {
+    void CommandList::begin(vk::CommandBufferUsageFlags usage) {
         m_buffers[*m_imageIndex].begin({
             .flags = usage
         });

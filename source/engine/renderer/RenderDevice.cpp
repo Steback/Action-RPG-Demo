@@ -80,7 +80,7 @@ namespace engine {
             m_logicalDevice.destroy(m_fences[i]);
         }
 
-        for (auto& cmdList : m_commands) {
+        for (auto& cmdList : m_mainCommands) {
             cmdList->cleanup();
         }
 
@@ -112,9 +112,9 @@ namespace engine {
         vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
         vk::Semaphore signalSemaphores[] = { m_renderFinishedSemaphores[m_currentFrame] };
 
-        std::vector<vk::CommandBuffer> cmdBuffers(m_commands.size());
+        std::vector<vk::CommandBuffer> cmdBuffers(m_mainCommands.size());
 
-        for (int i = 0; i < m_commands.size(); ++i) cmdBuffers[i] = m_commands[i]->getBuffer();
+        for (int i = 0; i < m_mainCommands.size(); ++i) cmdBuffers[i] = m_mainCommands[i]->getBuffer();
 
         {
             std::unique_lock<std::mutex> lock(m_queueMutex);
@@ -295,7 +295,7 @@ namespace engine {
         createDescriptorPool();
         createDescriptorSets();
 
-        for (auto& cmd : m_commands) cmd->initBuffers(m_swapChain.getImageCount(), &m_indexImage);
+        for (auto& cmd : m_mainCommands) cmd->initBuffers(m_swapChain.getImageCount(), &m_indexImage);
 
         // TODO: Include UIImGui in resize window
 //        m_ui.resize(m_swapChain);
@@ -308,7 +308,7 @@ namespace engine {
 
         for (auto & framebuffer : m_framebuffers) m_logicalDevice.destroy(framebuffer);
 
-        for (auto& cmd : m_commands) cmd->free();
+        for (auto& cmd : m_mainCommands) cmd->free();
 
         for (auto& pipeline : m_pipelines) pipeline->cleanup();
 
@@ -422,8 +422,8 @@ namespace engine {
     }
 
     std::shared_ptr<CommandList> RenderDevice::addCommandList() {
-        m_commands.push_back(std::make_shared<CommandList>(m_device->createCommandPool(), m_logicalDevice));
-        std::shared_ptr<CommandList> cmd = m_commands.back();
+        m_mainCommands.push_back(std::make_shared<CommandList>(m_device->createCommandPool(), m_logicalDevice));
+        std::shared_ptr<CommandList> cmd = m_mainCommands.back();
 
         cmd->initBuffers(m_swapChain.getImageCount(), &m_indexImage);
 

@@ -110,7 +110,7 @@ namespace engine {
                 m_commands->beginRenderPass(m_renderer->getRenderPass(), m_clearColor, m_renderer->getFrameBuffer(), m_renderer->getSwapChainExtent());
                 {
                     m_pipeline->bind(m_commands->getBuffer());
-                    m_scene->render(m_commands->getBuffer(), m_pipeline->getLayout(), m_renderer->getDescriptorSet(), m_renderer->m_mvp);
+                    m_scene->render(m_commands->getBuffer(), m_pipeline);
                     renderCommands(m_commands->getBuffer());
                 }
                 m_commands->endRenderPass();

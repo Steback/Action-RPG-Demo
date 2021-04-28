@@ -2,6 +2,7 @@
 #define PROTOTYPE_ACTION_RPG_RENDERDEVICE_HPP
 
 
+#include <thread>
 #include <memory>
 #include <vector>
 
@@ -102,7 +103,7 @@ namespace engine {
 
         vk::RenderPass m_renderPass{};
 
-        std::vector<std::shared_ptr<CommandList>> m_commands;
+        std::vector<std::shared_ptr<CommandList>> m_mainCommands;
 
         std::vector<vk::Semaphore> m_imageAvailableSemaphores{};
         std::vector<vk::Semaphore> m_renderFinishedSemaphores{};

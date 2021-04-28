@@ -28,7 +28,7 @@ namespace engine {
 
         std::string& getName();
 
-        void render(vk::CommandBuffer& cmdBuffer, const vk::PipelineLayout& layout, const vk::DescriptorSet& set, MVP& mvp);
+        void render(vk::CommandBuffer& cmdBuffer, const vk::PipelineLayout& layout);
 
         void setModel(uint64_t modelID);
 

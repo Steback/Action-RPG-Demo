@@ -29,7 +29,9 @@ namespace engine {
         return m_model->getName();
     }
 
-    void Model::render(vk::CommandBuffer& cmdBuffer, const vk::PipelineLayout& layout, const vk::DescriptorSet& set, MVP& mvp) {
+    void Model::render(vk::CommandBuffer& cmdBuffer, const vk::PipelineLayout& layout) {
+        MVP mvp = Application::m_renderer->m_mvp;
+
         for (auto& node : m_model->getNodes()) {
             if (node.mesh > 0) {
                 auto& transform = engine::Application::m_scene->getComponent<engine::Transform>(m_entityID);
@@ -53,7 +55,7 @@ namespace engine {
                 cmdBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(mvpMatrix), &mvpMatrix);
 
                 std::array<vk::DescriptorSet, 2> descriptorSetGroup = {
-                        set,
+                        Application::m_renderer->getDescriptorSet(),
                         engine::Application::m_resourceManager->getTexture(mesh.getTextureId()).getDescriptorSet()
                 };
 

@@ -14,7 +14,7 @@ namespace engine {
 
         void cleanup();
 
-        void initBuffers(uint32_t imageCount = 1, uint32_t* imageIndex = nullptr);
+        void initBuffers(uint32_t imageCount = 1, uint32_t* imageIndex = nullptr, uint32_t level = 0);
 
         void free();
 
@@ -27,7 +27,7 @@ namespace engine {
 
         void endRenderPass();
 
-        void begin(vk::CommandBufferUsageFlagBits usage = vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+        void begin(vk::CommandBufferUsageFlags usage = vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
         void end();
 
