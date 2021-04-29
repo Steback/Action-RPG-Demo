@@ -23,10 +23,16 @@ namespace engine {
                 .location = 1,
                 .binding = 0,
                 .format = vk::Format::eR32G32B32Sfloat,
-                .offset = offsetof(Vertex, color)
+                .offset = offsetof(Vertex, normal)
             },
             {
                 .location = 2,
+                .binding = 0,
+                .format = vk::Format::eR32G32B32Sfloat,
+                .offset = offsetof(Vertex, color)
+            },
+            {
+                .location = 3,
                 .binding = 0,
                 .format = vk::Format::eR32G32Sfloat,
                 .offset = offsetof(Vertex, texCoord)

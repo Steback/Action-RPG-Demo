@@ -46,14 +46,6 @@ namespace engine {
                 auto& mesh = Application::m_resourceManager->getMesh(node.mesh);
                 mvp.model = modelMatrix;
 
-                vk::Buffer vertexBuffer[] = {mesh.getVertexBuffer()};
-                vk::DeviceSize offsets[] = {0};
-                cmdBuffer.bindVertexBuffers(0, 1, vertexBuffer, offsets);
-                cmdBuffer.bindIndexBuffer(mesh.getIndexBuffer(), 0, vk::IndexType::eUint32);
-
-                glm::mat4 mvpMatrix = mvp.getMatrix();
-                cmdBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(mvpMatrix), &mvpMatrix);
-
                 std::array<vk::DescriptorSet, 2> descriptorSetGroup = {
                         Application::m_renderer->getDescriptorSet(),
                         engine::Application::m_resourceManager->getTexture(mesh.getTextureId()).getDescriptorSet()
@@ -62,6 +54,14 @@ namespace engine {
                 cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, 0,
                                              static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0,
                                              nullptr);
+
+                glm::mat4 mvpMatrix = mvp.getMatrix();
+                cmdBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(mvpMatrix), &mvpMatrix);
+
+                vk::Buffer vertexBuffer[] = {mesh.getVertexBuffer()};
+                vk::DeviceSize offsets[] = {0};
+                cmdBuffer.bindVertexBuffers(0, 1, vertexBuffer, offsets);
+                cmdBuffer.bindIndexBuffer(mesh.getIndexBuffer(), 0, vk::IndexType::eUint32);
 
                 cmdBuffer.drawIndexed(mesh.getIndexCount(), 1, 0, 0, 0);
             }

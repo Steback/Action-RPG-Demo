@@ -266,21 +266,26 @@ namespace engine {
                 if (primitive.attributes.find("POSITION") != primitive.attributes.end()) {
                     const tinygltf::Accessor& accessor = model.accessors[primitive.attributes.find("POSITION")->second];
                     const tinygltf::BufferView& view = model.bufferViews[accessor.bufferView];
-
                     positionBuffer = reinterpret_cast<const float*>(&(model.buffers[view.buffer].data[accessor.byteOffset + view.byteOffset]));
                     vertexCount = accessor.count;
+                }
+
+                if (primitive.attributes.find("NORMAL") != primitive.attributes.end()) {
+                    const tinygltf::Accessor& accessor = model.accessors[primitive.attributes.find("NORMAL")->second];
+                    const tinygltf::BufferView& view = model.bufferViews[accessor.bufferView];
+                    normalsBuffer = reinterpret_cast<const float*>(&(model.buffers[view.buffer].data[accessor.byteOffset + view.byteOffset]));
                 }
 
                 if (primitive.attributes.find("TEXCOORD_0") != primitive.attributes.end()) {
                     const tinygltf::Accessor& accessor = model.accessors[primitive.attributes.find("TEXCOORD_0")->second];
                     const tinygltf::BufferView& view = model.bufferViews[accessor.bufferView];
-
                     texCoordsBuffer = reinterpret_cast<const float*>(&(model.buffers[view.buffer].data[accessor.byteOffset + view.byteOffset]));
                 }
 
                 for (size_t v = 0; v < vertexCount; ++v) {
                     engine::Vertex vertex{};
                     vertex.position = glm::make_vec3(&positionBuffer[v * 3]);
+                    vertex.normal = glm::normalize(glm::vec3(normalsBuffer ? glm::make_vec3(&normalsBuffer[v * 3]) : glm::vec3(0.0f)));
                     vertex.texCoord = texCoordsBuffer ? glm::make_vec2(&texCoordsBuffer[v * 2]) : glm::vec2(0.0f);
                     vertex.color = glm::vec3(1.0f);
 
