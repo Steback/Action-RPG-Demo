@@ -21,10 +21,12 @@ namespace engine::lua {
 
         imgui.set_function("text", &ImGui::Text);
         imgui.set_function("separator", &ImGui::Separator);
+        imgui.set_function("button", [](const std::string& label) {return ImGui::Button(label.c_str()); });
         imgui.set_function("collapsingHeader", [](const std::string& title){ return ImGui::CollapsingHeader(title.c_str()); });
         imgui.set_function("selectable", [](const std::string& text, bool comapration){ return ImGui::Selectable(text.c_str(), comapration); });
         imgui.set_function("inputFloat3", [](const std::string& title, glm::vec3& v){ ImGui::InputFloat3(title.c_str(), glm::value_ptr(v)); });
         imgui.set_function("inputFloat2", [](const std::string& title, glm::vec2& v){ ImGui::InputFloat2(title.c_str(), glm::value_ptr(v)); });
+        imgui.set_function("inputFloat4", [](const std::string& title, glm::quat& q){ ImGui::InputFloat4(title.c_str(), glm::value_ptr(q)); });
         imgui.set_function("inputFloat", [](const std::string& title, float* n){ ImGui::InputFloat(title.c_str(), n); });
         imgui.set_function("getFrameRate", [](){ return ImGui::GetIO().Framerate; });
         imgui.set_function("progressBar", [](float fraction, float width, float height){ ImGui::ProgressBar(fraction, {width, height}); });
@@ -44,6 +46,12 @@ namespace engine::lua {
             ImGui::Checkbox(label.c_str(), &check);
 
             return check;
+        });
+        imgui.set_function("treeNode", [](const std::string& label, const sol::function& f){
+            if (ImGui::TreeNode(label.c_str())) {
+                LuaManager::executeFunction(f);
+                ImGui::TreePop();
+            }
         });
     }
 }

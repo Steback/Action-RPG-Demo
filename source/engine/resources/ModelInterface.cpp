@@ -3,7 +3,6 @@
 #include <utility>
 
 #include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "fmt/format.h"
 
@@ -39,30 +38,34 @@ namespace engine {
     }
 
     void ModelInterface::loadNode(const tinygltf::Node &inputNode, const tinygltf::Model &inputModel, int parentID) {
-        glm::mat4 matrix(1.0f);
         ModelInterface::Node node{};
         node.id = m_nodes.size();
         node.name = inputNode.name;
 
         if (inputNode.translation.size() == 3) {
-            glm::vec3 translation = glm::make_vec3(inputNode.translation.data());
+            node.position = glm::make_vec3(inputNode.translation.data());
 
-            matrix = glm::translate(matrix, translation);
+//            matrix = glm::translate(matrix, node.position);
         }
 
         if (inputNode.rotation.size() == 4) {
             glm::quat rotation = glm::make_quat(inputNode.rotation.data());
+            node.rotation = glm::mat4(rotation);
 
-            matrix *= glm::mat4(rotation);
+//            matrix *= glm::mat4(node.rotation);
         }
 
         if (inputNode.scale.size() == 3) {
-            glm::vec3 scale = glm::make_vec3(inputNode.scale.data());
+            node.scale = glm::make_vec3(inputNode.scale.data());
 
-            matrix = glm::scale(matrix, scale);
+//            matrix = glm::scale(matrix, node.scale);
         }
 
-        node.matrix = matrix;
+        if (inputNode.matrix.size() == 16) {
+            node.matrix = glm::make_mat4x4(inputNode.matrix.data());
+        } else {
+            node.matrix = glm::mat4(1.0f);
+        }
 
         if (inputNode.mesh > -1) {
             const tinygltf::Mesh& mesh = inputModel.meshes[inputNode.mesh];
@@ -79,10 +82,6 @@ namespace engine {
         if (parentID != -1) {
             auto& parent = m_nodes[parentID];
             node.parent = parent.id;
-
-            // TODO: Find a better solution for matrix attributes bug
-            auto it = std::find(m_conflictsNodes.begin(), m_conflictsNodes.end(), node.name);
-            if (it == m_conflictsNodes.end()) node.matrix = parent.matrix * node.matrix;
 
             parent.children.push_back(node.id);
         } else {

@@ -18,26 +18,22 @@
 
 namespace engine {
 
-    const std::vector<std::string> m_conflictsNodes = {
-            "Bow",
-            "fould_A",
-            "fould_B",
-            "helmet_A",
-            "helmet_B",
-            "helmet_C",
-            "hood_A",
-            "skeleton_mesh"
-    };
-
     class ModelInterface {
     public:
         struct Node {
             uint id;
             std::string name;
             glm::mat4 matrix;
+            glm::vec3 position;
+            glm::quat rotation;
+            glm::vec3 scale;
             std::vector<int> children;
             uint64_t mesh;
             int parent;
+
+            glm::mat4 getLocalMatrix() {
+                return glm::translate(glm::mat4(1.0f), position) * glm::mat4(rotation) * glm::scale(glm::mat4(1.0f), scale) * matrix;
+            }
         };
 
     public:

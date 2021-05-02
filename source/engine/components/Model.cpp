@@ -32,28 +32,32 @@ namespace engine {
     void Model::render(vk::CommandBuffer& cmdBuffer, const vk::PipelineLayout& layout) {
         MVP mvp = Application::m_renderer->m_mvp;
 
+        std::array<vk::DescriptorSet, 2> descriptorSetGroup = {
+                Application::m_renderer->getDescriptorSet()
+        };
+
         for (auto& node : m_model->getNodes()) {
             if (node.mesh > 0) {
-                auto& transform = engine::Application::m_scene->getComponent<engine::Transform>(m_entityID);
-                glm::mat4 modelMatrix;
+                auto& transform = Application::m_scene->getComponent<Transform>(m_entityID);
+                glm::mat4 modelMatrix = node.getLocalMatrix();
+                int parentID = node.parent;
 
-                if (m_model->getBaseMesh().id == node.id) {
-                    modelMatrix = transform.worldTransformMatrix();
-                } else {
-                    modelMatrix = transform.worldTransformMatrix() * node.matrix;
+                while (parentID != -1) {
+                    ModelInterface::Node& parent = m_model->getNode(parentID);
+                    modelMatrix = parent.getLocalMatrix() * modelMatrix;
+                    parentID = parent.parent;
                 }
+
+                modelMatrix = transform.worldTransformMatrix() * modelMatrix;
+
+//                if (m_model->getBaseMesh().id == node.id) {
+//                    modelMatrix = transform.worldTransformMatrix();
+//                } else {
+//                    modelMatrix = transform.worldTransformMatrix() * modelMatrix;
+//                }
 
                 auto& mesh = Application::m_resourceManager->getMesh(node.mesh);
                 mvp.model = modelMatrix;
-
-                std::array<vk::DescriptorSet, 2> descriptorSetGroup = {
-                        Application::m_renderer->getDescriptorSet(),
-                        engine::Application::m_resourceManager->getTexture(mesh.getTextureId()).getDescriptorSet()
-                };
-
-                cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, 0,
-                                             static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0,
-                                             nullptr);
 
                 glm::mat4 mvpMatrix = mvp.getMatrix();
                 cmdBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(mvpMatrix), &mvpMatrix);
@@ -62,6 +66,11 @@ namespace engine {
                 vk::DeviceSize offsets[] = {0};
                 cmdBuffer.bindVertexBuffers(0, 1, vertexBuffer, offsets);
                 cmdBuffer.bindIndexBuffer(mesh.getIndexBuffer(), 0, vk::IndexType::eUint32);
+
+                descriptorSetGroup[1] = engine::Application::m_resourceManager->getTexture(mesh.getTextureId()).getDescriptorSet();
+                cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, 0,
+                                             static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0,
+                                             nullptr);
 
                 cmdBuffer.drawIndexed(mesh.getIndexCount(), 1, 0, 0, 0);
             }
@@ -84,11 +93,24 @@ namespace engine {
     }
 
     void Model::setLuaBindings(sol::table &table) {
+        table.new_usertype<ModelInterface::Node>("Node",
+                                                 "getLocalMatrix", &ModelInterface::Node::getLocalMatrix,
+                                                 "id", &ModelInterface::Node::id,
+                                                 "name", &ModelInterface::Node::name,
+                                                 "position", &ModelInterface::Node::position,
+                                                 "rotation", &ModelInterface::Node::rotation,
+                                                 "scale", &ModelInterface::Node::scale,
+                                                 "children", &ModelInterface::Node::children,
+                                                 "mesh", &ModelInterface::Node::mesh,
+                                                 "parent", &ModelInterface::Node::parent);
+
         table.new_usertype<Model>("Model",
                                   sol::call_constructor, sol::constructors<Model(uint64_t, uint32_t)>(),
                                   "setModel", &Model::setModel,
                                   "getName", &Model::getName,
-                                  "descomposeMatrix", &Model::descomposeMatrix);
+                                  "descomposeMatrix", &Model::descomposeMatrix,
+                                  "getNodes", &Model::getNodes,
+                                  "getNode", &Model::getNode);
     }
 
 } // namespace core

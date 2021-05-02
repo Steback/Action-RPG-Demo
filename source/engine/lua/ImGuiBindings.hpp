@@ -8,7 +8,7 @@ namespace sol {
 
 namespace engine::lua {
 
-    void setImGuiBindings(sol::state& state);
+    void setImGuiBindings(sol::state& label);
 
 }
 

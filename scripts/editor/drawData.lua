@@ -1,6 +1,12 @@
+require 'utilities'
+
 -- Draw data
 drawData = {}
 
+-- Secondary windows
+local nodeView
+
+-- Main draw functions
 function drawData.cameraControls()
     local camera = scene.getCamera()
 
@@ -16,7 +22,6 @@ function drawData.cameraControls()
     imgui.separator()
     imgui.inputFloat("Distance", camera:getDistance())
 end
-
 
 entitySelected = 0
 function drawData.entitiesPanel()
@@ -106,7 +111,30 @@ function drawData.entitiesPropertiesPanel()
                         end
                     end
                 end)
+
+                if imgui.button("Nodes") then
+                    nodeView:setState(true)
+                end
             end
         end
+    end
+end
+
+-- Secondary draw functions
+function nodeViewDraw()
+    local model = scene.components.getModel(scene.entities:get(entitySelected).id)
+
+    utilities.drawNode(model:getNode(0), model)
+end
+
+-- Setup secondary windows
+function drawData.setup()
+    nodeView = ui.createWindow("Nodes view", -1.0, -1.0, ui.WindowFlags.close)
+end
+
+-- Draw secondary windows
+function drawData.draw()
+    if nodeView:open() then
+        nodeView:draw(nodeViewDraw, imgui.flags.noCollapse | imgui.flags.noResize)
     end
 end

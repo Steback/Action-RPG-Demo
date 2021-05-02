@@ -99,6 +99,8 @@ function init()
 
     progressBar = ui.createWindow("Loading..", barWidth, barHeight, ui.WindowFlags.fixPosition)
     progressBar:setPosition((windowSize.width / 2) - (barWidth / 2), (windowSize.height / 2) - (barHeight / 2))
+
+    drawData.setup()
 end
 
 local progress = 0.0
@@ -128,4 +130,7 @@ function drawUI()
     if openLoadScene then editor.loadScene("Select a file", ".json", "../data/", "openLoadScene", "selectFile") end
     if openAddModel then editor.addModel("Choose File", ".gltf", "../Assets/models", "openAddModel") end
     if openDemoWindow then imgui.showDemo("openDemoWindow") end
+
+    -- Draw data functions
+    drawData.draw()
 end
