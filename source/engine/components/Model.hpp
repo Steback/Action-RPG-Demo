@@ -22,8 +22,6 @@ namespace engine {
 
         engine::ModelInterface::Node& getNode(uint id);
 
-        engine::ModelInterface::Node& getBaseMesh();
-
         std::vector<engine::ModelInterface::Node>& getNodes();
 
         std::string& getName();
@@ -31,8 +29,6 @@ namespace engine {
         void render(vk::CommandBuffer& cmdBuffer, const vk::PipelineLayout& layout);
 
         void setModel(uint64_t modelID);
-
-        void descomposeMatrix(Transform& transform);
 
         static void setLuaBindings(sol::table& table);
 

@@ -11,6 +11,9 @@ namespace engine::lua {
     void setMathBindings(sol::state& state) {
         sol::table eMath = state.create_table("glm");
 
+        eMath.new_usertype<glm::mat4>("Mat4",
+                                      sol::call_constructor, sol::constructors<glm::mat4(), glm::mat4(float)>());
+
         eMath.new_usertype<glm::quat>("Quat",
                                       sol::call_constructor, sol::constructors<glm::quat(), glm::quat(float, float, float, float)>(),
                                       "x", &glm::quat::x,

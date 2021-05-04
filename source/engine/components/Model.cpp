@@ -1,7 +1,5 @@
 #include "Model.hpp"
 
-#include "glm/gtx/matrix_decompose.hpp"
-
 #include "../Utilities.hpp"
 #include "../Application.hpp"
 
@@ -15,10 +13,6 @@ namespace engine {
 
     engine::ModelInterface::Node &Model::getNode(uint id) {
         return m_model->getNode(id);
-    }
-
-    engine::ModelInterface::Node &Model::getBaseMesh() {
-        return m_model->getBaseMesh();
     }
 
     std::vector<engine::ModelInterface::Node> &Model::getNodes() {
@@ -39,23 +33,7 @@ namespace engine {
         for (auto& node : m_model->getNodes()) {
             if (node.mesh > 0) {
                 auto& transform = Application::m_scene->getComponent<Transform>(m_entityID);
-                glm::mat4 modelMatrix = node.getLocalMatrix();
-                int parentID = node.parent;
-
-                while (parentID != -1) {
-                    ModelInterface::Node& parent = m_model->getNode(parentID);
-                    modelMatrix = parent.getLocalMatrix() * modelMatrix;
-                    parentID = parent.parent;
-                }
-
-                modelMatrix = transform.worldTransformMatrix() * modelMatrix;
-
-//                if (m_model->getBaseMesh().id == node.id) {
-//                    modelMatrix = transform.worldTransformMatrix();
-//                } else {
-//                    modelMatrix = transform.worldTransformMatrix() * modelMatrix;
-//                }
-
+                glm::mat4 modelMatrix = transform.worldTransformMatrix() * node.matrix;
                 auto& mesh = Application::m_resourceManager->getMesh(node.mesh);
                 mvp.model = modelMatrix;
 
@@ -81,20 +59,8 @@ namespace engine {
         m_model = engine::Application::m_resourceManager->getModel(modelID);
     }
 
-    void Model::descomposeMatrix(Transform& transform) {
-        glm::vec3 tempTranslate, tempScale, tempSkew;
-        glm::vec4 tempPerspective;
-        glm::quat tempOrientation;
-
-        glm::decompose(m_model->getBaseMesh().matrix, tempScale, tempOrientation, tempTranslate, tempSkew, tempPerspective);
-
-        transform.getPosition() += tempTranslate;
-        transform.getRotation() += glm::eulerAngles(tempOrientation);
-    }
-
     void Model::setLuaBindings(sol::table &table) {
         table.new_usertype<ModelInterface::Node>("Node",
-                                                 "getLocalMatrix", &ModelInterface::Node::getLocalMatrix,
                                                  "id", &ModelInterface::Node::id,
                                                  "name", &ModelInterface::Node::name,
                                                  "position", &ModelInterface::Node::position,
@@ -108,7 +74,6 @@ namespace engine {
                                   sol::call_constructor, sol::constructors<Model(uint64_t, uint32_t)>(),
                                   "setModel", &Model::setModel,
                                   "getName", &Model::getName,
-                                  "descomposeMatrix", &Model::descomposeMatrix,
                                   "getNodes", &Model::getNodes,
                                   "getNode", &Model::getNode);
     }

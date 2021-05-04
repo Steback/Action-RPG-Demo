@@ -21,19 +21,15 @@ namespace engine {
     class ModelInterface {
     public:
         struct Node {
-            uint id;
-            std::string name;
-            glm::mat4 matrix;
-            glm::vec3 position;
-            glm::quat rotation;
-            glm::vec3 scale;
+            uint id{};
+            std::string name{};
+            glm::mat4 matrix{};
+            glm::vec3 position{};
+            glm::quat rotation{};
+            glm::vec3 scale{1.0f};
             std::vector<int> children;
-            uint64_t mesh;
-            int parent;
-
-            glm::mat4 getLocalMatrix() {
-                return glm::translate(glm::mat4(1.0f), position) * glm::mat4(rotation) * glm::scale(glm::mat4(1.0f), scale) * matrix;
-            }
+            uint64_t mesh{};
+            int parent{-1};
         };
 
     public:
@@ -47,8 +43,6 @@ namespace engine {
 
         Node& getNode(uint id);
 
-        Node& getBaseMesh();
-
         std::vector<Node>& getNodes();
 
         void loadNode(const tinygltf::Node& inputNode, const tinygltf::Model& inputModel, int parentID = -1);
@@ -57,7 +51,6 @@ namespace engine {
 
     private:
         std::vector<Node> m_nodes;
-        int m_baseMesh{};
         std::string m_name{};
     };
 
