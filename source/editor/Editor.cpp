@@ -5,7 +5,7 @@
 #include "ImGuiFileDialog/CustomImGuiFileDialogConfig.h"
 #include "ImGuiFileDialog/ImGuiFileDialog.h"
 
-#include "components/Model.hpp"
+#include "components/ModelInterface.hpp"
 #include "Gizmos.hpp"
 #include "ui/Window.hpp"
 
@@ -34,7 +34,7 @@ namespace editor {
         m_scene->loadScene("../data/basicScene.json", true);
 
         for (auto& entity : m_scene->getEntities()) {
-            auto& model = m_scene->getComponent<engine::Model>(entity.id);
+            auto& model = m_scene->getComponent<engine::ModelInterface>(entity.id);
             int modelID;
 
             for (int i = 0; i < m_modelsNames.size(); ++i) {
@@ -147,7 +147,7 @@ namespace editor {
         auto& entity = m_scene->addEntity(name, engine::EntityType::OBJECT);
         uint64_t modelID = engine::tools::hashString(model);
 
-        m_scene->registry().emplace<engine::Model>(entity.enttID, modelID, entity.id);
+        m_scene->registry().emplace<engine::ModelInterface>(entity.enttID, modelID, entity.id);
         m_scene->registry().emplace<engine::Transform>(entity.enttID, m_scene->getCamera().getCenter(), DEFAULT_SIZE, SPEED_ZERO, DEFAULT_ROTATION);
         entity.components = engine::MODEL | engine::TRANSFORM;
 
@@ -230,7 +230,7 @@ namespace editor {
                     scene->loadScene(path, true, modelNames);
 
                     for (auto& entity : m_scene->getEntities()) {
-                        auto& model = m_scene->getComponent<engine::Model>(entity.id);
+                        auto& model = m_scene->getComponent<engine::ModelInterface>(entity.id);
                         int modelID;
 
                         for (int i = 0; i < modelNames->size(); ++i) {

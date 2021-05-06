@@ -18,7 +18,7 @@
 
 namespace engine {
 
-    class ModelInterface {
+    class Model {
     public:
         struct Node {
             uint id{};
@@ -33,13 +33,13 @@ namespace engine {
         };
 
     public:
-        ModelInterface();
+        Model();
 
-        ModelInterface(std::string  name);
+        Model(std::string  name);
 
-        explicit ModelInterface(std::vector<Node> nodes, std::string  name);
+        explicit Model(std::vector<Node> nodes, std::string  name);
 
-        ~ModelInterface();
+        ~Model();
 
         Node& getNode(uint id);
 

@@ -13,7 +13,7 @@
 #include "../resources/ResourceManager.hpp"
 #include "../Constants.hpp"
 #include "../components/Transform.hpp"
-#include "../components/Model.hpp"
+#include "../components/ModelInterface.hpp"
 #include "../renderer/GraphicsPipeline.hpp"
 
 using json = nlohmann::json;
@@ -87,7 +87,7 @@ namespace engine {
 
         Camera& getCameraComponent(uint32_t id);
 
-        Model& getModel(uint32_t id);
+        ModelInterface& getModel(uint32_t id);
 
     private:
         std::vector<engine::Entity> m_entities;

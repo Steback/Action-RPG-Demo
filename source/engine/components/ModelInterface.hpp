@@ -1,5 +1,5 @@
-#ifndef PROTOTYPE_ACTION_RPG_MODEL_HPP
-#define PROTOTYPE_ACTION_RPG_MODEL_HPP
+#ifndef PROTOTYPE_ACTION_RPG_MODELINTERFACE_HPP
+#define PROTOTYPE_ACTION_RPG_MODELINTERFACE_HPP
 
 
 #include <string>
@@ -8,7 +8,7 @@
 #define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
 #include "vulkan/vulkan.hpp"
 
-#include "../resources/ModelInterface.hpp"
+#include "../resources/Model.hpp"
 #include "Transform.hpp"
 
 
@@ -16,13 +16,13 @@ namespace engine {
 
     struct MVP;
 
-    class Model {
+    class ModelInterface {
     public:
-        explicit Model(uint64_t modelID, uint32_t entityID);
+        explicit ModelInterface(uint64_t modelID, uint32_t entityID);
 
-        engine::ModelInterface::Node& getNode(uint id);
+        engine::Model::Node& getNode(uint id);
 
-        std::vector<engine::ModelInterface::Node>& getNodes();
+        std::vector<engine::Model::Node>& getNodes();
 
         std::string& getName();
 
@@ -33,11 +33,11 @@ namespace engine {
         static void setLuaBindings(sol::table& table);
 
     private:
-        std::shared_ptr<engine::ModelInterface> m_model;
+        std::shared_ptr<engine::Model> m_model;
         uint32_t m_entityID;
     };
 
 } // namespace core
 
 
-#endif //PROTOTYPE_ACTION_RPG_MODEL_HPP
+#endif //PROTOTYPE_ACTION_RPG_MODELINTERFACE_HPP

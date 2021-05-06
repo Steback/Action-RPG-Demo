@@ -1,4 +1,4 @@
-#include "RenderDevice.hpp"
+#include "RenderEngine.hpp"
 
 #include <utility>
 
@@ -31,7 +31,7 @@ inline vk::Result waitForFence(vk::Device device, vk::Fence* fence) {
 
 namespace engine {
 
-    RenderDevice::RenderDevice(std::shared_ptr<Window> window, vk::Instance instance, const std::string& appName, std::shared_ptr<engine::Device> device, vk::SurfaceKHR surface)
+    RenderEngine::RenderEngine(std::shared_ptr<Window> window, vk::Instance instance, const std::string& appName, std::shared_ptr<engine::Device> device, vk::SurfaceKHR surface)
             : m_window(std::move(window)), m_device(std::move(device)) {
         m_logicalDevice = m_device->m_logicalDevice;
         m_physicalDevice = m_device->m_physicalDevice;
@@ -49,9 +49,9 @@ namespace engine {
                                            vk::FormatFeatureFlagBits::eDepthStencilAttachment);
     }
 
-    RenderDevice::~RenderDevice() = default;
+    RenderEngine::~RenderEngine() = default;
 
-    void RenderDevice::init() {
+    void RenderEngine::init() {
         createRenderPass();
         createDescriptorSetLayout();
         createGraphicsPipeline();
@@ -65,7 +65,7 @@ namespace engine {
         spdlog::info("[Renderer] Initialized");
     }
 
-    void RenderDevice::cleanup(const std::shared_ptr<engine::Instance>& instance) {
+    void RenderEngine::cleanup(const std::shared_ptr<engine::Instance>& instance) {
         UIRender::cleanupImGui();
 
         cleanSwapChain();
@@ -87,7 +87,7 @@ namespace engine {
         spdlog::info("[Renderer] Cleaned");
     }
 
-    void RenderDevice::acquireNextImage() {
+    void RenderEngine::acquireNextImage() {
         VK_CHECK_RESULT_HPP(waitForFence(m_logicalDevice, &m_fences[m_currentFrame]))
 
         vk::Result result = m_swapChain.acquireNextImage(m_imageAvailableSemaphores[m_currentFrame], &m_indexImage);
@@ -105,7 +105,7 @@ namespace engine {
         m_imageFences[m_indexImage] = m_fences[m_currentFrame];
     }
 
-    void RenderDevice::render() {
+    void RenderEngine::render() {
         VK_CHECK_RESULT_HPP(m_logicalDevice.resetFences(1, &m_fences[m_currentFrame]))
 
         vk::Semaphore waitSemaphores[] = { m_imageAvailableSemaphores[m_currentFrame] };
@@ -151,7 +151,7 @@ namespace engine {
         m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 
-    void RenderDevice::createRenderPass() {
+    void RenderEngine::createRenderPass() {
         vk::AttachmentDescription colorAttachment{
             .format = m_swapChain.getFormat(),
             .samples = m_msaaSamples,
@@ -228,7 +228,7 @@ namespace engine {
         });
     }
 
-    void RenderDevice::createGraphicsPipeline() {
+    void RenderEngine::createGraphicsPipeline() {
         std::vector<vk::DescriptorSetLayout> layouts = {
                 m_descriptorSetLayout,
                 engine::Application::m_resourceManager->getTextureDescriptorSetLayout()
@@ -238,7 +238,7 @@ namespace engine {
             pipeline->create(layouts, m_swapChain, m_renderPass, m_msaaSamples);
     }
 
-    void RenderDevice::createFramebuffers() {
+    void RenderEngine::createFramebuffers() {
         m_framebuffers.resize(m_swapChain.getImageCount());
 
         for (size_t i = 0; i < m_swapChain.getImageCount(); ++i) {
@@ -259,7 +259,7 @@ namespace engine {
         }
     }
 
-    void RenderDevice::createSyncObjects() {
+    void RenderEngine::createSyncObjects() {
         m_imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
         m_renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
         m_fences.resize(MAX_FRAMES_IN_FLIGHT);
@@ -275,7 +275,7 @@ namespace engine {
         }
     }
 
-    void RenderDevice::recreateSwapchain() {
+    void RenderEngine::recreateSwapchain() {
         // TODO: Optimize window resize
         while (m_windowSize.width == 0 || m_windowSize.height == 0)  {
             m_windowSize = m_window->getSize();
@@ -302,7 +302,7 @@ namespace engine {
         engine::Application::m_resourceManager->recreateResources();
     }
 
-    void RenderDevice::cleanSwapChain() {
+    void RenderEngine::cleanSwapChain() {
         m_depthBuffer.cleanup(m_logicalDevice);
         m_colorImage.cleanup(m_logicalDevice);
 
@@ -320,7 +320,7 @@ namespace engine {
         engine::Application::m_resourceManager->cleanupResources();
     }
 
-    void RenderDevice:: createDescriptorSetLayout() {
+    void RenderEngine:: createDescriptorSetLayout() {
         vk::DescriptorSetLayoutBinding uboLayoutBinding{
             .binding = 0,
             .descriptorType = vk::DescriptorType::eUniformBuffer,
@@ -335,7 +335,7 @@ namespace engine {
         });
     }
 
-    void RenderDevice::createDescriptorPool() {
+    void RenderEngine::createDescriptorPool() {
         vk::DescriptorPoolSize descriptorPoolSize{
             .type = vk::DescriptorType::eUniformBuffer,
             .descriptorCount = m_swapChain.getImageCount()
@@ -349,7 +349,7 @@ namespace engine {
         });
     }
 
-    void RenderDevice::createDescriptorSets() {
+    void RenderEngine::createDescriptorSets() {
         std::vector<vk::DescriptorSetLayout> layouts(m_swapChain.getImageCount(), m_descriptorSetLayout);
 
         m_descriptorSets = m_logicalDevice.allocateDescriptorSets({
@@ -359,7 +359,7 @@ namespace engine {
         });
     }
 
-    void RenderDevice::createDepthResources() {
+    void RenderEngine::createDepthResources() {
         m_depthBuffer = engine::Image(m_logicalDevice, {
                 .imageType = vk::ImageType::e2D,
                 .format = static_cast<vk::Format>(m_depthFormat),
@@ -386,7 +386,7 @@ namespace engine {
                                         vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal);
     }
 
-    void RenderDevice::createMsaaResources() {
+    void RenderEngine::createMsaaResources() {
         auto colorFormat = static_cast<vk::Format>(m_swapChain.getFormat());
 
         m_colorImage = engine::Image(m_logicalDevice, {
@@ -412,16 +412,16 @@ namespace engine {
         m_colorImage.bind(m_logicalDevice, memType, memoryRequirements.size, vk::ImageAspectFlagBits::eColor);
     }
 
-    void RenderDevice::updateVP(const glm::mat4& view, const glm::mat4& proj) {
+    void RenderEngine::updateVP(const glm::mat4& view, const glm::mat4& proj) {
         m_mvp.view = view;
         m_mvp.proj = proj;
     }
 
-    vk::Queue &RenderDevice::getGraphicsQueue() {
+    vk::Queue &RenderEngine::getGraphicsQueue() {
         return m_graphicsQueue;
     }
 
-    std::shared_ptr<CommandList> RenderDevice::addCommandList() {
+    std::shared_ptr<CommandList> RenderEngine::addCommandList() {
         m_mainCommands.push_back(std::make_shared<CommandList>(m_device->createCommandPool(), m_logicalDevice));
         std::shared_ptr<CommandList> cmd = m_mainCommands.back();
 
@@ -430,23 +430,23 @@ namespace engine {
         return cmd;
     }
 
-    vk::Framebuffer &RenderDevice::getFrameBuffer() {
+    vk::Framebuffer &RenderEngine::getFrameBuffer() {
         return m_framebuffers[m_indexImage];
     }
 
-    vk::Extent2D RenderDevice::getSwapChainExtent() {
+    vk::Extent2D RenderEngine::getSwapChainExtent() {
         return m_swapChain.getExtent();
     }
 
-    vk::RenderPass &RenderDevice::getRenderPass() {
+    vk::RenderPass &RenderEngine::getRenderPass() {
         return m_renderPass;
     }
 
-    vk::DescriptorSet &RenderDevice::getDescriptorSet() {
+    vk::DescriptorSet &RenderEngine::getDescriptorSet() {
         return m_descriptorSets[m_indexImage];
     }
 
-    std::shared_ptr<GraphicsPipeline> RenderDevice::addPipeline(const std::shared_ptr<engine::Shader>& shaderID, vk::Device device, bool inited) {
+    std::shared_ptr<GraphicsPipeline> RenderEngine::addPipeline(const std::shared_ptr<engine::Shader>& shaderID, vk::Device device, bool inited) {
         m_pipelines.push_back(std::make_shared<GraphicsPipeline>(shaderID, device));
 
         if (inited) {
@@ -461,11 +461,11 @@ namespace engine {
         return m_pipelines.back();
     }
 
-    SwapChain &RenderDevice::getSwapChain() {
+    SwapChain &RenderEngine::getSwapChain() {
         return m_swapChain;
     }
 
-    uint32_t RenderDevice::getImageIndex() const {
+    uint32_t RenderEngine::getImageIndex() const {
         return m_indexImage;
     }
 

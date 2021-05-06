@@ -9,7 +9,7 @@
 
 namespace engine {
 
-    std::unique_ptr<engine::RenderDevice> Application::m_renderer;
+    std::unique_ptr<engine::RenderEngine> Application::m_renderer;
     std::unique_ptr<engine::ResourceManager> Application::m_resourceManager;
     std::unique_ptr<engine::Scene> Application::m_scene;
     std::unique_ptr<ThreadPool> Application::m_threadPool;
@@ -28,7 +28,7 @@ namespace engine {
         });
 
         m_device = std::make_shared<engine::Device>(m_instance);
-        m_renderer = std::make_unique<engine::RenderDevice>(m_window, m_instance->getInstance(), appName, m_device, m_instance->createSurface(m_window->getWindow()));
+        m_renderer = std::make_unique<engine::RenderEngine>(m_window, m_instance->getInstance(), appName, m_device, m_instance->createSurface(m_window->getWindow()));
         m_resourceManager = std::make_unique<engine::ResourceManager>(m_device, m_renderer->getGraphicsQueue());
 
         vk::PushConstantRange constantRange{

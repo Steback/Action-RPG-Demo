@@ -1,5 +1,5 @@
-#ifndef PROTOTYPE_ACTION_RPG_RENDERDEVICE_HPP
-#define PROTOTYPE_ACTION_RPG_RENDERDEVICE_HPP
+#ifndef PROTOTYPE_ACTION_RPG_RENDERENGINE_HPP
+#define PROTOTYPE_ACTION_RPG_RENDERENGINE_HPP
 
 
 #include <thread>
@@ -18,7 +18,7 @@
 #include "../Utilities.hpp"
 #include "../camera/Camera.hpp"
 #include "../window/Window.hpp"
-#include "../resources/ModelInterface.hpp"
+#include "../resources/Model.hpp"
 #include "../resources/ResourceManager.hpp"
 
 
@@ -26,11 +26,11 @@ namespace engine {
 
     class CommandList;
 
-    class RenderDevice {
+    class RenderEngine {
     public:
-        explicit RenderDevice(std::shared_ptr<Window> window, vk::Instance instance, const std::string& appName, std::shared_ptr<engine::Device> device, vk::SurfaceKHR surface);
+        explicit RenderEngine(std::shared_ptr<Window> window, vk::Instance instance, const std::string& appName, std::shared_ptr<engine::Device> device, vk::SurfaceKHR surface);
 
-        ~RenderDevice();
+        ~RenderEngine();
 
         void init();
 
@@ -134,4 +134,4 @@ namespace engine {
 } // End namespace core
 
 
-#endif //PROTOTYPE_ACTION_RPG_RENDERDEVICE_HPP
+#endif //PROTOTYPE_ACTION_RPG_RENDERENGINE_HPP

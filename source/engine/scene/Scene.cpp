@@ -45,10 +45,10 @@ namespace engine {
     }
 
     void Scene::render(vk::CommandBuffer& cmdBuffer, const std::shared_ptr<GraphicsPipeline>& pipeline) {
-        auto view = m_registry.view<engine::Model>();
+        auto view = m_registry.view<engine::ModelInterface>();
 
         for (auto& entity : view) {
-            view.get<Model>(entity).render(cmdBuffer, pipeline->getLayout());;
+            view.get<ModelInterface>(entity).render(cmdBuffer, pipeline->getLayout());;
         }
     }
 
@@ -103,7 +103,7 @@ namespace engine {
         if (editorBuild) {
             auto& entity = addEntity("Camera", EntityType::OBJECT | EntityType::CAMERA);
 
-            m_registry.emplace<engine::Model>(entity.enttID, engine::tools::hashString("cube"), entity.id);
+            m_registry.emplace<engine::ModelInterface>(entity.enttID, engine::tools::hashString("cube"), entity.id);
 
             glm::vec3 direction;
             float yaw = glm::radians(camera["angles"]["yaw"].get<float>());
@@ -143,7 +143,7 @@ namespace engine {
             if (!e["model"].empty()) {
                 auto& model = e["model"];
 
-                m_registry.emplace<engine::Model>(entity.enttID,
+                m_registry.emplace<engine::ModelInterface>(entity.enttID,
                                                   engine::Application::m_resourceManager->createModel(model["name"].get<std::string>() + ".gltf", model["name"]),
                                                   entity.id);
 
@@ -220,7 +220,7 @@ namespace engine {
                 }
 
                 if (entity.components & engine::MODEL) {
-                    auto& model = m_registry.get<engine::Model>(entity.enttID);
+                    auto& model = m_registry.get<engine::ModelInterface>(entity.enttID);
 
                     scene["entities"][entitiesCount]["model"] = {
                             {"name", model.getName()}
@@ -243,7 +243,7 @@ namespace engine {
         sol::table components = state["components"].get_or_create<sol::table>();
 
         Transform::setLuaBindings(components);
-        Model::setLuaBindings(components);
+        ModelInterface::setLuaBindings(components);
 
         components.new_enum("type",
                        "transform", ComponentFlags::TRANSFORM,
@@ -276,8 +276,8 @@ namespace engine {
         return getComponent<Camera>(id);
     }
 
-    Model &Scene::getModel(uint32_t id) {
-        return getComponent<Model>(id);
+    ModelInterface &Scene::getModel(uint32_t id) {
+        return getComponent<ModelInterface>(id);
     }
 
 } // namespace core

@@ -1,4 +1,4 @@
-#include "Model.hpp"
+#include "ModelInterface.hpp"
 
 #include "../Utilities.hpp"
 #include "../Application.hpp"
@@ -6,24 +6,24 @@
 
 namespace engine {
 
-    Model::Model(uint64_t modelID, uint32_t entityID)
+    ModelInterface::ModelInterface(uint64_t modelID, uint32_t entityID)
             : m_model(engine::Application::m_resourceManager->getModel(modelID)), m_entityID(entityID) {
 
     }
 
-    engine::ModelInterface::Node &Model::getNode(uint id) {
+    engine::Model::Node &ModelInterface::getNode(uint id) {
         return m_model->getNode(id);
     }
 
-    std::vector<engine::ModelInterface::Node> &Model::getNodes() {
+    std::vector<engine::Model::Node> &ModelInterface::getNodes() {
         return m_model->getNodes();
     }
 
-    std::string &Model::getName() {
+    std::string &ModelInterface::getName() {
         return m_model->getName();
     }
 
-    void Model::render(vk::CommandBuffer& cmdBuffer, const vk::PipelineLayout& layout) {
+    void ModelInterface::render(vk::CommandBuffer& cmdBuffer, const vk::PipelineLayout& layout) {
         MVP mvp = Application::m_renderer->m_mvp;
 
         std::array<vk::DescriptorSet, 2> descriptorSetGroup = {
@@ -55,27 +55,27 @@ namespace engine {
         }
     }
 
-    void Model::setModel(uint64_t modelID) {
+    void ModelInterface::setModel(uint64_t modelID) {
         m_model = engine::Application::m_resourceManager->getModel(modelID);
     }
 
-    void Model::setLuaBindings(sol::table &table) {
-        table.new_usertype<ModelInterface::Node>("Node",
-                                                 "id", &ModelInterface::Node::id,
-                                                 "name", &ModelInterface::Node::name,
-                                                 "position", &ModelInterface::Node::position,
-                                                 "rotation", &ModelInterface::Node::rotation,
-                                                 "scale", &ModelInterface::Node::scale,
-                                                 "children", &ModelInterface::Node::children,
-                                                 "mesh", &ModelInterface::Node::mesh,
-                                                 "parent", &ModelInterface::Node::parent);
+    void ModelInterface::setLuaBindings(sol::table &table) {
+        table.new_usertype<Model::Node>("Node",
+                                                 "id", &Model::Node::id,
+                                                 "name", &Model::Node::name,
+                                                 "position", &Model::Node::position,
+                                                 "rotation", &Model::Node::rotation,
+                                                 "scale", &Model::Node::scale,
+                                                 "children", &Model::Node::children,
+                                                 "mesh", &Model::Node::mesh,
+                                                 "parent", &Model::Node::parent);
 
-        table.new_usertype<Model>("Model",
+        table.new_usertype<ModelInterface>("Model",
                                   sol::call_constructor, sol::constructors<Model(uint64_t, uint32_t)>(),
-                                  "setModel", &Model::setModel,
-                                  "getName", &Model::getName,
-                                  "getNodes", &Model::getNodes,
-                                  "getNode", &Model::getNode);
+                                  "setModel", &ModelInterface::setModel,
+                                  "getName", &ModelInterface::getName,
+                                  "getNodes", &ModelInterface::getNodes,
+                                  "getNode", &ModelInterface::getNode);
     }
 
 } // namespace core

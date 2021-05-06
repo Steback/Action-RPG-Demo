@@ -220,7 +220,7 @@ namespace engine {
 
         if (fileLoaded) {
             uint64_t modelName = engine::tools::hashString(name);
-            m_models[modelName] = std::make_shared<engine::ModelInterface>(name);
+            m_models[modelName] = std::make_shared<engine::Model>(name);
 
             for (auto& image : inputModel.images) createTexture(image.uri, image.name);
 
@@ -235,7 +235,7 @@ namespace engine {
         }
     }
 
-    std::shared_ptr<engine::ModelInterface> ResourceManager::getModel(uint64_t id) {
+    std::shared_ptr<engine::Model> ResourceManager::getModel(uint64_t id) {
         return m_models[id];
     }
 

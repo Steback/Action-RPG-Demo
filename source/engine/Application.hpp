@@ -8,7 +8,7 @@
 #include "entt/entt.hpp"
 
 #include "window/Window.hpp"
-#include "renderer/RenderDevice.hpp"
+#include "renderer/RenderEngine.hpp"
 #include "renderer/Device.hpp"
 #include "renderer/Instance.hpp"
 #include "scene/Scene.hpp"
@@ -49,7 +49,7 @@ namespace engine {
         [[nodiscard]] float getDeltaTime() const;
 
     public:
-        static std::unique_ptr<engine::RenderDevice> m_renderer;
+        static std::unique_ptr<engine::RenderEngine> m_renderer;
         static std::unique_ptr<engine::ResourceManager> m_resourceManager;
         static std::unique_ptr<engine::Scene> m_scene;
         static std::unique_ptr<ThreadPool> m_threadPool;

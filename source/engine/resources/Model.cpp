@@ -1,4 +1,4 @@
-#include "ModelInterface.hpp"
+#include "Model.hpp"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
@@ -21,28 +21,28 @@ const std::vector<std::string> conflictsNodes = {
 
 namespace engine {
 
-    ModelInterface::ModelInterface() = default;
+    Model::Model() = default;
 
-    ModelInterface::ModelInterface(std::string name) : m_name(std::move(name)) {
+    Model::Model(std::string name) : m_name(std::move(name)) {
 
     }
 
-    ModelInterface::ModelInterface(std::vector<Node> nodes, std::string name)
+    Model::Model(std::vector<Node> nodes, std::string name)
             : m_nodes(std::move(nodes)), m_name(std::move(name)) {
 
     }
 
-    ModelInterface::~ModelInterface() = default;
+    Model::~Model() = default;
 
-    ModelInterface::Node &ModelInterface::getNode(uint id) {
+    Model::Node &Model::getNode(uint id) {
         return m_nodes[id];
     }
 
-    std::vector<ModelInterface::Node>& ModelInterface::getNodes() {
+    std::vector<Model::Node>& Model::getNodes() {
         return m_nodes;
     }
 
-    void ModelInterface::loadNode(const tinygltf::Node &inputNode, const tinygltf::Model &inputModel, int parentID) {
+    void Model::loadNode(const tinygltf::Node &inputNode, const tinygltf::Model &inputModel, int parentID) {
         Node node{};
         glm::mat4 matrix = glm::mat4(1.0f);
         node.id = m_nodes.size();
@@ -103,7 +103,7 @@ namespace engine {
         }
     }
 
-    std::string &ModelInterface::getName() {
+    std::string &Model::getName() {
         return m_name;
     }
 
