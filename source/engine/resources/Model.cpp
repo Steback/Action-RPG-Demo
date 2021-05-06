@@ -23,18 +23,18 @@ namespace engine {
 
     Model::Model() = default;
 
-    Model::Model(std::string name) : m_name(std::move(name)) {
-
+    Model::Model(std::string name, int32_t numNodes) : m_name(std::move(name)) {
+        if (numNodes != -1) m_nodes.resize(numNodes);
     }
 
-    Model::Model(std::vector<Node> nodes, std::string name)
+    Model::Model(std::vector<Node> nodes, std::string name, int32_t numNodes)
             : m_nodes(std::move(nodes)), m_name(std::move(name)) {
-
+        if (numNodes != -1) m_nodes.resize(numNodes);
     }
 
     Model::~Model() = default;
 
-    Model::Node &Model::getNode(uint id) {
+    Model::Node &Model::getNode(uint32_t id) {
         return m_nodes[id];
     }
 
@@ -42,10 +42,10 @@ namespace engine {
         return m_nodes;
     }
 
-    void Model::loadNode(const tinygltf::Node &inputNode, const tinygltf::Model &inputModel, int parentID) {
+    void Model::loadNode(const tinygltf::Node &inputNode, const tinygltf::Model &inputModel, uint32_t nodeID, int32_t parentID) {
         Node node{};
         glm::mat4 matrix = glm::mat4(1.0f);
-        node.id = m_nodes.size();
+        node.id = nodeID;
         node.name = inputNode.name;
 
         if (inputNode.translation.size() == 3) {
@@ -82,8 +82,8 @@ namespace engine {
 
         if (parentID != -1) {
             auto& parent = m_nodes[parentID];
-            parent.children.push_back(static_cast<int>(parent.id));
-            node.parent = static_cast<int>(parent.id);
+            parent.children.push_back(node.id);
+            node.parent = static_cast<int32_t>(parent.id);
 
             // TODO: All the skeletons models have a error when applying transforms with some nodes.
             // So my "best" solution to this problem. I create a vector with all the name of the conflict nodes and
@@ -91,20 +91,24 @@ namespace engine {
             if (std::find(conflictsNodes.begin(), conflictsNodes.end(), node.name) == conflictsNodes.end())
                 node.matrix = parent.matrix * node.matrix;
         } else {
-            node.parent = -1;
+            rootNode = node.id;
         }
 
-        m_nodes.push_back(node);
+        m_nodes[node.id] = node;
 
         if (!inputNode.children.empty()) {
             for (size_t i : inputNode.children) {
-                loadNode(inputModel.nodes[i], inputModel, node.id);
+                loadNode(inputModel.nodes[i], inputModel, static_cast<uint32_t>(i), static_cast<int32_t>(node.id));
             }
         }
     }
 
     std::string &Model::getName() {
         return m_name;
+    }
+
+    uint32_t Model::getRootNode() const {
+        return rootNode;
     }
 
 } // namespace core

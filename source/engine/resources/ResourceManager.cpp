@@ -220,11 +220,11 @@ namespace engine {
 
         if (fileLoaded) {
             uint64_t modelName = engine::tools::hashString(name);
-            m_models[modelName] = std::make_shared<engine::Model>(name);
+            m_models[modelName] = std::make_shared<engine::Model>(name, inputModel.nodes.size());
 
             for (auto& image : inputModel.images) createTexture(image.uri, image.name);
 
-            for (auto& nodeID : inputModel.scenes[0].nodes) m_models[modelName]->loadNode(inputModel.nodes[nodeID], inputModel);
+            for (auto& nodeID : inputModel.scenes[0].nodes) m_models[modelName]->loadNode(inputModel.nodes[nodeID], inputModel, nodeID);
 
             return modelName;
 

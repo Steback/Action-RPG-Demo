@@ -20,7 +20,7 @@ namespace engine {
     public:
         explicit ModelInterface(uint64_t modelID, uint32_t entityID);
 
-        engine::Model::Node& getNode(uint id);
+        engine::Model::Node& getNode(uint32_t id);
 
         std::vector<engine::Model::Node>& getNodes();
 
@@ -29,6 +29,8 @@ namespace engine {
         void render(vk::CommandBuffer& cmdBuffer, const vk::PipelineLayout& layout);
 
         void setModel(uint64_t modelID);
+
+        uint32_t getRootNode();
 
         static void setLuaBindings(sol::table& table);
 

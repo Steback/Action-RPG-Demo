@@ -124,7 +124,7 @@ end
 function nodeViewDraw()
     local model = scene.components.getModel(scene.entities:get(entitySelected).id)
 
-    utilities.drawNode(model:getNode(0), model)
+    utilities.drawNode(model:getNode(model:getRootNode()), model)
 end
 
 -- Setup secondary windows

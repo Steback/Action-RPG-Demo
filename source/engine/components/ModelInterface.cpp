@@ -11,7 +11,7 @@ namespace engine {
 
     }
 
-    engine::Model::Node &ModelInterface::getNode(uint id) {
+    engine::Model::Node &ModelInterface::getNode(uint32_t id) {
         return m_model->getNode(id);
     }
 
@@ -61,21 +61,26 @@ namespace engine {
 
     void ModelInterface::setLuaBindings(sol::table &table) {
         table.new_usertype<Model::Node>("Node",
-                                                 "id", &Model::Node::id,
-                                                 "name", &Model::Node::name,
-                                                 "position", &Model::Node::position,
-                                                 "rotation", &Model::Node::rotation,
-                                                 "scale", &Model::Node::scale,
-                                                 "children", &Model::Node::children,
-                                                 "mesh", &Model::Node::mesh,
-                                                 "parent", &Model::Node::parent);
+                                        "id", &Model::Node::id,
+                                        "name", &Model::Node::name,
+                                        "position", &Model::Node::position,
+                                        "rotation", &Model::Node::rotation,
+                                        "scale", &Model::Node::scale,
+                                        "children", &Model::Node::children,
+                                        "mesh", &Model::Node::mesh,
+                                        "parent", &Model::Node::parent);
 
         table.new_usertype<ModelInterface>("Model",
                                   sol::call_constructor, sol::constructors<Model(uint64_t, uint32_t)>(),
                                   "setModel", &ModelInterface::setModel,
                                   "getName", &ModelInterface::getName,
                                   "getNodes", &ModelInterface::getNodes,
-                                  "getNode", &ModelInterface::getNode);
+                                  "getNode", &ModelInterface::getNode,
+                                  "getRootNode", &ModelInterface::getRootNode);
+    }
+
+    uint32_t ModelInterface::getRootNode() {
+        return m_model->getRootNode();
     }
 
 } // namespace core
