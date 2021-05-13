@@ -36,6 +36,18 @@ namespace engine {
                 .binding = 0,
                 .format = vk::Format::eR32G32Sfloat,
                 .offset = offsetof(Vertex, texCoord)
+            },
+            {
+                .location = 4,
+                .binding = 0,
+                .format = vk::Format::eR32G32B32A32Sfloat,
+                .offset = offsetof(Vertex, jointIndices)
+            },
+            {
+                .location = 5,
+                .binding = 0,
+                .format = vk::Format::eR32G32B32A32Sfloat,
+                .offset = offsetof(Vertex, jointWeights)
             }
         };
     }

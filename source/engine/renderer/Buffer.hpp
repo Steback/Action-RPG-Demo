@@ -33,6 +33,8 @@ namespace engine {
 
         void destroy() const;
 
+        vk::DescriptorBufferInfo& getDescriptorBufferInfo();
+
     public:
         vk::Device m_device = {};
         vk::Buffer m_buffer = nullptr;

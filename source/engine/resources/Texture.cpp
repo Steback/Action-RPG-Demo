@@ -50,7 +50,7 @@ namespace engine {
 
         vk::WriteDescriptorSet writeDescriptorSet{
             .dstSet = m_descriptorSet,
-            .dstBinding = 1,
+            .dstBinding = 0,
             .dstArrayElement = 0,
             .descriptorCount = 1,
             .descriptorType = vk::DescriptorType::eCombinedImageSampler,

@@ -1,0 +1,6 @@
+{
+  "name": "hero",
+  "animations": {
+    "ide": "hero/heroIde"
+  }
+}

@@ -230,7 +230,6 @@ namespace engine {
         // If a pointer to the buffer data has been passed, map the buffer and copy over the data
         if (data != nullptr) {
             buffer.map(size);
-
             buffer.copyTo(data, size);
 
             if (!(memoryPropertyFlags & vk::MemoryPropertyFlagBits::eHostCoherent))

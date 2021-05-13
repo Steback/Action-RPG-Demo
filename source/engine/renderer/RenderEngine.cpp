@@ -446,16 +446,21 @@ namespace engine {
         return m_descriptorSets[m_indexImage];
     }
 
-    std::shared_ptr<GraphicsPipeline> RenderEngine::addPipeline(const std::shared_ptr<engine::Shader>& shaderID, vk::Device device, bool inited) {
+    std::shared_ptr<GraphicsPipeline> RenderEngine::addPipeline(const std::shared_ptr<engine::Shader>& shaderID, vk::Device device,
+                                                                std::vector<vk::DescriptorSetLayout>* pLayouts, bool inited) {
         m_pipelines.push_back(std::make_shared<GraphicsPipeline>(shaderID, device));
 
         if (inited) {
-            std::vector<vk::DescriptorSetLayout> layouts = {
-                    m_descriptorSetLayout,
-                    engine::Application::m_resourceManager->getTextureDescriptorSetLayout()
-            };
+            if (pLayouts) {
+                m_pipelines.back()->create(*pLayouts, m_swapChain, m_renderPass, m_msaaSamples);
+            } else {
+                std::vector<vk::DescriptorSetLayout> layouts = {
+                        m_descriptorSetLayout,
+                        engine::Application::m_resourceManager->getTextureDescriptorSetLayout()
+                };
 
-            m_pipelines.back()->create(layouts, m_swapChain, m_renderPass, m_msaaSamples);
+                m_pipelines.back()->create(layouts, m_swapChain, m_renderPass, m_msaaSamples);
+            }
         }
 
         return m_pipelines.back();
@@ -467,6 +472,10 @@ namespace engine {
 
     uint32_t RenderEngine::getImageIndex() const {
         return m_indexImage;
+    }
+
+    vk::DescriptorSetLayout RenderEngine::getDescriptorSetLayout() {
+        return m_descriptorSetLayout;
     }
 
 } // End namespace core

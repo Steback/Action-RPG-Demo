@@ -7,8 +7,11 @@
 #include "tiny_gltf.h"
 #include "fmt/format.h"
 #include "glm/gtc/type_ptr.hpp"
+#include "nlohmann/json.hpp"
 
 #include "Shader.hpp"
+
+using json = nlohmann::json;
 
 
 namespace engine {
@@ -22,13 +25,17 @@ namespace engine {
     ResourceManager::~ResourceManager() = default;
 
     void ResourceManager::cleanup() {
+        for (auto& model : m_models) model.second->cleanup();
+
         for (auto& mesh : m_meshes) mesh.second.cleanup();
 
         for (auto& texture : m_textures) texture.second.cleanup(m_device->m_logicalDevice);
 
         for (auto& shader : m_shaders) shader->cleanup(m_device->m_logicalDevice);
 
-        vkDestroyDescriptorSetLayout(m_device->m_logicalDevice, m_descriptorSetLayout, nullptr);
+        m_device->m_logicalDevice.destroy(m_skinsDescriptorSetLayout);
+        m_device->m_logicalDevice.destroy(m_skinSDescriptorPool);
+        m_device->m_logicalDevice.destroy(m_imagesDescriptorSetLayout);
     }
 
     void ResourceManager::createTexture(const std::string &fileName, const std::string& name) {
@@ -74,7 +81,7 @@ namespace engine {
 
         stagingBuffer.destroy();
 
-        texture.createDescriptor(m_device->m_logicalDevice, m_descriptorPool, m_descriptorSetLayout);
+        texture.createDescriptor(m_device->m_logicalDevice, m_imagesDescriptorPool, m_imagesDescriptorSetLayout);
 
         m_textures[engine::tools::hashString(name)] = texture;
     }
@@ -84,19 +91,19 @@ namespace engine {
     }
 
     vk::DescriptorSetLayout &ResourceManager::getTextureDescriptorSetLayout() {
-        return m_descriptorSetLayout;
+        return m_imagesDescriptorSetLayout;
     }
 
     void ResourceManager::recreateResources() {
        createDescriptorPool();
 
        for (auto& texture : m_textures) {
-           texture.second.createDescriptor(m_device->m_logicalDevice, m_descriptorPool, m_descriptorSetLayout);
+           texture.second.createDescriptor(m_device->m_logicalDevice, m_imagesDescriptorPool, m_imagesDescriptorSetLayout);
        }
     }
 
     void ResourceManager::cleanupResources() {
-        vkDestroyDescriptorPool(m_device->m_logicalDevice, m_descriptorPool, nullptr);
+        vkDestroyDescriptorPool(m_device->m_logicalDevice, m_imagesDescriptorPool, nullptr);
     }
 
     void ResourceManager::generateMipmaps(const engine::Texture& texture, vk::Format format, vk::Extent2D size, uint32_t mipLevels) {
@@ -191,12 +198,12 @@ namespace engine {
             .pPoolSizes = &samplerPoolSizer
         };
 
-        m_descriptorPool = m_device->m_logicalDevice.createDescriptorPool(samplerPoolCreateInfo);
+        m_imagesDescriptorPool = m_device->m_logicalDevice.createDescriptorPool(samplerPoolCreateInfo);
     }
 
     void ResourceManager::createDescriptorSetLayout() {
         vk::DescriptorSetLayoutBinding samplerLayoutBinding{
-            .binding = 1,
+            .binding = 0,
             .descriptorType = vk::DescriptorType::eCombinedImageSampler,
             .descriptorCount = 1,
             .stageFlags = vk::ShaderStageFlagBits::eFragment,
@@ -205,29 +212,43 @@ namespace engine {
 
         vk::DescriptorSetLayoutCreateInfo samplerLayoutInfo{
             .bindingCount = 1,
-            .pBindings = &samplerLayoutBinding
+            .pBindings = &samplerLayoutBinding,
         };
 
-        m_descriptorSetLayout = m_device->m_logicalDevice.createDescriptorSetLayout(samplerLayoutInfo);
+        m_imagesDescriptorSetLayout = m_device->m_logicalDevice.createDescriptorSetLayout(samplerLayoutInfo);
     }
 
     uint64_t ResourceManager::createModel(const std::string &uri, const std::string& name) {
+        uint64_t modelName = engine::tools::hashString(name);
+
+        if (m_models.find(modelName) != m_models.end()) return modelName;
+
+        json modelFile;
+        {
+            std::ifstream file("../data/models/" + uri);
+            file >> modelFile;
+            file.close();
+        }
+
         tinygltf::Model inputModel;
         tinygltf::TinyGLTF loader;
         std::string error, warning;
 
-        bool fileLoaded = loader.LoadASCIIFromFile(&inputModel, &error, &warning, MODELS_DIR + uri);
+        bool fileLoaded = loader.LoadASCIIFromFile(&inputModel, &error, &warning, MODELS_DIR + modelFile["name"].get<std::string>() + ".gltf");
 
         if (fileLoaded) {
-            uint64_t modelName = engine::tools::hashString(name);
             m_models[modelName] = std::make_shared<engine::Model>(name, inputModel.nodes.size());
 
             for (auto& image : inputModel.images) createTexture(image.uri, image.name);
 
             for (auto& nodeID : inputModel.scenes[0].nodes) m_models[modelName]->loadNode(inputModel.nodes[nodeID], inputModel, nodeID);
 
-            return modelName;
+            m_models[modelName]->loadSkins(inputModel, m_device, m_graphicsQueue);
 
+            if (!modelFile["animations"].empty())
+                m_models[modelName]->m_animations.ide = loadAnimation(modelFile["animations"]["ide"].get<std::string>(), name + "_ide");
+
+            return modelName;
         } else {
             fmt::print(stderr, "[Model] error: {} \n", error);
 
@@ -261,6 +282,8 @@ namespace engine {
                 const float* positionBuffer = nullptr;
                 const float* normalsBuffer = nullptr;
                 const float* texCoordsBuffer = nullptr;
+                const uint16_t* jointIndicesBuffer = nullptr;
+                const float* jointWeightsBuffer = nullptr;
                 size_t vertexCount = 0;
 
                 if (primitive.attributes.find("POSITION") != primitive.attributes.end()) {
@@ -282,12 +305,27 @@ namespace engine {
                     texCoordsBuffer = reinterpret_cast<const float*>(&(model.buffers[view.buffer].data[accessor.byteOffset + view.byteOffset]));
                 }
 
+                if (primitive.attributes.find("JOINTS_0") != primitive.attributes.end()) {
+                    const tinygltf::Accessor& accessor = model.accessors[primitive.attributes.find("JOINTS_0")->second];
+                    const tinygltf::BufferView &view = model.bufferViews[accessor.bufferView];
+                    jointIndicesBuffer = reinterpret_cast<const uint16_t *>(&(model.buffers[view.buffer].data[accessor.byteOffset + view.byteOffset]));
+                }
+
+                if (primitive.attributes.find("WEIGHTS_0") != primitive.attributes.end()) {
+                    const tinygltf::Accessor& accessor = model.accessors[primitive.attributes.find("WEIGHTS_0")->second];
+                    const tinygltf::BufferView &view = model.bufferViews[accessor.bufferView];
+                    jointWeightsBuffer = reinterpret_cast<const float *>(&(model.buffers[view.buffer].data[accessor.byteOffset + view.byteOffset]));
+                }
+
+                bool hasSkin = (jointIndicesBuffer && jointWeightsBuffer);
                 for (size_t v = 0; v < vertexCount; ++v) {
                     engine::Vertex vertex{};
                     vertex.position = glm::make_vec3(&positionBuffer[v * 3]);
                     vertex.normal = glm::normalize(glm::vec3(normalsBuffer ? glm::make_vec3(&normalsBuffer[v * 3]) : glm::vec3(0.0f)));
                     vertex.texCoord = texCoordsBuffer ? glm::make_vec2(&texCoordsBuffer[v * 2]) : glm::vec2(0.0f);
                     vertex.color = glm::vec3(1.0f);
+                    vertex.jointIndices = hasSkin ? glm::vec4(glm::make_vec4(&jointIndicesBuffer[v * 4])) : glm::vec4(0.0f);
+                    vertex.jointWeights = hasSkin ? glm::make_vec4(&jointWeightsBuffer[v * 4]) : glm::vec4(0.0f);
 
                     vertices.push_back(vertex);
                 }
@@ -348,6 +386,163 @@ namespace engine {
         m_shaders.emplace_back(std::make_shared<Shader>(vert, frag, m_device->m_logicalDevice, pushConstants, vertexInfo));
 
         return m_shaders.back();
+    }
+
+    uint64_t ResourceManager::loadAnimation(const std::string& uri, const std::string& name) {
+        uint64_t animationName = std::hash<std::string>{}(name);
+
+        if (m_animations.find(animationName) != m_animations.end()) return animationName;
+
+        tinygltf::Model inputModel;
+        tinygltf::TinyGLTF loader;
+        std::string error, warning;
+
+        if (loader.LoadASCIIFromFile(&inputModel, &error, &warning, ANIMATIONS_DIR + uri + ".gltf")) {
+            tinygltf::Animation gltfAnimation = inputModel.animations[0];
+            m_animations[animationName] = Animation();
+            Animation& animation = m_animations[animationName];
+            animation.m_name = gltfAnimation.name;
+
+            animation.m_samplers.resize(gltfAnimation.samplers.size());
+            for (int i = 0; i < gltfAnimation.samplers.size(); ++i) {
+                tinygltf::AnimationSampler& glTFSampler = gltfAnimation.samplers[i];
+                Animation::Sampler& dstSampler = animation.m_samplers[i];
+                dstSampler.interpolation = glTFSampler.interpolation;
+
+                // Read sampler keyframe input time values
+                {
+                    const tinygltf::Accessor&  accessor = inputModel.accessors[glTFSampler.input];
+                    const tinygltf::BufferView &bufferView = inputModel.bufferViews[accessor.bufferView];
+                    const tinygltf::Buffer& buffer = inputModel.buffers[bufferView.buffer];
+                    const void *dataPtr = &buffer.data[accessor.byteOffset + bufferView.byteOffset];
+                    const auto *buf = static_cast<const float *>(dataPtr);
+
+                    dstSampler.inputs.resize(accessor.count);
+                    for (size_t index = 0; index < accessor.count; ++index)
+                        dstSampler.inputs[index] = buf[index];
+
+                    for (auto input : animation.m_samplers[i].inputs) {
+                        if (input < animation.m_start) animation.m_start = input;
+
+                        if (input > animation.m_end) animation.m_end = input;
+                    }
+                }
+
+                // Read sampler keyframe output translate/rotate/scale values
+                {
+                    const tinygltf::Accessor& accessor = inputModel.accessors[glTFSampler.output];
+                    const tinygltf::BufferView& bufferView = inputModel.bufferViews[accessor.bufferView];
+                    const tinygltf::Buffer& buffer = inputModel.buffers[bufferView.buffer];
+                    const void* dataPtr = &buffer.data[accessor.byteOffset + bufferView.byteOffset];
+
+                    switch (accessor.type) {
+                        case TINYGLTF_TYPE_VEC3: {
+                            const auto *buf = static_cast<const glm::vec3 *>(dataPtr);
+
+                            for (size_t index = 0; index < accessor.count; index++) dstSampler.outputs.emplace_back(buf[index], 0.0f);
+
+                            break;
+                        }
+                        case TINYGLTF_TYPE_VEC4: {
+                            const auto *buf = static_cast<const glm::vec4 *>(dataPtr);
+
+                            for (size_t index = 0; index < accessor.count; index++) dstSampler.outputs.push_back(buf[index]);
+
+                            break;
+                        }
+                        default: {
+                            fmt::print("Unknown type\n");
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Channels
+            animation.m_channels.resize(gltfAnimation.channels.size());
+            for (int i = 0; i < gltfAnimation.channels.size(); ++i) {
+                tinygltf::AnimationChannel gltfChannel = gltfAnimation.channels[i];
+                Animation::Channel& dstChannel = animation.m_channels[i];
+                dstChannel.path = gltfChannel.target_path;
+                dstChannel.samplerIndex = gltfChannel.sampler;
+                dstChannel.nodeID = gltfChannel.target_node;
+            }
+        } else {
+            return 0;
+        }
+
+        return animationName;
+    }
+
+    Animation &ResourceManager::getAnimation(uint64_t name) {
+        return m_animations[name];
+    }
+
+    void ResourceManager::createSkinsDescriptors(const std::vector<vk::DescriptorPoolSize>& sizes, uint32_t maxSize) {
+        vk::DescriptorPoolCreateInfo poolCreateInfo{
+            .maxSets = maxSize,
+            .poolSizeCount = static_cast<uint32_t>(sizes.size()),
+            .pPoolSizes = sizes.data()
+        };
+        
+        m_skinSDescriptorPool = m_device->m_logicalDevice.createDescriptorPool(poolCreateInfo);
+
+        vk::DescriptorSetLayoutBinding layoutBinding{
+            .binding = 0,
+            .descriptorType = vk::DescriptorType::eStorageBuffer,
+            .descriptorCount = 1,
+            .stageFlags = vk::ShaderStageFlagBits::eVertex,
+            .pImmutableSamplers = nullptr
+        };
+
+        vk::DescriptorSetLayoutCreateInfo layoutCreateInfo{
+            .bindingCount = 1,
+            .pBindings = &layoutBinding
+        };
+
+        m_skinsDescriptorSetLayout = m_device->m_logicalDevice.createDescriptorSetLayout(layoutCreateInfo);
+    }
+
+    void ResourceManager::createSkinsDescriptorSets() {
+        for (auto& [id, model] : m_models) {
+            for (auto& node : model->getNodes()) {
+                if (node.skin > -1) {
+                    Model::Skin& skin = model->getSkin(node.skin);
+                    vk::DescriptorSetAllocateInfo allocateInfo{
+                        .descriptorPool = m_skinSDescriptorPool,
+                        .descriptorSetCount = 1,
+                        .pSetLayouts = &m_skinsDescriptorSetLayout
+                    };
+
+                    skin.descriptorSet = m_device->m_logicalDevice.allocateDescriptorSets(allocateInfo).front();
+                    skin.ssbo.setupDescriptor(sizeof(glm::mat4) * skin.joints.size());
+
+                    vk::WriteDescriptorSet writeDescriptorSet{
+                        .dstSet = skin.descriptorSet,
+                        .dstBinding = 0,
+                        .descriptorCount = 1,
+                        .descriptorType = vk::DescriptorType::eStorageBuffer,
+                        .pBufferInfo= &skin.ssbo.m_descriptor
+                    };
+
+                    m_device->m_logicalDevice.updateDescriptorSets(1, &writeDescriptorSet, 0, nullptr);
+                }
+            }
+        }
+    }
+
+    uint32_t ResourceManager::getSkinsCount() {
+        uint32_t skinsCount = 0;
+
+        for (auto& [id, model] : m_models) {
+            skinsCount += static_cast<uint32_t>(model->getSkinsCount());
+        }
+
+        return skinsCount;
+    }
+
+    vk::DescriptorSetLayout ResourceManager::getSkinsDescriptorSetLayout() {
+        return m_skinsDescriptorSetLayout;
     }
 
 } // namespace core

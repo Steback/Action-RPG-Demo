@@ -46,4 +46,8 @@ namespace engine {
         if (m_memory) m_device.freeMemory(m_memory);
     }
 
+    vk::DescriptorBufferInfo &Buffer::getDescriptorBufferInfo() {
+        return m_descriptor;
+    }
+
 } // End namespace vk

@@ -10,9 +10,10 @@
 #include "vulkan/vulkan.hpp"
 
 #include "Texture.hpp"
-#include "../renderer/Device.hpp"
 #include "Model.hpp"
+#include "Animation.hpp"
 #include "../Utilities.hpp"
+#include "../renderer/Device.hpp"
 
 
 namespace engine {
@@ -49,10 +50,22 @@ namespace engine {
 
         std::shared_ptr<engine::Shader> createShader(const std::string &vert, const std::string &frag, const std::vector<vk::PushConstantRange>& pushConstants, bool vertexInfo = true);
 
+        Animation& getAnimation(uint64_t name);
+
+        void createSkinsDescriptorSets();
+
+        void createSkinsDescriptors(const std::vector<vk::DescriptorPoolSize>& sizes, uint32_t maxSize);
+
+        uint32_t getSkinsCount();
+
+        vk::DescriptorSetLayout getSkinsDescriptorSetLayout();
+
     private:
         void createDescriptorPool();
 
         void createDescriptorSetLayout();
+
+        uint64_t loadAnimation(const std::string& uri, const std::string& name);
 
     private:
         std::shared_ptr<engine::Device> m_device{};
@@ -60,9 +73,12 @@ namespace engine {
         std::unordered_map<uint64_t, engine::Texture> m_textures;
         std::unordered_map<uint64_t, std::shared_ptr<engine::Model>> m_models;
         std::unordered_map<uint64_t, engine::Mesh> m_meshes;
+        std::unordered_map<uint64_t, Animation> m_animations;
         std::vector<std::shared_ptr<engine::Shader>> m_shaders;
-        vk::DescriptorPool m_descriptorPool{};
-        vk::DescriptorSetLayout m_descriptorSetLayout{};
+        vk::DescriptorPool m_imagesDescriptorPool{};
+        vk::DescriptorSetLayout m_imagesDescriptorSetLayout{};
+        vk::DescriptorPool m_skinSDescriptorPool{};
+        vk::DescriptorSetLayout m_skinsDescriptorSetLayout{};
     };
 
 } // namespace core

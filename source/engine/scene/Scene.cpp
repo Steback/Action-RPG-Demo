@@ -144,7 +144,7 @@ namespace engine {
                 auto& model = e["model"];
 
                 m_registry.emplace<engine::ModelInterface>(entity.enttID,
-                                                  engine::Application::m_resourceManager->createModel(model["name"].get<std::string>() + ".gltf", model["name"]),
+                                                  engine::Application::m_resourceManager->createModel(model["name"].get<std::string>() + ".json", model["name"]),
                                                   entity.id);
 
                 if (modelNames) modelNames->push_back(model["name"].get<std::string>());

@@ -16,6 +16,8 @@ namespace engine {
         glm::vec3 normal;
         glm::vec3 color;
         glm::vec2 texCoord;
+        glm::vec4 jointIndices;
+        glm::vec4 jointWeights;
 
         static vk::VertexInputBindingDescription getBindingDescription();
 

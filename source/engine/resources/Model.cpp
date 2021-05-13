@@ -34,6 +34,10 @@ namespace engine {
 
     Model::~Model() = default;
 
+    void Model::cleanup() {
+        for (auto& skin : m_skins) skin.ssbo.destroy();
+    }
+
     Model::Node &Model::getNode(uint32_t id) {
         return m_nodes[id];
     }
@@ -80,6 +84,8 @@ namespace engine {
             node.mesh = engine::Application::m_resourceManager->loadMesh(node.name, mesh, inputModel, textureID);
         }
 
+        if (inputNode.skin > -1) node.skin = inputNode.skin;
+
         if (parentID != -1) {
             auto& parent = m_nodes[parentID];
             parent.children.push_back(node.id);
@@ -91,7 +97,7 @@ namespace engine {
             if (std::find(conflictsNodes.begin(), conflictsNodes.end(), node.name) == conflictsNodes.end())
                 node.matrix = parent.matrix * node.matrix;
         } else {
-            rootNode = node.id;
+            m_rootNode = node.id;
         }
 
         m_nodes[node.id] = node;
@@ -108,7 +114,54 @@ namespace engine {
     }
 
     uint32_t Model::getRootNode() const {
-        return rootNode;
+        return m_rootNode;
+    }
+
+    void Model::loadSkins(const tinygltf::Model& inputModel, const std::shared_ptr<Device>& device, const vk::Queue& transfer) {
+        for (auto& node : m_nodes) {
+            if (node.skin > -1) {
+                tinygltf::Skin gltfSkin = inputModel.skins[node.skin];
+
+                m_skins.push_back({});
+                Skin& skin = m_skins.back();
+                skin.name = gltfSkin.name;
+                skin.rootNodeID = gltfSkin.skeleton;
+
+                for (int joint : gltfSkin.joints) skin.joints.push_back(joint);
+
+                if (gltfSkin.inverseBindMatrices > -1) {
+                    const tinygltf::Accessor &accessor = inputModel.accessors[gltfSkin.inverseBindMatrices];
+                    const tinygltf::BufferView &bufferView = inputModel.bufferViews[accessor.bufferView];
+                    const tinygltf::Buffer &buffer = inputModel.buffers[bufferView.buffer];
+                    skin.inverseBindMatrices.resize(accessor.count);
+
+                    std::memcpy(skin.inverseBindMatrices.data(), &buffer.data[accessor.byteOffset + bufferView.byteOffset], accessor.count * sizeof(glm::mat4));
+
+                    vk::DeviceSize size = accessor.count * sizeof(glm::mat4);
+                    engine::Buffer stagingBuffer;
+
+                    stagingBuffer = device->createBuffer(vk::BufferUsageFlagBits::eTransferSrc,
+                                                         vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
+                                                         size, (void*)skin.inverseBindMatrices.data());
+
+                    // TODO: I'm not sure if the Buffer's properties flags are correct for it use
+                    skin.ssbo = device->createBuffer(vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst,
+                                                     vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eDeviceLocal, size);
+
+                    device->copyBuffer(&stagingBuffer, &skin.ssbo, transfer);
+
+                    stagingBuffer.destroy();
+                }
+            }
+        }
+    }
+
+    Model::Skin &Model::getSkin(size_t i) {
+        return m_skins[i];
+    }
+
+    uint32_t Model::getSkinsCount() const {
+        return static_cast<uint32_t>(m_skins.size());
     }
 
 } // namespace core

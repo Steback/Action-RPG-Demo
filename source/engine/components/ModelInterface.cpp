@@ -26,9 +26,6 @@ namespace engine {
     void ModelInterface::render(vk::CommandBuffer& cmdBuffer, const vk::PipelineLayout& layout) {
         MVP mvp = Application::m_renderer->m_mvp;
 
-        std::array<vk::DescriptorSet, 2> descriptorSetGroup = {
-                Application::m_renderer->getDescriptorSet()
-        };
 
         for (auto& node : m_model->getNodes()) {
             if (node.mesh > 0) {
@@ -45,10 +42,17 @@ namespace engine {
                 cmdBuffer.bindVertexBuffers(0, 1, vertexBuffer, offsets);
                 cmdBuffer.bindIndexBuffer(mesh.getIndexBuffer(), 0, vk::IndexType::eUint32);
 
-                descriptorSetGroup[1] = engine::Application::m_resourceManager->getTexture(mesh.getTextureId()).getDescriptorSet();
+                std::vector<vk::DescriptorSet> descriptorSetGroup = {
+                        Application::m_renderer->getDescriptorSet(),
+                        engine::Application::m_resourceManager->getTexture(mesh.getTextureId()).getDescriptorSet()
+                };
+
+                if (node.skin > -1)
+                    descriptorSetGroup.push_back(m_model->getSkin(node.skin).descriptorSet);
+
                 cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, 0,
-                                             static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0,
-                                             nullptr);
+                                             static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(),
+                                             0,nullptr);
 
                 cmdBuffer.drawIndexed(mesh.getIndexCount(), 1, 0, 0, 0);
             }

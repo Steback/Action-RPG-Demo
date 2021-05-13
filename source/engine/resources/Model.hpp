@@ -30,6 +30,23 @@ namespace engine {
             std::vector<uint32_t> children;
             uint64_t mesh{};
             int32_t parent{-1};
+            int32_t skin{-1};
+        };
+
+        struct Skin {
+            std::string name{};
+            int32_t rootNodeID{};
+            std::vector<glm::mat4> inverseBindMatrices;
+            std::vector<uint32_t> joints;
+            Buffer ssbo;
+            vk::DescriptorSet descriptorSet;
+        };
+
+        struct Animations {
+            uint64_t ide;
+            uint64_t walk;
+            uint64_t attack;
+            uint64_t death;
         };
 
     public:
@@ -41,6 +58,8 @@ namespace engine {
 
         ~Model();
 
+        void cleanup();
+
         Node& getNode(uint32_t id);
 
         std::vector<Node>& getNodes();
@@ -51,10 +70,20 @@ namespace engine {
 
         uint32_t getRootNode() const;
 
+        void loadSkins(const tinygltf::Model& inputModel, const std::shared_ptr<Device>& device, const vk::Queue& transfer);
+
+        Skin& getSkin(size_t i);
+
+        uint32_t getSkinsCount() const;
+
+    public:
+        Animations m_animations{};
+
     private:
         std::vector<Node> m_nodes;
         std::string m_name{};
-        uint32_t rootNode{};
+        uint32_t m_rootNode{};
+        std::vector<Skin> m_skins;
     };
 
 } // namespace core

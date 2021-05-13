@@ -48,6 +48,9 @@ namespace engine {
 
         [[nodiscard]] float getDeltaTime() const;
 
+    protected:
+        void updatePipeline();
+
     public:
         static std::unique_ptr<engine::RenderEngine> m_renderer;
         static std::unique_ptr<engine::ResourceManager> m_resourceManager;

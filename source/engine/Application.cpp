@@ -32,13 +32,14 @@ namespace engine {
         m_resourceManager = std::make_unique<engine::ResourceManager>(m_device, m_renderer->getGraphicsQueue());
 
         vk::PushConstantRange constantRange{
-            .stageFlags = vk::ShaderStageFlagBits::eVertex,
-            .offset = 0,
-            .size = sizeof(glm::mat4)
+                .stageFlags = vk::ShaderStageFlagBits::eVertex,
+                .offset = 0,
+                .size = sizeof(glm::mat4)
         };
 
         m_pipeline = m_renderer->addPipeline(engine::Application::m_resourceManager->createShader("model.vert.spv", "model.frag.spv", {constantRange}),
                                              m_device->m_logicalDevice);
+
         m_renderer->init();
 
         m_scene = std::make_unique<engine::Scene>();
@@ -65,6 +66,7 @@ namespace engine {
 
     void Application::run() {
         init();
+        updatePipeline();
         loop();
         shutdown();
     }
@@ -97,7 +99,66 @@ namespace engine {
             m_renderer->updateVP(m_scene->getCamera().getView(), m_scene->getCamera().getProjection(m_window->aspect()));
             m_scene->update(m_deltaTime);
 
+            m_threadPool->submit([animation = &m_resourceManager->getAnimation(3451133277237452101), deltaTime = m_deltaTime,
+                                  model = m_resourceManager->getModel(2712)] {
+                animation->m_currentTime += deltaTime;
+
+                if (animation->m_currentTime > animation->m_end) animation->m_currentTime -= animation->m_end;
+
+                for (auto& channel : animation->m_channels) {
+                    Animation::Sampler& sampler = animation->m_samplers[channel.samplerIndex];
+
+                    for (size_t i = 0; i < sampler.inputs.size() - 1; ++i) {
+                        if ((animation->m_currentTime >= sampler.inputs[i]) && (animation->m_currentTime <= sampler.inputs[i + 1])) {
+                            float a = (animation->m_currentTime - sampler.inputs[i]) / (sampler.inputs[i + 1] - sampler.inputs[i]);
+                            Model::Node& node = model->getNode(channel.nodeID);
+
+                            if (channel.path == "translation") {
+                                glm::vec4 translation = glm::mix(sampler.outputs[i], sampler.outputs[i + 1], a);
+                                node.matrix = glm::translate(node.matrix, {translation.x, translation.y, translation.z});
+                            } else if (channel.path == "rotation") {
+                                glm::quat q1;
+                                q1.x = sampler.outputs[i].x;
+                                q1.y = sampler.outputs[i].y;
+                                q1.z = sampler.outputs[i].z;
+                                q1.w = sampler.outputs[i].w;
+
+                                glm::quat q2;
+                                q2.x = sampler.outputs[i + 1].x;
+                                q2.y = sampler.outputs[i + 1].y;
+                                q2.z = sampler.outputs[i + 1].z;
+                                q2.w = sampler.outputs[i + 1].w;
+
+                                node.matrix *= glm::mat4(glm::normalize(glm::slerp(q1, q2, a)));
+                            } else if (channel.path == "scale") {
+                                glm::vec4 scale = glm::mix(sampler.outputs[i], sampler.outputs[i + 1], a);
+                            }
+                        }
+                    }
+                }
+            });
             update();
+
+            m_threadPool->submit([model = m_resourceManager->getModel(2712)] {
+                for (auto& node : model->getNodes()) {
+                    if (node.skin > -1) {
+                        glm::mat4 inverseTransform = glm::inverse(node.matrix);
+                        Model::Skin& skin = model->getSkin(node.skin);
+                        size_t numJoints = static_cast<uint32_t>(skin.joints.size());
+                        std::vector<glm::mat4> jointMatrices(numJoints);
+
+                        for (size_t i = 0; i < numJoints; ++i) {
+                            jointMatrices[i] = model->getNode(skin.joints[i]).matrix * skin.inverseBindMatrices[i];
+                            jointMatrices[i] = inverseTransform * jointMatrices[i];
+                        }
+
+                        vk::DeviceSize size = jointMatrices.size() * sizeof(glm::mat4);
+                        skin.ssbo.map(size);
+                        skin.ssbo.copyTo(jointMatrices.data(), size);
+                        skin.ssbo.unmap();
+                    }
+                }
+            });
 
             engine::UIRender::newFrame();
             drawUI();
@@ -123,6 +184,26 @@ namespace engine {
 
     float Application::getDeltaTime() const {
         return m_deltaTime;
+    }
+
+    void Application::updatePipeline() {
+        uint32_t maxPoolSize = m_resourceManager->getSkinsCount();
+        vk::DescriptorPoolSize poolSizes = {
+            .type = vk::DescriptorType::eStorageBuffer,
+            .descriptorCount = maxPoolSize
+        };
+
+        m_resourceManager->createSkinsDescriptors({poolSizes}, maxPoolSize + 1);
+        m_resourceManager->createSkinsDescriptorSets();
+
+        std::vector<vk::DescriptorSetLayout> layouts = {
+                m_renderer->getDescriptorSetLayout(),
+                m_resourceManager->getTextureDescriptorSetLayout(),
+                m_resourceManager->getSkinsDescriptorSetLayout()
+        };
+
+        m_pipeline->cleanup();
+        m_pipeline->create(layouts, m_renderer->getSwapChain(), m_renderer->getRenderPass(), m_device->getMaxUsableSampleCount());
     }
 
 } // namespace core

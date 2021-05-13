@@ -54,11 +54,14 @@ namespace engine {
 
         vk::DescriptorSet& getDescriptorSet();
 
-        std::shared_ptr<GraphicsPipeline> addPipeline(const std::shared_ptr<engine::Shader>& shaderID, vk::Device device, bool inited = false);
+        std::shared_ptr<GraphicsPipeline> addPipeline(const std::shared_ptr<engine::Shader>& shaderID, vk::Device device,
+                                                      std::vector<vk::DescriptorSetLayout>* layouts = nullptr, bool inited = false);
 
         SwapChain& getSwapChain();
 
         [[nodiscard]] uint32_t getImageIndex() const;
+
+        vk::DescriptorSetLayout getDescriptorSetLayout();
 
     private:
         void createRenderPass();
