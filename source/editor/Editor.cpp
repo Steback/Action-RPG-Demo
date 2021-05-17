@@ -12,7 +12,8 @@
 
 namespace editor {
 
-    Editor::Editor() : engine::Application("Editor", {0.24f, 0.24f, 0.24f, 1.0f}), m_currentOperation(ImGuizmo::OPERATION::TRANSLATE) {
+    Editor::Editor() : engine::Application("Editor", {0.24f, 0.24f, 0.24f, 1.0f}, true),
+            m_currentOperation(ImGuizmo::OPERATION::TRANSLATE) {
 
     }
 
@@ -26,7 +27,7 @@ namespace editor {
         };
 
         m_gridPipeline = m_renderer->addPipeline(engine::Application::m_resourceManager->createShader("grid.vert.spv", "grid.frag.spv", {constantRange}, false),
-                                                 m_device->m_logicalDevice, true);
+                                                 m_device->m_logicalDevice, nullptr, true);
 
         m_resourceManager->createModel("cube.json", "cube");
         m_modelsNames.emplace_back("cube");

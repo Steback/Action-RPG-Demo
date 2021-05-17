@@ -13,10 +13,12 @@ namespace engine {
     std::unique_ptr<engine::ResourceManager> Application::m_resourceManager;
     std::unique_ptr<engine::Scene> Application::m_scene;
     std::unique_ptr<ThreadPool> Application::m_threadPool;
+    bool Application::m_editor;
 
-    Application::Application(const std::string& appName, const glm::vec4& clearColor)
+    Application::Application(const std::string& appName, const glm::vec4& clearColor, bool editor)
             : m_clearColor(clearColor) {
         spdlog::info("[App] Start");
+        m_editor = editor;
 
         m_window = std::make_shared<engine::Window>(appName, 1776, 1000);
 
@@ -34,10 +36,12 @@ namespace engine {
         vk::PushConstantRange constantRange{
                 .stageFlags = vk::ShaderStageFlagBits::eVertex,
                 .offset = 0,
-                .size = sizeof(glm::mat4)
+                .size = sizeof(MVP)
         };
 
-        m_pipeline = m_renderer->addPipeline(engine::Application::m_resourceManager->createShader("model.vert.spv", "model.frag.spv", {constantRange}),
+        std::string vertShader = std::string(m_editor ? "editor" : "model") + ".vert.spv";
+        std::string fragShader = std::string(m_editor ? "editor" : "model") + ".frag.spv";
+        m_pipeline = m_renderer->addPipeline(Application::m_resourceManager->createShader(vertShader, fragShader, {constantRange}),
                                              m_device->m_logicalDevice);
 
         m_renderer->init();
@@ -66,7 +70,9 @@ namespace engine {
 
     void Application::run() {
         init();
-        updatePipeline();
+
+        if (!m_editor) updatePipeline();
+
         loop();
         shutdown();
     }
@@ -99,66 +105,70 @@ namespace engine {
             m_renderer->updateVP(m_scene->getCamera().getView(), m_scene->getCamera().getProjection(m_window->aspect()));
             m_scene->update(m_deltaTime);
 
-            m_threadPool->submit([animation = &m_resourceManager->getAnimation(3451133277237452101), deltaTime = m_deltaTime,
-                                  model = m_resourceManager->getModel(2712)] {
-                animation->m_currentTime += deltaTime;
+            if (!m_editor) {
+                m_threadPool->submit([animation = &m_resourceManager->getAnimation(3451133277237452101), deltaTime = m_deltaTime,
+                                             model = m_resourceManager->getModel(2712)] {
+                    animation->m_currentTime += deltaTime;
 
-                if (animation->m_currentTime > animation->m_end) animation->m_currentTime -= animation->m_end;
+                    if (animation->m_currentTime > animation->m_end) animation->m_currentTime -= animation->m_end;
 
-                for (auto& channel : animation->m_channels) {
-                    Animation::Sampler& sampler = animation->m_samplers[channel.samplerIndex];
+                    for (auto& channel : animation->m_channels) {
+                        Animation::Sampler& sampler = animation->m_samplers[channel.samplerIndex];
 
-                    for (size_t i = 0; i < sampler.inputs.size() - 1; ++i) {
-                        if ((animation->m_currentTime >= sampler.inputs[i]) && (animation->m_currentTime <= sampler.inputs[i + 1])) {
-                            float a = (animation->m_currentTime - sampler.inputs[i]) / (sampler.inputs[i + 1] - sampler.inputs[i]);
-                            Model::Node& node = model->getNode(channel.nodeID);
+                        for (size_t i = 0; i < sampler.inputs.size() - 1; ++i) {
+                            if ((animation->m_currentTime >= sampler.inputs[i]) && (animation->m_currentTime <= sampler.inputs[i + 1])) {
+                                float a = (animation->m_currentTime - sampler.inputs[i]) / (sampler.inputs[i + 1] - sampler.inputs[i]);
+                                Model::Node& node = model->getNode(channel.nodeID);
 
-                            if (channel.path == "translation") {
-                                glm::vec4 translation = glm::mix(sampler.outputs[i], sampler.outputs[i + 1], a);
-                                node.matrix = glm::translate(node.matrix, {translation.x, translation.y, translation.z});
-                            } else if (channel.path == "rotation") {
-                                glm::quat q1;
-                                q1.x = sampler.outputs[i].x;
-                                q1.y = sampler.outputs[i].y;
-                                q1.z = sampler.outputs[i].z;
-                                q1.w = sampler.outputs[i].w;
+                                if (channel.path == "translation") {
+                                    glm::vec4 translation = glm::mix(sampler.outputs[i], sampler.outputs[i + 1], a);
+                                    node.matrix = glm::translate(node.matrix, {translation.x, translation.y, translation.z});
+                                } else if (channel.path == "rotation") {
+                                    glm::quat q1;
+                                    q1.x = sampler.outputs[i].x;
+                                    q1.y = sampler.outputs[i].y;
+                                    q1.z = sampler.outputs[i].z;
+                                    q1.w = sampler.outputs[i].w;
 
-                                glm::quat q2;
-                                q2.x = sampler.outputs[i + 1].x;
-                                q2.y = sampler.outputs[i + 1].y;
-                                q2.z = sampler.outputs[i + 1].z;
-                                q2.w = sampler.outputs[i + 1].w;
+                                    glm::quat q2;
+                                    q2.x = sampler.outputs[i + 1].x;
+                                    q2.y = sampler.outputs[i + 1].y;
+                                    q2.z = sampler.outputs[i + 1].z;
+                                    q2.w = sampler.outputs[i + 1].w;
 
-                                node.matrix *= glm::mat4(glm::normalize(glm::slerp(q1, q2, a)));
-                            } else if (channel.path == "scale") {
-                                glm::vec4 scale = glm::mix(sampler.outputs[i], sampler.outputs[i + 1], a);
+                                    node.matrix *= glm::mat4(glm::normalize(glm::slerp(q1, q2, a)));
+                                } else if (channel.path == "scale") {
+                                    glm::vec4 scale = glm::mix(sampler.outputs[i], sampler.outputs[i + 1], a);
+                                }
                             }
                         }
                     }
-                }
-            });
+                });
+            }
             update();
 
-            m_threadPool->submit([model = m_resourceManager->getModel(2712)] {
-                for (auto& node : model->getNodes()) {
-                    if (node.skin > -1) {
-                        glm::mat4 inverseTransform = glm::inverse(node.matrix);
-                        Model::Skin& skin = model->getSkin(node.skin);
-                        size_t numJoints = static_cast<uint32_t>(skin.joints.size());
-                        std::vector<glm::mat4> jointMatrices(numJoints);
+            if (!m_editor) {
+                m_threadPool->submit([model = m_resourceManager->getModel(2712)] {
+                    for (auto& node : model->getNodes()) {
+                        if (node.skin > -1) {
+                            glm::mat4 inverseTransform = glm::inverse(node.matrix);
+                            Model::Skin& skin = model->getSkin(node.skin);
+                            size_t numJoints = static_cast<uint32_t>(skin.joints.size());
+                            std::vector<glm::mat4> jointMatrices(numJoints);
 
-                        for (size_t i = 0; i < numJoints; ++i) {
-                            jointMatrices[i] = model->getNode(skin.joints[i]).matrix * skin.inverseBindMatrices[i];
-                            jointMatrices[i] = inverseTransform * jointMatrices[i];
+                            for (size_t i = 0; i < numJoints; ++i) {
+                                jointMatrices[i] = model->getNode(skin.joints[i]).matrix * skin.inverseBindMatrices[i];
+                                jointMatrices[i] = inverseTransform * jointMatrices[i];
+                            }
+
+                            vk::DeviceSize size = jointMatrices.size() * sizeof(glm::mat4);
+                            skin.ssbo.map(size);
+                            skin.ssbo.copyTo(jointMatrices.data(), size);
+                            skin.ssbo.unmap();
                         }
-
-                        vk::DeviceSize size = jointMatrices.size() * sizeof(glm::mat4);
-                        skin.ssbo.map(size);
-                        skin.ssbo.copyTo(jointMatrices.data(), size);
-                        skin.ssbo.unmap();
                     }
-                }
-            });
+                });
+            }
 
             engine::UIRender::newFrame();
             drawUI();

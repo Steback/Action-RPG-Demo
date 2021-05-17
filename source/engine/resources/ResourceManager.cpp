@@ -10,6 +10,7 @@
 #include "nlohmann/json.hpp"
 
 #include "Shader.hpp"
+#include "../Application.hpp"
 
 using json = nlohmann::json;
 
@@ -243,9 +244,9 @@ namespace engine {
 
             for (auto& nodeID : inputModel.scenes[0].nodes) m_models[modelName]->loadNode(inputModel.nodes[nodeID], inputModel, nodeID);
 
-            m_models[modelName]->loadSkins(inputModel, m_device, m_graphicsQueue);
+            if (!Application::m_editor) m_models[modelName]->loadSkins(inputModel, m_device, m_graphicsQueue);
 
-            if (!modelFile["animations"].empty())
+            if (!modelFile["animations"].empty() && !Application::m_editor)
                 m_models[modelName]->m_animations.ide = loadAnimation(modelFile["animations"]["ide"].get<std::string>(), name + "_ide");
 
             return modelName;

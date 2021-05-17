@@ -26,7 +26,6 @@ namespace engine {
     void ModelInterface::render(vk::CommandBuffer& cmdBuffer, const vk::PipelineLayout& layout) {
         MVP mvp = Application::m_renderer->m_mvp;
 
-
         for (auto& node : m_model->getNodes()) {
             if (node.mesh > 0) {
                 auto& transform = Application::m_scene->getComponent<Transform>(m_entityID);
@@ -34,8 +33,7 @@ namespace engine {
                 auto& mesh = Application::m_resourceManager->getMesh(node.mesh);
                 mvp.model = modelMatrix;
 
-                glm::mat4 mvpMatrix = mvp.getMatrix();
-                cmdBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(mvpMatrix), &mvpMatrix);
+                cmdBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(MVP), &mvp);
 
                 vk::Buffer vertexBuffer[] = {mesh.getVertexBuffer()};
                 vk::DeviceSize offsets[] = {0};
@@ -47,7 +45,7 @@ namespace engine {
                         engine::Application::m_resourceManager->getTexture(mesh.getTextureId()).getDescriptorSet()
                 };
 
-                if (node.skin > -1)
+                if (node.skin > -1 && !Application::m_editor)
                     descriptorSetGroup.push_back(m_model->getSkin(node.skin).descriptorSet);
 
                 cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, 0,

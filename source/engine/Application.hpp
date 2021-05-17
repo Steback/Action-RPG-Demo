@@ -26,7 +26,8 @@ namespace engine {
 
     class Application {
     public:
-        explicit Application(const std::string& appName, const glm::vec4& clearColor = {glm::vec3(0.0f), 1.0f});
+        explicit Application(const std::string& appName, const glm::vec4& clearColor = {glm::vec3(0.0f), 1.0f},
+                             bool editor = false);
 
         ~Application();
 
@@ -56,6 +57,7 @@ namespace engine {
         static std::unique_ptr<engine::ResourceManager> m_resourceManager;
         static std::unique_ptr<engine::Scene> m_scene;
         static std::unique_ptr<ThreadPool> m_threadPool;
+        static bool m_editor;
 
     protected:
         std::shared_ptr<engine::Window> m_window;
