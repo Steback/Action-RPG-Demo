@@ -319,6 +319,7 @@ namespace engine {
                 }
 
                 bool hasSkin = (jointIndicesBuffer && jointWeightsBuffer);
+
                 for (size_t v = 0; v < vertexCount; ++v) {
                     engine::Vertex vertex{};
                     vertex.position = glm::make_vec3(&positionBuffer[v * 3]);

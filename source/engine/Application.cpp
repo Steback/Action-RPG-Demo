@@ -39,8 +39,8 @@ namespace engine {
                 .size = sizeof(MVP)
         };
 
-        std::string vertShader = std::string(m_editor ? "editor" : "model") + ".vert.spv";
-        std::string fragShader = std::string(m_editor ? "editor" : "model") + ".frag.spv";
+        std::string vertShader = std::string(m_editor ? "editor" : "animation") + ".vert.spv";
+        std::string fragShader = std::string(m_editor ? "editor" : "animation") + ".frag.spv";
         m_pipeline = m_renderer->addPipeline(Application::m_resourceManager->createShader(vertShader, fragShader, {constantRange}),
                                              m_device->m_logicalDevice);
 
@@ -107,7 +107,7 @@ namespace engine {
 
             if (!m_editor) {
                 m_threadPool->submit([animation = &m_resourceManager->getAnimation(3451133277237452101), deltaTime = m_deltaTime,
-                                             model = m_resourceManager->getModel(2712)] {
+                                      model = m_resourceManager->getModel(2712)] {
                     animation->m_currentTime += deltaTime;
 
                     if (animation->m_currentTime > animation->m_end) animation->m_currentTime -= animation->m_end;
@@ -115,14 +115,18 @@ namespace engine {
                     for (auto& channel : animation->m_channels) {
                         Animation::Sampler& sampler = animation->m_samplers[channel.samplerIndex];
 
+                        if (sampler.interpolation != "LINEAR") {
+                            spdlog::error( "This sample only supports linear interpolations\n");
+                            continue;
+                        }
+
                         for (size_t i = 0; i < sampler.inputs.size() - 1; ++i) {
                             if ((animation->m_currentTime >= sampler.inputs[i]) && (animation->m_currentTime <= sampler.inputs[i + 1])) {
                                 float a = (animation->m_currentTime - sampler.inputs[i]) / (sampler.inputs[i + 1] - sampler.inputs[i]);
                                 Model::Node& node = model->getNode(channel.nodeID);
 
                                 if (channel.path == "translation") {
-                                    glm::vec4 translation = glm::mix(sampler.outputs[i], sampler.outputs[i + 1], a);
-                                    node.matrix = glm::translate(node.matrix, {translation.x, translation.y, translation.z});
+                                    node.position = glm::mix(sampler.outputs[i], sampler.outputs[i + 1], a);
                                 } else if (channel.path == "rotation") {
                                     glm::quat q1;
                                     q1.x = sampler.outputs[i].x;
@@ -136,28 +140,23 @@ namespace engine {
                                     q2.z = sampler.outputs[i + 1].z;
                                     q2.w = sampler.outputs[i + 1].w;
 
-                                    node.matrix *= glm::mat4(glm::normalize(glm::slerp(q1, q2, a)));
+                                    node.rotation = glm::normalize(glm::slerp(q1, q2, a));
                                 } else if (channel.path == "scale") {
-                                    glm::vec4 scale = glm::mix(sampler.outputs[i], sampler.outputs[i + 1], a);
+                                    node.scale = glm::mix(sampler.outputs[i], sampler.outputs[i + 1], a);
                                 }
                             }
                         }
                     }
-                });
-            }
-            update();
 
-            if (!m_editor) {
-                m_threadPool->submit([model = m_resourceManager->getModel(2712)] {
                     for (auto& node : model->getNodes()) {
                         if (node.skin > -1) {
-                            glm::mat4 inverseTransform = glm::inverse(node.matrix);
-                            Model::Skin& skin = model->getSkin(node.skin);
+                            glm::mat4 inverseTransform = glm::inverse(node.getMatrix(model));
+                            Model::Skin &skin = model->getSkin(node.skin);
                             size_t numJoints = static_cast<uint32_t>(skin.joints.size());
                             std::vector<glm::mat4> jointMatrices(numJoints);
 
                             for (size_t i = 0; i < numJoints; ++i) {
-                                jointMatrices[i] = model->getNode(skin.joints[i]).matrix * skin.inverseBindMatrices[i];
+                                jointMatrices[i] = model->getNode(skin.joints[i]).getMatrix(model) * skin.inverseBindMatrices[i];
                                 jointMatrices[i] = inverseTransform * jointMatrices[i];
                             }
 
@@ -170,6 +169,8 @@ namespace engine {
                 });
             }
 
+            update();
+
             engine::UIRender::newFrame();
             drawUI();
             m_luaManager.executeFunction("drawUI");
@@ -181,6 +182,8 @@ namespace engine {
                 m_commands->beginRenderPass(m_renderer->getRenderPass(), m_clearColor, m_renderer->getFrameBuffer(), m_renderer->getSwapChainExtent());
                 {
                     m_pipeline->bind(m_commands->getBuffer());
+                    m_commands->getBuffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipeline->getLayout(), 0, 1,
+                                                               &m_renderer->getDescriptorSet(), 0, nullptr);
                     m_scene->render(m_commands->getBuffer(), m_pipeline);
                     renderCommands(m_commands->getBuffer());
                 }

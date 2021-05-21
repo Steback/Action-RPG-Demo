@@ -16,15 +16,15 @@ layout(push_constant) uniform MVP {
     mat4 model;
 } mvp;
 
-layout(set = 2, binding = 0) readonly buffer JointMatrices {
+layout(std430, set = 2, binding = 0) readonly buffer JointMatrices {
     mat4 jointMatrices[];
 };
 
 void main() {
     mat4 skinMat = jointWeights.x * jointMatrices[int(jointIndices.x)] +
-            jointWeights.y * jointMatrices[int(jointIndices.y)] +
-            jointWeights.z * jointMatrices[int(jointIndices.z)] +
-            jointWeights.x * jointMatrices[int(jointIndices.x)];
+                   jointWeights.y * jointMatrices[int(jointIndices.y)] +
+                   jointWeights.z * jointMatrices[int(jointIndices.z)] +
+                   jointWeights.w * jointMatrices[int(jointIndices.w)];
 
     gl_Position = mvp.proj * mvp.view * mvp.model * skinMat * vec4(position, 1.0);
     fragColor = color;

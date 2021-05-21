@@ -21,6 +21,23 @@ const std::vector<std::string> conflictsNodes = {
 
 namespace engine {
 
+    glm::mat4 Model::Node::getLocalMatrix() const {
+        return glm::translate(glm::mat4(1.0f), position) * glm::mat4(rotation) * glm::scale(glm::mat4(1.0f), scale) * matrix;
+    }
+
+    glm::mat4 Model::Node::getMatrix(const std::shared_ptr<Model>& model) const {
+        glm::mat4 nodeMatrix = getLocalMatrix();
+        int32_t parenID = parent;
+
+        while (parenID > -1) {
+            Model::Node& currentParent = model->getNode(parenID);
+            nodeMatrix = currentParent.getLocalMatrix() * nodeMatrix;
+            parenID = currentParent.parent;
+        }
+
+        return nodeMatrix;
+    }
+
     Model::Model() = default;
 
     Model::Model(std::string name, int32_t numNodes) : m_name(std::move(name)) {
@@ -48,30 +65,26 @@ namespace engine {
 
     void Model::loadNode(const tinygltf::Node &inputNode, const tinygltf::Model &inputModel, uint32_t nodeID, int32_t parentID) {
         Node node{};
-        glm::mat4 matrix = glm::mat4(1.0f);
         node.id = nodeID;
         node.name = inputNode.name;
 
         if (inputNode.translation.size() == 3) {
             node.position = glm::make_vec3(inputNode.translation.data());
-            matrix = glm::translate(matrix, node.position);
         }
 
         if (inputNode.rotation.size() == 4) {
             glm::quat rotation = glm::make_quat(inputNode.rotation.data());
             node.rotation = glm::mat4(rotation);
-            matrix *= glm::mat4(node.rotation);
         }
 
         if (inputNode.scale.size() == 3) {
             node.scale = glm::make_vec3(inputNode.scale.data());
-            matrix = glm::scale(matrix, node.scale);
         }
 
         if (inputNode.matrix.size() == 16) {
-            node.matrix = matrix * glm::mat4(glm::make_mat4x4(inputNode.matrix.data()));
+            node.matrix = glm::mat4(glm::make_mat4x4(inputNode.matrix.data()));
         } else {
-            node.matrix = matrix;
+            node.matrix = glm::mat4(1.0f);
         }
 
         if (inputNode.mesh > -1) {
@@ -94,8 +107,8 @@ namespace engine {
             // TODO: All the skeletons models have a error when applying transforms with some nodes.
             // So my "best" solution to this problem. I create a vector with all the name of the conflict nodes and
             // not apply the transform to them. If anyone can tell what's the error or how to solve it, I really appreciate that.
-            if (std::find(conflictsNodes.begin(), conflictsNodes.end(), node.name) == conflictsNodes.end())
-                node.matrix = parent.matrix * node.matrix;
+//            if (std::find(conflictsNodes.begin(), conflictsNodes.end(), node.name) == conflictsNodes.end())
+//                node.matrix = parent.matrix * node.matrix;
         } else {
             m_rootNode = node.id;
         }
@@ -163,5 +176,4 @@ namespace engine {
     uint32_t Model::getSkinsCount() const {
         return static_cast<uint32_t>(m_skins.size());
     }
-
 } // namespace core

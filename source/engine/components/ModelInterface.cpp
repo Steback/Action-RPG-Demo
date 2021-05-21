@@ -29,28 +29,32 @@ namespace engine {
         for (auto& node : m_model->getNodes()) {
             if (node.mesh > 0) {
                 auto& transform = Application::m_scene->getComponent<Transform>(m_entityID);
-                glm::mat4 modelMatrix = transform.worldTransformMatrix() * node.matrix;
-                auto& mesh = Application::m_resourceManager->getMesh(node.mesh);
-                mvp.model = modelMatrix;
+                glm::mat4 modelMatrix = node.matrix;
+                int32_t parentID = node.parent;
 
+                while (parentID > -1) {
+                    Model::Node& currentParent = m_model->getNode(parentID);
+                    modelMatrix = currentParent.matrix * modelMatrix;
+                    parentID = currentParent.parent;
+                }
+
+                mvp.model = transform.worldTransformMatrix() * modelMatrix;
                 cmdBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(MVP), &mvp);
+
+                if (node.skin > -1 && !Application::m_editor)
+                    cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, 2, 1, &m_model->getSkin(node.skin).descriptorSet,
+                                                 0, nullptr);
+
+                auto& mesh = Application::m_resourceManager->getMesh(node.mesh);
 
                 vk::Buffer vertexBuffer[] = {mesh.getVertexBuffer()};
                 vk::DeviceSize offsets[] = {0};
                 cmdBuffer.bindVertexBuffers(0, 1, vertexBuffer, offsets);
                 cmdBuffer.bindIndexBuffer(mesh.getIndexBuffer(), 0, vk::IndexType::eUint32);
 
-                std::vector<vk::DescriptorSet> descriptorSetGroup = {
-                        Application::m_renderer->getDescriptorSet(),
-                        engine::Application::m_resourceManager->getTexture(mesh.getTextureId()).getDescriptorSet()
-                };
-
-                if (node.skin > -1 && !Application::m_editor)
-                    descriptorSetGroup.push_back(m_model->getSkin(node.skin).descriptorSet);
-
-                cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, 0,
-                                             static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(),
-                                             0,nullptr);
+                vk::DescriptorSet texture = Application::m_resourceManager->getTexture(mesh.getTextureId()).getDescriptorSet();
+                cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, 1, 1,
+                                             &texture, 0, nullptr);
 
                 cmdBuffer.drawIndexed(mesh.getIndexCount(), 1, 0, 0, 0);
             }

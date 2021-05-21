@@ -31,6 +31,10 @@ namespace engine {
             uint64_t mesh{};
             int32_t parent{-1};
             int32_t skin{-1};
+
+            glm::mat4 getLocalMatrix() const;
+
+            glm::mat4 getMatrix(const std::shared_ptr<Model>& model) const;
         };
 
         struct Skin {

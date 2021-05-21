@@ -5,12 +5,12 @@ import os
 GLSLC = ''
 
 if sys.platform == "linux":
-    GLSLC = '../bin/glslangValidator'
+    GLSLC = 'bin/glslangValidator'
 elif sys.platform == "win32":
-    GLSLC = '../bin/glslangValidator.exe'
+    GLSLC = 'bin/glslangValidator.exe'
 
-SHADERS_DIR = '../data/shaders/'
-BUILD_DIR = '../bin/shaders/'
+SHADERS_DIR = 'data/shaders/'
+BUILD_DIR = 'bin/shaders/'
 
 if __name__ == "__main__":
     print("Compile Shaders!")
