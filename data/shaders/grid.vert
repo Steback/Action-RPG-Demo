@@ -1,9 +1,9 @@
 #version 450
 
 layout(push_constant) uniform MVP {
-    mat4 model;
-    mat4 view;
     mat4 proj;
+    mat4 view;
+    mat4 model;
 } view;
 
 layout(location = 1) out vec3 nearPoint;

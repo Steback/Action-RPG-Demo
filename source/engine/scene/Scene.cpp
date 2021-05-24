@@ -44,11 +44,12 @@ namespace engine {
         }
     }
 
-    void Scene::render(vk::CommandBuffer& cmdBuffer, const std::shared_ptr<GraphicsPipeline>& pipeline) {
+    void Scene::render(vk::CommandBuffer& cmdBuffer, const std::shared_ptr<GraphicsPipeline>& pipeAnimation,
+                       const std::shared_ptr<GraphicsPipeline>& pipeModel) {
         auto view = m_registry.view<engine::ModelInterface>();
 
         for (auto& entity : view) {
-            view.get<ModelInterface>(entity).render(cmdBuffer, pipeline->getLayout());;
+            view.get<ModelInterface>(entity).render(cmdBuffer, pipeAnimation, pipeModel);
         }
     }
 

@@ -8,17 +8,6 @@
 #include "../Application.hpp"
 
 
-const std::vector<std::string> conflictsNodes = {
-        "Bow",
-        "fould_A",
-        "fould_B",
-        "helmet_A",
-        "helmet_B",
-        "helmet_C",
-        "hood_A",
-        "skeleton_mesh"
-};
-
 namespace engine {
 
     glm::mat4 Model::Node::getLocalMatrix() const {
@@ -103,12 +92,6 @@ namespace engine {
             auto& parent = m_nodes[parentID];
             parent.children.push_back(node.id);
             node.parent = static_cast<int32_t>(parent.id);
-
-            // TODO: All the skeletons models have a error when applying transforms with some nodes.
-            // So my "best" solution to this problem. I create a vector with all the name of the conflict nodes and
-            // not apply the transform to them. If anyone can tell what's the error or how to solve it, I really appreciate that.
-//            if (std::find(conflictsNodes.begin(), conflictsNodes.end(), node.name) == conflictsNodes.end())
-//                node.matrix = parent.matrix * node.matrix;
         } else {
             m_rootNode = node.id;
         }

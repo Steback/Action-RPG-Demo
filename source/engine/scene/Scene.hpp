@@ -55,7 +55,8 @@ namespace engine {
 
         void update(float deltaTime);
 
-        void render(vk::CommandBuffer& cmdBuffer, const std::shared_ptr<GraphicsPipeline>& pipeline);
+        void render(vk::CommandBuffer& cmdBuffer, const std::shared_ptr<GraphicsPipeline>& pipeAnimation,
+                    const std::shared_ptr<GraphicsPipeline>& pipeModel);
 
         void cleanup();
 

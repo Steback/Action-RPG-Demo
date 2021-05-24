@@ -41,8 +41,11 @@ namespace engine {
 
         std::string vertShader = std::string(m_editor ? "editor" : "animation") + ".vert.spv";
         std::string fragShader = std::string(m_editor ? "editor" : "animation") + ".frag.spv";
-        m_pipeline = m_renderer->addPipeline(Application::m_resourceManager->createShader(vertShader, fragShader, {constantRange}),
-                                             m_device->m_logicalDevice);
+        m_pipelineAnimation = m_renderer->addPipeline(Application::m_resourceManager->createShader(vertShader, fragShader, {constantRange}),
+                                                      m_device->m_logicalDevice);
+
+        m_pipelineModel = m_renderer->addPipeline(Application::m_resourceManager->createShader("model.vert.spv", "model.frag.spv", {constantRange}),
+                                                      m_device->m_logicalDevice);
 
         m_renderer->init();
 
@@ -181,10 +184,10 @@ namespace engine {
             {
                 m_commands->beginRenderPass(m_renderer->getRenderPass(), m_clearColor, m_renderer->getFrameBuffer(), m_renderer->getSwapChainExtent());
                 {
-                    m_pipeline->bind(m_commands->getBuffer());
-                    m_commands->getBuffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipeline->getLayout(), 0, 1,
+                    m_pipelineAnimation->bind(m_commands->getBuffer());
+                    m_commands->getBuffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineAnimation->getLayout(), 0, 1,
                                                                &m_renderer->getDescriptorSet(), 0, nullptr);
-                    m_scene->render(m_commands->getBuffer(), m_pipeline);
+                    m_scene->render(m_commands->getBuffer(), m_pipelineAnimation, m_pipelineModel);
                     renderCommands(m_commands->getBuffer());
                 }
                 m_commands->endRenderPass();
@@ -215,8 +218,8 @@ namespace engine {
                 m_resourceManager->getSkinsDescriptorSetLayout()
         };
 
-        m_pipeline->cleanup();
-        m_pipeline->create(layouts, m_renderer->getSwapChain(), m_renderer->getRenderPass(), m_device->getMaxUsableSampleCount());
+        m_pipelineAnimation->cleanup();
+        m_pipelineAnimation->create(layouts, m_renderer->getSwapChain(), m_renderer->getRenderPass(), m_device->getMaxUsableSampleCount());
     }
 
 } // namespace core

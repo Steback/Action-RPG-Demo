@@ -4,6 +4,17 @@
 #include "../Application.hpp"
 
 
+const std::vector<std::string> conflictsNodes = {
+        "Bow",
+        "fould_A",
+        "fould_B",
+        "helmet_A",
+        "helmet_B",
+        "helmet_C",
+        "hood_A",
+        "skeleton_mesh"
+};
+
 namespace engine {
 
     ModelInterface::ModelInterface(uint64_t modelID, uint32_t entityID)
@@ -23,26 +34,25 @@ namespace engine {
         return m_model->getName();
     }
 
-    void ModelInterface::render(vk::CommandBuffer& cmdBuffer, const vk::PipelineLayout& layout) {
-        MVP mvp = Application::m_renderer->m_mvp;
-
+    void ModelInterface::render(vk::CommandBuffer& cmdBuffer, const std::shared_ptr<GraphicsPipeline>& pipeAnimation,
+                                const std::shared_ptr<GraphicsPipeline>& pipeModel) {
         for (auto& node : m_model->getNodes()) {
             if (node.mesh > 0) {
+                bool haveSkin = node.skin > -1;
+                std::shared_ptr<GraphicsPipeline> pipeline = ( haveSkin ? pipeAnimation : pipeModel);
+                pipeline->bind(cmdBuffer);
+
                 auto& transform = Application::m_scene->getComponent<Transform>(m_entityID);
-                glm::mat4 modelMatrix = node.matrix;
-                int32_t parentID = node.parent;
+                // TODO: All the skeletons models have a error when applying transforms with some nodes.
+                // So my "best" solution to this problem. I create a vector with all the name of the conflict nodes and
+                // not apply the transform to them. If anyone can tell what's the error or how to solve it, I really appreciate that.
+                bool conflictNode = std::find(conflictsNodes.begin(), conflictsNodes.end(), node.name) == conflictsNodes.end();
 
-                while (parentID > -1) {
-                    Model::Node& currentParent = m_model->getNode(parentID);
-                    modelMatrix = currentParent.matrix * modelMatrix;
-                    parentID = currentParent.parent;
-                }
+                Application::m_renderer->m_mvp.model = transform.worldTransformMatrix() * (conflictNode ? node.getMatrix(m_model) : node.matrix);
+                cmdBuffer.pushConstants(pipeline->getLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(MVP), &Application::m_renderer->m_mvp);
 
-                mvp.model = transform.worldTransformMatrix() * modelMatrix;
-                cmdBuffer.pushConstants(layout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(MVP), &mvp);
-
-                if (node.skin > -1 && !Application::m_editor)
-                    cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, 2, 1, &m_model->getSkin(node.skin).descriptorSet,
+                if (haveSkin && !Application::m_editor)
+                    cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline->getLayout(), 2, 1, &m_model->getSkin(node.skin).descriptorSet,
                                                  0, nullptr);
 
                 auto& mesh = Application::m_resourceManager->getMesh(node.mesh);
@@ -53,7 +63,7 @@ namespace engine {
                 cmdBuffer.bindIndexBuffer(mesh.getIndexBuffer(), 0, vk::IndexType::eUint32);
 
                 vk::DescriptorSet texture = Application::m_resourceManager->getTexture(mesh.getTextureId()).getDescriptorSet();
-                cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, 1, 1,
+                cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline->getLayout(), 1, 1,
                                              &texture, 0, nullptr);
 
                 cmdBuffer.drawIndexed(mesh.getIndexCount(), 1, 0, 0, 0);

@@ -8,8 +8,9 @@
 #define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
 #include "vulkan/vulkan.hpp"
 
-#include "../resources/Model.hpp"
 #include "Transform.hpp"
+#include "../resources/Model.hpp"
+#include "../renderer/GraphicsPipeline.hpp"
 
 
 namespace engine {
@@ -26,7 +27,8 @@ namespace engine {
 
         std::string& getName();
 
-        void render(vk::CommandBuffer& cmdBuffer, const vk::PipelineLayout& layout);
+        void render(vk::CommandBuffer& cmdBuffer, const std::shared_ptr<GraphicsPipeline>& pipeAnimation,
+                    const std::shared_ptr<GraphicsPipeline>& pipeModel);
 
         void setModel(uint64_t modelID);
 
