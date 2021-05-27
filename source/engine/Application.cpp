@@ -43,10 +43,6 @@ namespace engine {
         std::string fragShader = std::string(m_editor ? "editor" : "animation") + ".frag.spv";
         m_pipelineAnimation = m_renderer->addPipeline(Application::m_resourceManager->createShader(vertShader, fragShader, {constantRange}),
                                                       m_device->m_logicalDevice);
-
-        m_pipelineModel = m_renderer->addPipeline(Application::m_resourceManager->createShader("model.vert.spv", "model.frag.spv", {constantRange}),
-                                                      m_device->m_logicalDevice);
-
         m_renderer->init();
 
         m_scene = std::make_unique<engine::Scene>();
@@ -187,7 +183,7 @@ namespace engine {
                     m_pipelineAnimation->bind(m_commands->getBuffer());
                     m_commands->getBuffer().bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_pipelineAnimation->getLayout(), 0, 1,
                                                                &m_renderer->getDescriptorSet(), 0, nullptr);
-                    m_scene->render(m_commands->getBuffer(), m_pipelineAnimation, m_pipelineModel);
+                    m_scene->render(m_commands->getBuffer(), m_pipelineAnimation);
                     renderCommands(m_commands->getBuffer());
                 }
                 m_commands->endRenderPass();

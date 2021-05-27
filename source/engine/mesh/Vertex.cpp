@@ -28,26 +28,26 @@ namespace engine {
             {
                 .location = 2,
                 .binding = 0,
-                .format = vk::Format::eR32G32B32Sfloat,
-                .offset = offsetof(Vertex, color)
+                .format = vk::Format::eR32G32Sfloat,
+                .offset = offsetof(Vertex, uv0)
             },
             {
                 .location = 3,
                 .binding = 0,
                 .format = vk::Format::eR32G32Sfloat,
-                .offset = offsetof(Vertex, texCoord)
+                .offset = offsetof(Vertex, uv1)
             },
             {
                 .location = 4,
                 .binding = 0,
                 .format = vk::Format::eR32G32B32A32Sfloat,
-                .offset = offsetof(Vertex, jointIndices)
+                .offset = offsetof(Vertex, joint0)
             },
             {
                 .location = 5,
                 .binding = 0,
                 .format = vk::Format::eR32G32B32A32Sfloat,
-                .offset = offsetof(Vertex, jointWeights)
+                .offset = offsetof(Vertex, weight0)
             }
         };
     }

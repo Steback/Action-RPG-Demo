@@ -66,7 +66,6 @@ namespace engine {
         float m_lastTime{}, m_deltaTime{};
         glm::vec4 m_clearColor;
         std::shared_ptr<GraphicsPipeline> m_pipelineAnimation;
-        std::shared_ptr<GraphicsPipeline> m_pipelineModel;
         std::shared_ptr<CommandList> m_commands;
         UIRender m_ui;
         LuaManager m_luaManager;

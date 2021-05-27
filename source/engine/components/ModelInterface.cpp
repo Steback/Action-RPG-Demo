@@ -34,13 +34,10 @@ namespace engine {
         return m_model->getName();
     }
 
-    void ModelInterface::render(vk::CommandBuffer& cmdBuffer, const std::shared_ptr<GraphicsPipeline>& pipeAnimation,
-                                const std::shared_ptr<GraphicsPipeline>& pipeModel) {
+    void ModelInterface::render(vk::CommandBuffer& cmdBuffer, const std::shared_ptr<GraphicsPipeline>& pipeAnimation) {
         for (auto& node : m_model->getNodes()) {
             if (node.mesh > 0) {
                 bool haveSkin = node.skin > -1;
-                std::shared_ptr<GraphicsPipeline> pipeline = ( haveSkin ? pipeAnimation : pipeModel);
-                pipeline->bind(cmdBuffer);
 
                 auto& transform = Application::m_scene->getComponent<Transform>(m_entityID);
                 // TODO: All the skeletons models have a error when applying transforms with some nodes.
@@ -49,10 +46,10 @@ namespace engine {
                 bool conflictNode = std::find(conflictsNodes.begin(), conflictsNodes.end(), node.name) == conflictsNodes.end();
 
                 Application::m_renderer->m_mvp.model = transform.worldTransformMatrix() * (conflictNode ? node.getMatrix(m_model) : node.matrix);
-                cmdBuffer.pushConstants(pipeline->getLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(MVP), &Application::m_renderer->m_mvp);
+                cmdBuffer.pushConstants(pipeAnimation->getLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(MVP), &Application::m_renderer->m_mvp);
 
                 if (haveSkin && !Application::m_editor)
-                    cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline->getLayout(), 2, 1, &m_model->getSkin(node.skin).descriptorSet,
+                    cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeAnimation->getLayout(), 2, 1, &m_model->getSkin(node.skin).descriptorSet,
                                                  0, nullptr);
 
                 auto& mesh = Application::m_resourceManager->getMesh(node.mesh);
@@ -63,7 +60,7 @@ namespace engine {
                 cmdBuffer.bindIndexBuffer(mesh.getIndexBuffer(), 0, vk::IndexType::eUint32);
 
                 vk::DescriptorSet texture = Application::m_resourceManager->getTexture(mesh.getTextureId()).getDescriptorSet();
-                cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline->getLayout(), 1, 1,
+                cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeAnimation->getLayout(), 1, 1,
                                              &texture, 0, nullptr);
 
                 cmdBuffer.drawIndexed(mesh.getIndexCount(), 1, 0, 0, 0);

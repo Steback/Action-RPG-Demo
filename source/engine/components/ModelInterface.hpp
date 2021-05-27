@@ -27,8 +27,7 @@ namespace engine {
 
         std::string& getName();
 
-        void render(vk::CommandBuffer& cmdBuffer, const std::shared_ptr<GraphicsPipeline>& pipeAnimation,
-                    const std::shared_ptr<GraphicsPipeline>& pipeModel);
+        void render(vk::CommandBuffer& cmdBuffer, const std::shared_ptr<GraphicsPipeline>& pipeAnimation);
 
         void setModel(uint64_t modelID);
 

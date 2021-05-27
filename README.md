@@ -27,3 +27,4 @@ The resources in this section are all I used for learn some of the key concepts 
 * [Infinite grid](http://asliceofrendering.com/scene%20helper/2020/01/05/InfiniteGrid/)
 * [C++ Cocurrency in Action](https://www.amazon.com/C-Concurrency-Action-Practical-Multithreading/dp/1933988770)
 * [Thread Pool Tutorial - How-To](https://youtu.be/eWTGtp3HXiw)
+* [Vulkan physically-Based Rendering using glTF 2.0 models](https://github.com/SaschaWillems/Vulkan-glTF-PBR/) (It helped me with loading and rendering animations. Also, with some concepts about render glTf models)
