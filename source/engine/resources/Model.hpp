@@ -42,8 +42,6 @@ namespace engine {
             int32_t rootNodeID{};
             std::vector<glm::mat4> inverseBindMatrices;
             std::vector<uint32_t> joints;
-            Buffer ssbo;
-            vk::DescriptorSet descriptorSet;
         };
 
         struct Animations {

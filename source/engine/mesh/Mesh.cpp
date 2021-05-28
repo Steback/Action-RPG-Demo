@@ -12,6 +12,13 @@ namespace engine {
             : m_vertexCount(vertices.size()), m_indexCount(indices.size()), m_textureID(textureID) {
         createVertexBuffer(vertices, transferQueue, device);
         createIndexBuffer(indices, transferQueue, device);
+
+        vk::DeviceSize size = sizeof(m_uniformBlock);
+        m_uniformBuffer = device->createBuffer(vk::BufferUsageFlagBits::eUniformBuffer,
+                                               vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
+                                               size);
+        m_uniformBuffer.map(size);
+        m_uniformBuffer.setupDescriptor(size);
     }
 
     Mesh::~Mesh() = default;
@@ -33,6 +40,7 @@ namespace engine {
     }
 
     void Mesh::cleanup() {
+        m_uniformBuffer.destroy();
         m_indexBuffer.destroy();
         m_vertexBuffer.destroy();
     }

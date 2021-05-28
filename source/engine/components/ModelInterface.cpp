@@ -35,23 +35,12 @@ namespace engine {
     }
 
     void ModelInterface::render(vk::CommandBuffer& cmdBuffer, const std::shared_ptr<GraphicsPipeline>& pipeAnimation) {
+        auto& transform = Application::m_scene->getComponent<Transform>(m_entityID);
+        Application::m_renderer->m_mvp.model = transform.worldTransformMatrix();
+        cmdBuffer.pushConstants(pipeAnimation->getLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(MVP), &Application::m_renderer->m_mvp);
+
         for (auto& node : m_model->getNodes()) {
             if (node.mesh > 0) {
-                bool haveSkin = node.skin > -1;
-
-                auto& transform = Application::m_scene->getComponent<Transform>(m_entityID);
-                // TODO: All the skeletons models have a error when applying transforms with some nodes.
-                // So my "best" solution to this problem. I create a vector with all the name of the conflict nodes and
-                // not apply the transform to them. If anyone can tell what's the error or how to solve it, I really appreciate that.
-                bool conflictNode = std::find(conflictsNodes.begin(), conflictsNodes.end(), node.name) == conflictsNodes.end();
-
-                Application::m_renderer->m_mvp.model = transform.worldTransformMatrix() * (conflictNode ? node.getMatrix(m_model) : node.matrix);
-                cmdBuffer.pushConstants(pipeAnimation->getLayout(), vk::ShaderStageFlagBits::eVertex, 0, sizeof(MVP), &Application::m_renderer->m_mvp);
-
-                if (haveSkin && !Application::m_editor)
-                    cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeAnimation->getLayout(), 2, 1, &m_model->getSkin(node.skin).descriptorSet,
-                                                 0, nullptr);
-
                 auto& mesh = Application::m_resourceManager->getMesh(node.mesh);
 
                 vk::Buffer vertexBuffer[] = {mesh.getVertexBuffer()};
@@ -59,10 +48,14 @@ namespace engine {
                 cmdBuffer.bindVertexBuffers(0, 1, vertexBuffer, offsets);
                 cmdBuffer.bindIndexBuffer(mesh.getIndexBuffer(), 0, vk::IndexType::eUint32);
 
-                vk::DescriptorSet texture = Application::m_resourceManager->getTexture(mesh.getTextureId()).getDescriptorSet();
-                cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeAnimation->getLayout(), 1, 1,
-                                             &texture, 0, nullptr);
+                std::vector<vk::DescriptorSet> descriptorGroup =  {
+                    Application::m_resourceManager->getTexture(mesh.getTextureId()).getDescriptorSet(),
+                    mesh.m_uniformBuffer.m_descriptorSet
+                };
 
+                cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeAnimation->getLayout(), 1,
+                                             static_cast<uint32_t>(descriptorGroup.size()), descriptorGroup.data(),
+                                             0, nullptr);
                 cmdBuffer.drawIndexed(mesh.getIndexCount(), 1, 0, 0, 0);
             }
         }

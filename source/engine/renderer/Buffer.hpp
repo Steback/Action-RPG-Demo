@@ -40,6 +40,7 @@ namespace engine {
         vk::Buffer m_buffer = nullptr;
         vk::DeviceMemory m_memory = nullptr;
         vk::DescriptorBufferInfo m_descriptor{};
+        vk::DescriptorSet m_descriptorSet{};
         vk::DeviceSize m_size = 0;
         void* m_mapped = nullptr;
     };

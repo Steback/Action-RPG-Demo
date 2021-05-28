@@ -18,17 +18,28 @@ layout(push_constant) uniform MVP {
 
 #define MAX_NUM_JOINTS 128
 
-layout(std430, set = 2, binding = 0) readonly buffer JointMatrices {
-    mat4 jointMatrices[];
-};
+layout (set = 2, binding = 0) uniform UBONode {
+    mat4 matrix;
+    mat4 jointMatrix[MAX_NUM_JOINTS];
+    float jointCount;
+} node;
 
 void main() {
-    mat4 skinMat = jointWeights.x * jointMatrices[int(jointIndices.x)] +
-                   jointWeights.y * jointMatrices[int(jointIndices.y)] +
-                   jointWeights.z * jointMatrices[int(jointIndices.z)] +
-                   jointWeights.w * jointMatrices[int(jointIndices.w)];
+    vec4 locPos;
 
-    gl_Position = mvp.proj * mvp.view * mvp.model * skinMat * vec4(position, 1.0);
+    if (node.jointCount > 0.0) {
+        // Mesh is skinned
+        mat4 skinMat =  jointWeights.x * node.jointMatrix[int(jointIndices.x)] +
+                        jointWeights.y * node.jointMatrix[int(jointIndices.y)] +
+                        jointWeights.z * node.jointMatrix[int(jointIndices.z)] +
+                        jointWeights.w * node.jointMatrix[int(jointIndices.w)];
+
+        locPos = mvp.model * node.matrix * skinMat * vec4(position, 1.0);
+    } else {
+        locPos = mvp.model * node.matrix * vec4(position, 1.0);
+    }
+
+    gl_Position = mvp.proj * mvp.view * locPos;
     fragTexCoord0 = texCoord0;
     fragTexCoord1 = texCoord1;
 }

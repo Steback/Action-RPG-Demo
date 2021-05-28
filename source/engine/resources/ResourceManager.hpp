@@ -52,13 +52,13 @@ namespace engine {
 
         Animation& getAnimation(uint64_t name);
 
-        void createSkinsDescriptorSets();
+        void createMeshDescriptorSets();
 
-        void createSkinsDescriptors(const std::vector<vk::DescriptorPoolSize>& sizes, uint32_t maxSize);
+        void createMeshDescriptors(const std::vector<vk::DescriptorPoolSize>& sizes, uint32_t maxSize);
 
-        uint32_t getSkinsCount();
+        uint32_t getMeshesCount();
 
-        vk::DescriptorSetLayout getSkinsDescriptorSetLayout();
+        vk::DescriptorSetLayout getMeshDescriptorSetLayout();
 
     private:
         void createDescriptorPool();
@@ -77,8 +77,8 @@ namespace engine {
         std::vector<std::shared_ptr<engine::Shader>> m_shaders;
         vk::DescriptorPool m_imagesDescriptorPool{};
         vk::DescriptorSetLayout m_imagesDescriptorSetLayout{};
-        vk::DescriptorPool m_skinSDescriptorPool{};
-        vk::DescriptorSetLayout m_skinsDescriptorSetLayout{};
+        vk::DescriptorPool m_meshSDescriptorPool{};
+        vk::DescriptorSetLayout m_meshDescriptorSetLayout{};
     };
 
 } // namespace core

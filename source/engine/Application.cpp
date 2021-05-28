@@ -152,21 +152,26 @@ namespace engine {
                     }
 
                     for (auto& node : model->getNodes()) {
-                        if (node.skin > -1) {
-                            glm::mat4 inverseTransform = glm::inverse(node.getMatrix(model));
-                            Model::Skin &skin = model->getSkin(node.skin);
-                            size_t numJoints = static_cast<uint32_t>(skin.joints.size());
-                            std::vector<glm::mat4> jointMatrices(numJoints);
+                        if (node.mesh > 0) {
+                            glm::mat4 matrix = node.getMatrix(model);
+                            Mesh& mesh = m_resourceManager->getMesh(node.mesh);
 
-                            for (size_t i = 0; i < numJoints; ++i) {
-                                jointMatrices[i] = model->getNode(skin.joints[i]).getMatrix(model) * skin.inverseBindMatrices[i];
-                                jointMatrices[i] = inverseTransform * jointMatrices[i];
+                            if (node.skin > -1) {
+                                mesh.m_uniformBlock.matrix = matrix;
+                                glm::mat4 inverseTransform = glm::inverse(matrix);
+                                Model::Skin &skin = model->getSkin(node.skin);
+                                size_t numJoints = static_cast<uint32_t>(skin.joints.size());
+
+                                for (size_t i = 0; i < numJoints; ++i) {
+                                    glm::mat4 jointMatrix = model->getNode(skin.joints[i]).getMatrix(model) * skin.inverseBindMatrices[i];
+                                    mesh.m_uniformBlock.jointMatrix[i] = inverseTransform * jointMatrix;
+                                }
+
+                                mesh.m_uniformBlock.jointCount = (float)numJoints;
+                                mesh.m_uniformBuffer.copyTo(&mesh.m_uniformBlock, sizeof(mesh.m_uniformBlock));
+                            } else {
+                                mesh.m_uniformBuffer.copyTo(&matrix, sizeof(glm::mat4));
                             }
-
-                            vk::DeviceSize size = jointMatrices.size() * sizeof(glm::mat4);
-                            skin.ssbo.map(size);
-                            skin.ssbo.copyTo(jointMatrices.data(), size);
-                            skin.ssbo.unmap();
                         }
                     }
                 });
@@ -203,19 +208,19 @@ namespace engine {
     }
 
     void Application::updatePipeline() {
-        uint32_t maxPoolSize = m_resourceManager->getSkinsCount();
+        uint32_t maxPoolSize = m_resourceManager->getMeshesCount();
         vk::DescriptorPoolSize poolSizes = {
-            .type = vk::DescriptorType::eStorageBuffer,
+            .type = vk::DescriptorType::eUniformBuffer,
             .descriptorCount = maxPoolSize
         };
 
-        m_resourceManager->createSkinsDescriptors({poolSizes}, maxPoolSize + 1);
-        m_resourceManager->createSkinsDescriptorSets();
+        m_resourceManager->createMeshDescriptors({poolSizes}, maxPoolSize + 1);
+        m_resourceManager->createMeshDescriptorSets();
 
         std::vector<vk::DescriptorSetLayout> layouts = {
                 m_renderer->getDescriptorSetLayout(),
                 m_resourceManager->getTextureDescriptorSetLayout(),
-                m_resourceManager->getSkinsDescriptorSetLayout()
+                m_resourceManager->getMeshDescriptorSetLayout()
         };
 
         m_pipelineAnimation->cleanup();

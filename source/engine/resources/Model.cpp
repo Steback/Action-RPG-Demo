@@ -41,7 +41,7 @@ namespace engine {
     Model::~Model() = default;
 
     void Model::cleanup() {
-        for (auto& skin : m_skins) skin.ssbo.destroy();
+
     }
 
     Model::Node &Model::getNode(uint32_t id) {
@@ -82,7 +82,6 @@ namespace engine {
             const tinygltf::Texture texture = inputModel.textures[material.pbrMetallicRoughness.baseColorTexture.index];
             const tinygltf::Image image = inputModel.images[texture.source];
             uint64_t textureID = engine::tools::hashString(image.name);
-
             node.mesh = engine::Application::m_resourceManager->loadMesh(node.name, mesh, inputModel, textureID);
         }
 
@@ -132,21 +131,6 @@ namespace engine {
                     skin.inverseBindMatrices.resize(accessor.count);
 
                     std::memcpy(skin.inverseBindMatrices.data(), &buffer.data[accessor.byteOffset + bufferView.byteOffset], accessor.count * sizeof(glm::mat4));
-
-                    vk::DeviceSize size = accessor.count * sizeof(glm::mat4);
-                    engine::Buffer stagingBuffer;
-
-                    stagingBuffer = device->createBuffer(vk::BufferUsageFlagBits::eTransferSrc,
-                                                         vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
-                                                         size, (void*)skin.inverseBindMatrices.data());
-
-                    // TODO: I'm not sure if the Buffer's properties flags are correct for it use
-                    skin.ssbo = device->createBuffer(vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst,
-                                                     vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eDeviceLocal, size);
-
-                    device->copyBuffer(&stagingBuffer, &skin.ssbo, transfer);
-
-                    stagingBuffer.destroy();
                 }
             }
         }

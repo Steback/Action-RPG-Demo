@@ -34,8 +34,8 @@ namespace engine {
 
         for (auto& shader : m_shaders) shader->cleanup(m_device->m_logicalDevice);
 
-        m_device->m_logicalDevice.destroy(m_skinsDescriptorSetLayout);
-        m_device->m_logicalDevice.destroy(m_skinSDescriptorPool);
+        m_device->m_logicalDevice.destroy(m_meshDescriptorSetLayout);
+        m_device->m_logicalDevice.destroy(m_meshSDescriptorPool);
         m_device->m_logicalDevice.destroy(m_imagesDescriptorSetLayout);
     }
 
@@ -540,18 +540,18 @@ namespace engine {
         return m_animations[name];
     }
 
-    void ResourceManager::createSkinsDescriptors(const std::vector<vk::DescriptorPoolSize>& sizes, uint32_t maxSize) {
+    void ResourceManager::createMeshDescriptors(const std::vector<vk::DescriptorPoolSize>& sizes, uint32_t maxSize) {
         vk::DescriptorPoolCreateInfo poolCreateInfo{
             .maxSets = maxSize,
             .poolSizeCount = static_cast<uint32_t>(sizes.size()),
             .pPoolSizes = sizes.data()
         };
-        
-        m_skinSDescriptorPool = m_device->m_logicalDevice.createDescriptorPool(poolCreateInfo);
+
+        m_meshSDescriptorPool = m_device->m_logicalDevice.createDescriptorPool(poolCreateInfo);
 
         vk::DescriptorSetLayoutBinding layoutBinding{
             .binding = 0,
-            .descriptorType = vk::DescriptorType::eStorageBuffer,
+            .descriptorType = vk::DescriptorType::eUniformBuffer,
             .descriptorCount = 1,
             .stageFlags = vk::ShaderStageFlagBits::eVertex,
             .pImmutableSamplers = nullptr
@@ -562,49 +562,37 @@ namespace engine {
             .pBindings = &layoutBinding
         };
 
-        m_skinsDescriptorSetLayout = m_device->m_logicalDevice.createDescriptorSetLayout(layoutCreateInfo);
+        m_meshDescriptorSetLayout = m_device->m_logicalDevice.createDescriptorSetLayout(layoutCreateInfo);
     }
 
-    void ResourceManager::createSkinsDescriptorSets() {
-        for (auto& [id, model] : m_models) {
-            for (auto& node : model->getNodes()) {
-                if (node.skin > -1) {
-                    Model::Skin& skin = model->getSkin(node.skin);
-                    vk::DescriptorSetAllocateInfo allocateInfo{
-                        .descriptorPool = m_skinSDescriptorPool,
-                        .descriptorSetCount = 1,
-                        .pSetLayouts = &m_skinsDescriptorSetLayout
-                    };
+    void ResourceManager::createMeshDescriptorSets() {
+        for (auto& [id, mesh] : m_meshes) {
+            vk::DescriptorSetAllocateInfo allocateInfo{
+                    .descriptorPool = m_meshSDescriptorPool,
+                    .descriptorSetCount = 1,
+                    .pSetLayouts = &m_meshDescriptorSetLayout
+            };
 
-                    skin.descriptorSet = m_device->m_logicalDevice.allocateDescriptorSets(allocateInfo).front();
-                    skin.ssbo.setupDescriptor(sizeof(glm::mat4) * skin.joints.size());
+            mesh.m_uniformBuffer.m_descriptorSet = m_device->m_logicalDevice.allocateDescriptorSets(allocateInfo).front();
 
-                    vk::WriteDescriptorSet writeDescriptorSet{
-                        .dstSet = skin.descriptorSet,
-                        .dstBinding = 0,
-                        .descriptorCount = 1,
-                        .descriptorType = vk::DescriptorType::eStorageBuffer,
-                        .pBufferInfo= &skin.ssbo.m_descriptor
-                    };
+            vk::WriteDescriptorSet writeDescriptorSet{
+                    .dstSet = mesh.m_uniformBuffer.m_descriptorSet,
+                    .dstBinding = 0,
+                    .descriptorCount = 1,
+                    .descriptorType = vk::DescriptorType::eUniformBuffer,
+                    .pBufferInfo= &mesh.m_uniformBuffer.m_descriptor
+            };
 
-                    m_device->m_logicalDevice.updateDescriptorSets(1, &writeDescriptorSet, 0, nullptr);
-                }
-            }
+            m_device->m_logicalDevice.updateDescriptorSets(1, &writeDescriptorSet, 0, nullptr);
         }
     }
 
-    uint32_t ResourceManager::getSkinsCount() {
-        uint32_t skinsCount = 0;
-
-        for (auto& [id, model] : m_models) {
-            skinsCount += static_cast<uint32_t>(model->getSkinsCount());
-        }
-
-        return skinsCount;
+    uint32_t ResourceManager::getMeshesCount() {
+        return static_cast<uint32_t>(m_meshes.size());
     }
 
-    vk::DescriptorSetLayout ResourceManager::getSkinsDescriptorSetLayout() {
-        return m_skinsDescriptorSetLayout;
+    vk::DescriptorSetLayout ResourceManager::getMeshDescriptorSetLayout() {
+        return m_meshDescriptorSetLayout;
     }
 
 } // namespace core

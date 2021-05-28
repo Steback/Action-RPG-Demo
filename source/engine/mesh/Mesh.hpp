@@ -11,10 +11,19 @@
 #include "../renderer/Buffer.hpp"
 #include "../renderer/Device.hpp"
 
+#define MAX_NUM_JOINTS 128u
+
 
 namespace engine {
 
     class Mesh {
+    public:
+        struct UniformBlock {
+            glm::mat4 matrix{1.0f};
+            glm::mat4 jointMatrix[MAX_NUM_JOINTS]{};
+            float jointCount{0};
+        };
+
     public:
         Mesh();
 
@@ -39,6 +48,10 @@ namespace engine {
         void createVertexBuffer(const std::vector<engine::Vertex>& vertices, vk::Queue transferQueue, const std::shared_ptr<engine::Device>& device);
 
         void createIndexBuffer(const std::vector<uint32_t>& indices, vk::Queue transferQueue, const std::shared_ptr<engine::Device>& device);
+
+    public:
+        Buffer m_uniformBuffer;
+        UniformBlock m_uniformBlock;
 
     private:
         int m_vertexCount{};
