@@ -114,7 +114,7 @@ namespace engine {
                     for (auto& channel : animation->m_channels) {
                         Animation::Sampler& sampler = animation->m_samplers[channel.samplerIndex];
 
-                        if (sampler.interpolation != "LINEAR") {
+                        if (sampler.interpolation != Animation::Sampler::InterpolationType::LINEAR) {
                             spdlog::error( "This sample only supports linear interpolations\n");
                             continue;
                         }
@@ -124,24 +124,28 @@ namespace engine {
                                 float a = (animation->m_currentTime - sampler.inputs[i]) / (sampler.inputs[i + 1] - sampler.inputs[i]);
                                 Model::Node& node = model->getNode(channel.nodeID);
 
-                                if (channel.path == "translation") {
-                                    node.position = glm::mix(sampler.outputs[i], sampler.outputs[i + 1], a);
-                                } else if (channel.path == "rotation") {
-                                    glm::quat q1;
-                                    q1.x = sampler.outputs[i].x;
-                                    q1.y = sampler.outputs[i].y;
-                                    q1.z = sampler.outputs[i].z;
-                                    q1.w = sampler.outputs[i].w;
+                                switch (channel.path) {
+                                    case Animation::Channel::PathType::TRANSLATION: {
+                                        node.position = glm::mix(sampler.outputs[i], sampler.outputs[i + 1], a);
+                                    }
+                                    case Animation::Channel::PathType::ROTATION: {
+                                        glm::quat q1;
+                                        q1.x = sampler.outputs[i].x;
+                                        q1.y = sampler.outputs[i].y;
+                                        q1.z = sampler.outputs[i].z;
+                                        q1.w = sampler.outputs[i].w;
 
-                                    glm::quat q2;
-                                    q2.x = sampler.outputs[i + 1].x;
-                                    q2.y = sampler.outputs[i + 1].y;
-                                    q2.z = sampler.outputs[i + 1].z;
-                                    q2.w = sampler.outputs[i + 1].w;
+                                        glm::quat q2;
+                                        q2.x = sampler.outputs[i + 1].x;
+                                        q2.y = sampler.outputs[i + 1].y;
+                                        q2.z = sampler.outputs[i + 1].z;
+                                        q2.w = sampler.outputs[i + 1].w;
 
-                                    node.rotation = glm::normalize(glm::slerp(q1, q2, a));
-                                } else if (channel.path == "scale") {
-                                    node.scale = glm::mix(sampler.outputs[i], sampler.outputs[i + 1], a);
+                                        node.rotation = glm::normalize(glm::slerp(q1, q2, a));
+                                    }
+                                    case Animation::Channel::PathType::SCALE: {
+                                        node.scale = glm::mix(sampler.outputs[i], sampler.outputs[i + 1], a);
+                                    }
                                 }
                             }
                         }

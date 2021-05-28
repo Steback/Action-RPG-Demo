@@ -450,7 +450,16 @@ namespace engine {
             for (int i = 0; i < gltfAnimation.samplers.size(); ++i) {
                 tinygltf::AnimationSampler& glTFSampler = gltfAnimation.samplers[i];
                 Animation::Sampler& dstSampler = animation.m_samplers[i];
-                dstSampler.interpolation = glTFSampler.interpolation;
+
+                if (glTFSampler.interpolation == "LINEAR") {
+                    dstSampler.interpolation = Animation::Sampler::InterpolationType::LINEAR;
+                }
+                if (glTFSampler.interpolation == "STEP") {
+                    dstSampler.interpolation = Animation::Sampler::InterpolationType::STEP;
+                }
+                if (glTFSampler.interpolation == "CUBICSPLINE") {
+                    dstSampler.interpolation = Animation::Sampler::InterpolationType::CUBICSPLINE;
+                }
 
                 // Read sampler keyframe input time values
                 {
@@ -506,9 +515,19 @@ namespace engine {
             for (int i = 0; i < gltfAnimation.channels.size(); ++i) {
                 tinygltf::AnimationChannel gltfChannel = gltfAnimation.channels[i];
                 Animation::Channel& dstChannel = animation.m_channels[i];
-                dstChannel.path = gltfChannel.target_path;
                 dstChannel.samplerIndex = gltfChannel.sampler;
                 dstChannel.nodeID = gltfChannel.target_node;
+
+                if (gltfChannel.target_path == "rotation") dstChannel.path = Animation::Channel::PathType::ROTATION;
+
+                if (gltfChannel.target_path == "translation") dstChannel.path = Animation::Channel::PathType::TRANSLATION;
+
+                if (gltfChannel.target_path == "scale") dstChannel.path = Animation::Channel::PathType::SCALE;
+
+                if (gltfChannel.target_path == "weights") {
+                    spdlog::warn("weights not yet supported, skipping channel");
+                    continue;
+                }
             }
         } else {
             return 0;

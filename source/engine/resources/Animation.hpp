@@ -14,13 +14,17 @@ namespace engine {
     class Animation {
     public:
         struct Sampler {
-            std::string interpolation{};
+            enum InterpolationType { LINEAR, STEP, CUBICSPLINE };
+
+            InterpolationType interpolation{};
             std::vector<float> inputs;
             std::vector<glm::vec4> outputs;
         };
 
         struct Channel {
-            std::string path{};
+            enum PathType { TRANSLATION, ROTATION, SCALE };
+
+            PathType path{};
             int32_t nodeID{-1};
             uint32_t samplerIndex;
         };
