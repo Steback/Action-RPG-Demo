@@ -1,9 +1,9 @@
 {
   "name": "hero",
   "animations": {
-    "ide": "hero/heroIde",
-    "walk": "hero/heroWalk",
-    "attack": "hero/heroAttack",
-    "dead": "hero/heroDead"
+    "ide": "hero/idle",
+    "walk": "hero/walk",
+    "attack": "hero/attack",
+    "dead": "hero/dead"
   }
 }
