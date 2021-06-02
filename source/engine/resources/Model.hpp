@@ -44,13 +44,6 @@ namespace engine {
             std::vector<uint32_t> joints;
         };
 
-        struct Animations {
-            uint64_t ide;
-            uint64_t walk;
-            uint64_t attack;
-            uint64_t death;
-        };
-
     public:
         Model();
 
@@ -77,9 +70,6 @@ namespace engine {
         Skin& getSkin(size_t i);
 
         uint32_t getSkinsCount() const;
-
-    public:
-        Animations m_animations{};
 
     private:
         std::vector<Node> m_nodes;

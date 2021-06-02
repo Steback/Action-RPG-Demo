@@ -4,17 +4,6 @@
 #include "../Application.hpp"
 
 
-const std::vector<std::string> conflictsNodes = {
-        "Bow",
-        "fould_A",
-        "fould_B",
-        "helmet_A",
-        "helmet_B",
-        "helmet_C",
-        "hood_A",
-        "skeleton_mesh"
-};
-
 namespace engine {
 
     ModelInterface::ModelInterface(uint64_t modelID, uint32_t entityID)
@@ -50,8 +39,9 @@ namespace engine {
 
                 std::vector<vk::DescriptorSet> descriptorGroup =  {
                     Application::m_resourceManager->getTexture(mesh.getTextureId()).getDescriptorSet(),
-                    mesh.m_uniformBuffer.m_descriptorSet
                 };
+
+                if (!Application::m_editor) descriptorGroup.push_back(mesh.m_uniformBuffer.m_descriptorSet);
 
                 cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeAnimation->getLayout(), 1,
                                              static_cast<uint32_t>(descriptorGroup.size()), descriptorGroup.data(),
@@ -87,6 +77,10 @@ namespace engine {
 
     uint32_t ModelInterface::getRootNode() {
         return m_model->getRootNode();
+    }
+
+    std::shared_ptr<Model> ModelInterface::getHandle() {
+        return m_model;
     }
 
 } // namespace core

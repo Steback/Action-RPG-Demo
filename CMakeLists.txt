@@ -17,7 +17,3 @@ add_subdirectory(source/game)
 
 target_link_libraries(Editor core ${CONAN_LIBS} ${VALIDATION_LAYERS})
 target_link_libraries(Game core ${CONAN_LIBS} ${VALIDATION_LAYERS})
-
-### COMPILE SHADERS ###
-set(SHADERS_COMPILE_SCRIPT ${PROJECT_SOURCE_DIR}/tools/shadersCompile.py)
-execute_process(COMMAND python ${SHADERS_COMPILE_SCRIPT} ${PROJECT_SOURCE_DIR}/bin)

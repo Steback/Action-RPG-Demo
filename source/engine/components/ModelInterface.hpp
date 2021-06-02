@@ -33,6 +33,8 @@ namespace engine {
 
         uint32_t getRootNode();
 
+        std::shared_ptr<Model> getHandle();
+
         static void setLuaBindings(sol::table& table);
 
     private:

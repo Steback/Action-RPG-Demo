@@ -224,18 +224,11 @@ namespace engine {
 
         if (m_models.find(modelName) != m_models.end()) return modelName;
 
-        json modelFile;
-        {
-            std::ifstream file("../data/models/" + uri);
-            file >> modelFile;
-            file.close();
-        }
-
         tinygltf::Model inputModel;
         tinygltf::TinyGLTF loader;
         std::string error, warning;
 
-        bool fileLoaded = loader.LoadASCIIFromFile(&inputModel, &error, &warning, MODELS_DIR + modelFile["name"].get<std::string>() + ".gltf");
+        bool fileLoaded = loader.LoadASCIIFromFile(&inputModel, &error, &warning, MODELS_DIR + uri + ".gltf");
 
         if (fileLoaded) {
             m_models[modelName] = std::make_shared<engine::Model>(name, inputModel.nodes.size());
@@ -244,10 +237,7 @@ namespace engine {
 
             for (auto& nodeID : inputModel.scenes[0].nodes) m_models[modelName]->loadNode(inputModel.nodes[nodeID], inputModel, nodeID);
 
-            if (!Application::m_editor) m_models[modelName]->loadSkins(inputModel, m_device, m_graphicsQueue);
-
-            if (!modelFile["animations"].empty() && !Application::m_editor)
-                m_models[modelName]->m_animations.ide = loadAnimation(modelFile["animations"]["ide"].get<std::string>(), name + "_ide");
+            m_models[modelName]->loadSkins(inputModel, m_device, m_graphicsQueue);
 
             return modelName;
         } else {
@@ -440,16 +430,16 @@ namespace engine {
         tinygltf::TinyGLTF loader;
         std::string error, warning;
 
-        if (loader.LoadASCIIFromFile(&inputModel, &error, &warning, ANIMATIONS_DIR + uri + ".gltf")) {
+        if (loader.LoadASCIIFromFile(&inputModel, &error, &warning, ANIMATIONS_DIR + uri)) {
             tinygltf::Animation gltfAnimation = inputModel.animations[0];
-            m_animations[animationName] = Animation();
-            Animation& animation = m_animations[animationName];
-            animation.m_name = gltfAnimation.name;
+            m_animations[animationName] = std::make_shared<Animation>();
+            std::shared_ptr<Animation> animation = m_animations[animationName];
+            animation->m_name = gltfAnimation.name;
 
-            animation.m_samplers.resize(gltfAnimation.samplers.size());
+            animation->m_samplers.resize(gltfAnimation.samplers.size());
             for (int i = 0; i < gltfAnimation.samplers.size(); ++i) {
                 tinygltf::AnimationSampler& glTFSampler = gltfAnimation.samplers[i];
-                Animation::Sampler& dstSampler = animation.m_samplers[i];
+                Animation::Sampler& dstSampler = animation->m_samplers[i];
 
                 if (glTFSampler.interpolation == "LINEAR") {
                     dstSampler.interpolation = Animation::Sampler::InterpolationType::LINEAR;
@@ -473,10 +463,10 @@ namespace engine {
                     for (size_t index = 0; index < accessor.count; ++index)
                         dstSampler.inputs[index] = buf[index];
 
-                    for (auto input : animation.m_samplers[i].inputs) {
-                        if (input < animation.m_start) animation.m_start = input;
+                    for (auto input : animation->m_samplers[i].inputs) {
+                        if (input < animation->m_start) animation->m_start = input;
 
-                        if (input > animation.m_end) animation.m_end = input;
+                        if (input > animation->m_end) animation->m_end = input;
                     }
                 }
 
@@ -511,10 +501,10 @@ namespace engine {
             }
 
             // Channels
-            animation.m_channels.resize(gltfAnimation.channels.size());
+            animation->m_channels.resize(gltfAnimation.channels.size());
             for (int i = 0; i < gltfAnimation.channels.size(); ++i) {
                 tinygltf::AnimationChannel gltfChannel = gltfAnimation.channels[i];
-                Animation::Channel& dstChannel = animation.m_channels[i];
+                Animation::Channel& dstChannel = animation->m_channels[i];
                 dstChannel.samplerIndex = gltfChannel.sampler;
                 dstChannel.nodeID = gltfChannel.target_node;
 
@@ -536,7 +526,7 @@ namespace engine {
         return animationName;
     }
 
-    Animation &ResourceManager::getAnimation(uint64_t name) {
+    std::shared_ptr<Animation> ResourceManager::getAnimation(uint64_t name) {
         return m_animations[name];
     }
 

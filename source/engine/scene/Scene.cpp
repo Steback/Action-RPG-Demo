@@ -8,6 +8,7 @@
 
 #include "../Application.hpp"
 #include "../renderer/CommandList.hpp"
+#include "../components/AnimationInterface.hpp"
 
 
 namespace engine {
@@ -39,6 +40,14 @@ namespace engine {
             if (entity.type != EntityType::CAMERA) {
                 Application::m_threadPool->submit([transform = &m_registry.get<engine::Transform>(entity.enttID), deltaTime] {
                     transform->update(deltaTime);
+                });
+            }
+        }
+
+        if (!Application::m_editor) {
+            for (auto& entity : m_registry.view<AnimationInterface>()) {
+                Application::m_threadPool->submit([animation = &m_registry.get<AnimationInterface>(entity), deltaTime] {
+                    animation->update(deltaTime);
                 });
             }
         }
@@ -144,10 +153,30 @@ namespace engine {
                 auto& model = e["model"];
 
                 m_registry.emplace<engine::ModelInterface>(entity.enttID,
-                                                  engine::Application::m_resourceManager->createModel(model["name"].get<std::string>() + ".json", model["name"]),
+                                                  engine::Application::m_resourceManager->createModel(model["name"].get<std::string>(), model["name"]),
                                                   entity.id);
 
+
+
                 if (modelNames) modelNames->push_back(model["name"].get<std::string>());
+            }
+
+            if (!e["animations"].empty()) {
+                auto& animations = e["animations"];
+                auto idle = animations["idle"].get<std::string>();
+                auto attack = animations["attack"].get<std::string>();
+                auto death = animations["death"].get<std::string>();
+                auto walk = animations["walk"].get<std::string>();
+
+                std::vector<uint64_t> animationsList{
+                    Application::m_resourceManager->loadAnimation(idle + ".gltf", idle),
+                    Application::m_resourceManager->loadAnimation(attack + ".gltf", attack),
+                    Application::m_resourceManager->loadAnimation(death + ".gltf", death),
+                    Application::m_resourceManager->loadAnimation(walk + ".gltf", walk)
+                };
+
+                m_registry.emplace<AnimationInterface>(entity.enttID, m_registry.get<ModelInterface>(entity.enttID).getHandle(),
+                                                       animationsList);
             }
 
             entity.components = ComponentFlags::TRANSFORM | ComponentFlags::MODEL;
@@ -244,6 +273,7 @@ namespace engine {
 
         Transform::setLuaBindings(components);
         ModelInterface::setLuaBindings(components);
+        AnimationInterface::setLuaBindings(components);
 
         components.new_enum("type",
                        "transform", ComponentFlags::TRANSFORM,

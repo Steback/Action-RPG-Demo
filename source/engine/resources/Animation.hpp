@@ -13,6 +13,14 @@ namespace engine {
 
     class Animation {
     public:
+        enum Type {
+            idle = 1,
+            attack = 2,
+            death = 3,
+            walk = 4
+        };
+
+    public:
         struct Sampler {
             enum InterpolationType { LINEAR, STEP, CUBICSPLINE };
 

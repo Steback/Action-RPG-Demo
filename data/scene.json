@@ -37,6 +37,12 @@
                 ],
                 "speed": 0.0
             },
+            "animations": {
+                "idle": "hero/idle",
+                "attack": "hero/attack",
+                "death": "hero/dead",
+                "walk": "hero/walk"
+            },
             "type": 1
         }
     ]
