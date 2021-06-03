@@ -14,7 +14,7 @@ namespace engine {
 
     AnimationInterface::AnimationInterface() = default;
 
-    AnimationInterface::AnimationInterface(std::shared_ptr<Model> model, std::vector<uint64_t> animationList)
+    AnimationInterface::AnimationInterface(std::shared_ptr<Model> model, std::vector<uint32_t> animationList)
             : model(std::move(model)), animationsList(std::move(animationList)) {
 
     }
@@ -91,15 +91,16 @@ namespace engine {
     }
 
     void AnimationInterface::setLuaBindings(sol::table &table) {
-        sol::table animationsType = table["AnimationsType"].get_or_create<sol::table>();
-        animationsType["idle"] = Animation::Type::idle;
-        animationsType["attack"] = Animation::Type::attack;
-        animationsType["death"] = Animation::Type::death;
-        animationsType["walk"] = Animation::Type::walk;
+        table.new_enum("AnimationType",
+                       "idle", Animation::Type::idle,
+                       "attack", Animation::Type::attack,
+                       "death", Animation::Type::death,
+                       "walk", Animation::Type::walk);
 
         table.new_usertype<AnimationInterface>("AnimationInterface",
                                                sol::call_constructor, sol::constructors<AnimationInterface()>(),
-                                               "currentType", &AnimationInterface::currentAnimation);
+                                               "currentType", &AnimationInterface::currentAnimation,
+                                               "animationsList", &AnimationInterface::animationsList);
     }
 
 } // namespace engine

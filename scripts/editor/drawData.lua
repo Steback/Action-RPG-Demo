@@ -5,6 +5,7 @@ drawData = {}
 
 -- Secondary windows
 local nodeView
+local addComponentView
 
 -- Main draw functions
 function drawData.cameraControls()
@@ -91,7 +92,7 @@ function drawData.entitiesPropertiesPanel()
             end
         end
 
-        if entity.components & components.type.model then
+        if (entity.components & components.type.model) then
             if imgui.collapsingHeader("Model") then
                 local model = scene.components.getModel(entity.id)
 
@@ -117,6 +118,33 @@ function drawData.entitiesPropertiesPanel()
                 end
             end
         end
+
+
+        if (entity.components & components.type.animation) ~= 0 then
+            if imgui.collapsingHeader("Animations") then
+                local animation = scene.components.getAnimation(entity.id)
+                local animationsNames = editor.animationsNames
+                local animationList = animation.animationsList
+                local animationsType = {"Idle", "Attack", "Death", "Walk"}
+
+                for i = 1, animationList:size() do
+                    local currentAnimation = animationList:at(i)
+
+                    imgui.beginCombo(animationsType[i], animationsNames:get(currentAnimation), function()
+                        for key, name in animationsNames:pairs() do
+                            if imgui.selectable(name, currentType == key) then
+                                currentType = key
+                                animationList:set(i, currentType)
+                            end
+                        end
+                    end)
+                end
+            end
+        end
+
+        if imgui.button("Add Component") then
+            addComponentView:setState(true)
+        end
     end
 end
 
@@ -127,14 +155,21 @@ function nodeViewDraw()
     utilities.drawNode(model:getNode(model:getRootNode()), model)
 end
 
+function addComponent()
+    if imgui.button("Animation") then
+        editor.addComponent(scene.entities:get(entitySelected).id, components.type.animation)
+        addComponentView:setState(false)
+    end
+end
+
 -- Setup secondary windows
 function drawData.setup()
     nodeView = ui.createWindow("Nodes view", -1.0, -1.0, ui.WindowFlags.close)
+    addComponentView = ui.createWindow("Add Component", 200, -1.0, ui.WindowFlags.close)
 end
 
 -- Draw secondary windows
 function drawData.draw()
-    if nodeView:open() then
-        nodeView:draw(nodeViewDraw, imgui.flags.noCollapse | imgui.flags.noResize)
-    end
+    if nodeView:open() then nodeView:draw(nodeViewDraw, imgui.flags.noCollapse | imgui.flags.noResize) end
+    if addComponentView:open() then addComponentView:draw(addComponent, imgui.flags.noCollapse | imgui.flags.noResize) end
 end

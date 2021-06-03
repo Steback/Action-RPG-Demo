@@ -71,6 +71,10 @@ namespace editor {
 
         void setEntity(int entity);
 
+        void addAnimation(const std::string& title, const std::string& filters, const std::string& path, const std::string& openName);
+
+        void addComponent(uint32_t id, uint32_t type);
+
     private:
         size_t m_entitySelected = -1;
         bool m_gizmoDraw = true;
@@ -82,6 +86,8 @@ namespace editor {
         bool m_sceneLoaded =  false;
         std::shared_ptr<engine::GraphicsPipeline> m_gridPipeline;
         std::vector<MenuBar> m_menuBar;
+        std::unordered_map<uint32_t , std::string> animationsName;
+        uint32_t noneAnimation{};
     };
 
 } // namespace editor

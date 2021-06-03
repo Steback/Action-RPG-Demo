@@ -5,9 +5,10 @@
 #include "ImGuiFileDialog/CustomImGuiFileDialogConfig.h"
 #include "ImGuiFileDialog/ImGuiFileDialog.h"
 
-#include "components/ModelInterface.hpp"
-#include "Gizmos.hpp"
 #include "ui/Window.hpp"
+#include "Gizmos.hpp"
+#include "components/ModelInterface.hpp"
+#include "components/AnimationInterface.hpp"
 
 
 namespace editor {
@@ -32,7 +33,7 @@ namespace editor {
         m_resourceManager->createModel("cube", "cube");
         m_modelsNames.emplace_back("cube");
 
-        m_scene->loadScene("../data/basicScene.json", true);
+        m_scene->loadScene("../data/scene.json", true, &m_modelsNames, &animationsName);
 
         for (auto& entity : m_scene->getEntities()) {
             auto& model = m_scene->getComponent<engine::ModelInterface>(entity.id);
@@ -55,12 +56,14 @@ namespace editor {
         sol::table editor = m_luaManager.getState().create_table("editor");
         setLuaBindings(editor);
 
+        std::string none = "none";
+        noneAnimation = std::hash<std::string>{}(none);
+        animationsName[noneAnimation] = none;
+
         m_luaManager.scriptFile("main.lua");
 
         loadMenuBar(m_luaManager.getState());
         m_luaManager.executeFunction("init");
-
-        auto windowSize = m_window->getSize();
     }
 
     void Editor::update() {
@@ -172,7 +175,7 @@ namespace editor {
                 idx = (int)fileName.rfind('.');
                 std::string modelName = fileName.substr(0, idx);
 
-                m_resourceManager->createModel(fileName, modelName);
+                m_resourceManager->createModel(modelName, modelName);
                 m_modelsNames.emplace_back(modelName);
             }
 
@@ -199,8 +202,8 @@ namespace editor {
             if (ImGuiFileDialog::Instance()->IsOk()) {
                 std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
 
-                m_threadPool->submit([scene = m_scene.get(), filePathName] {
-                    scene->saveScene(filePathName, true);
+                m_threadPool->submit([scene = m_scene.get(), filePathName, animationsNames = &animationsName] {
+                    scene->saveScene(filePathName, true, animationsNames);
                 });
             }
 
@@ -309,6 +312,7 @@ namespace editor {
 
         state["entitiesInfo"] = std::ref(m_entitiesInfo);
         state["modelsNames"] = std::ref(m_modelsNames);
+        state["animationsNames"] = std::ref(animationsName);
 
         state.set_function("saveScene", &Editor::saveScene, this);
         state.set_function("loadScene", &Editor::loadScene, this);
@@ -316,6 +320,8 @@ namespace editor {
         state.set_function("addModel", &Editor::addModel, this);
         state.set_function("getEntity", &Editor::getEntity, this);
         state.set_function("setEntity", &Editor::setEntity, this);
+        state.set_function("addAnimation", &Editor::addAnimation, this);
+        state.set_function("addComponent", &Editor::addComponent, this);
     }
 
     int Editor::getEntity() const {
@@ -332,6 +338,45 @@ namespace editor {
         ImGui::ShowDemoWindow(&open);
 
         m_luaManager.getState()[openName] = open;
+    }
+
+    void Editor::addAnimation(const std::string& title, const std::string& filters, const std::string& path, const std::string& openName) {
+        bool open = m_luaManager.get<bool>(openName);
+
+        ImGui::SetNextWindowSize({500, 250});
+
+        if (open)
+            ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", title, filters.c_str(), path);
+
+        if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey")) {
+            if (ImGuiFileDialog::Instance()->IsOk()) {
+                std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+                int idx = (int)filePathName.rfind('.');
+                std::string filePath = filePathName.substr(0, idx);
+                std::string animationDir = "animations/";
+                idx = (int)filePath.rfind(animationDir);
+                std::string fileName = filePath.substr(idx + animationDir.size(), filePath.size());
+                animationsName[std::hash<std::string>{}(fileName)] = fileName;
+            }
+
+            ImGuiFileDialog::Instance()->Close();
+
+            m_luaManager.getState()[openName] = !open;
+        }
+    }
+
+    void Editor::addComponent(uint32_t id, uint32_t type) {
+        if (type & engine::ComponentFlags::ANIMATION) {
+            auto& entity = m_scene->getEntity(id);
+            auto& registry = m_scene->registry();
+            std::vector<uint32_t> animationList{noneAnimation, noneAnimation, noneAnimation, noneAnimation};
+            auto& model = registry.get<engine::ModelInterface>(entity.enttID);
+            registry.emplace<engine::AnimationInterface>(entity.enttID,
+                                                         model.getHandle(),
+                                                         animationList);
+
+            entity.components |= engine::ComponentFlags::ANIMATION;
+        }
     }
 
 } // namespace editor

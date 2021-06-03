@@ -20,14 +20,14 @@ namespace engine {
     public:
         AnimationInterface();
 
-        explicit AnimationInterface(std::shared_ptr<Model> model, std::vector<uint64_t> animationList);
+        explicit AnimationInterface(std::shared_ptr<Model> model, std::vector<uint32_t> animationList);
 
         void update(float deltaTime);
 
         static void setLuaBindings(sol::table& table);
 
     public:
-        std::vector<uint64_t> animationsList;
+        std::vector<uint32_t> animationsList;
         Animation::Type currentAnimation{Animation::Type::idle};
         std::shared_ptr<Animation> animation;
         std::shared_ptr<Model> model;

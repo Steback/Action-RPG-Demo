@@ -8,7 +8,6 @@
 
 #include "../Application.hpp"
 #include "../renderer/CommandList.hpp"
-#include "../components/AnimationInterface.hpp"
 
 
 namespace engine {
@@ -98,7 +97,8 @@ namespace engine {
         return m_camera;
     }
 
-    void Scene::loadScene(const std::string &uri, bool editorBuild, std::vector<std::string>* modelNames) {
+    void Scene::loadScene(const std::string &uri, bool editorBuild, std::vector<std::string>* modelNames,
+                          std::unordered_map<uint32_t, std::string>* animationsName) {
         cleanup();
 
         json scene;
@@ -156,8 +156,6 @@ namespace engine {
                                                   engine::Application::m_resourceManager->createModel(model["name"].get<std::string>(), model["name"]),
                                                   entity.id);
 
-
-
                 if (modelNames) modelNames->push_back(model["name"].get<std::string>());
             }
 
@@ -167,23 +165,36 @@ namespace engine {
                 auto attack = animations["attack"].get<std::string>();
                 auto death = animations["death"].get<std::string>();
                 auto walk = animations["walk"].get<std::string>();
+                uint32_t idleID = Application::m_resourceManager->loadAnimation(idle + ".gltf", idle);
+                uint32_t attackID = Application::m_resourceManager->loadAnimation(attack + ".gltf", attack);
+                uint32_t deathID = Application::m_resourceManager->loadAnimation(death + ".gltf", death);
+                uint32_t walkID = Application::m_resourceManager->loadAnimation(walk + ".gltf", walk);
 
-                std::vector<uint64_t> animationsList{
-                    Application::m_resourceManager->loadAnimation(idle + ".gltf", idle),
-                    Application::m_resourceManager->loadAnimation(attack + ".gltf", attack),
-                    Application::m_resourceManager->loadAnimation(death + ".gltf", death),
-                    Application::m_resourceManager->loadAnimation(walk + ".gltf", walk)
+                std::vector<uint32_t> animationsList{
+                    idleID,
+                    attackID,
+                    deathID,
+                    walkID
                 };
 
                 m_registry.emplace<AnimationInterface>(entity.enttID, m_registry.get<ModelInterface>(entity.enttID).getHandle(),
                                                        animationsList);
+
+                entity.components |= ComponentFlags::ANIMATION;
+
+                if (animationsName) {
+                    animationsName->emplace(idleID, idle);
+                    animationsName->emplace(attackID, attack);
+                    animationsName->emplace(deathID, death);
+                    animationsName->emplace(walkID, walk);
+                }
             }
 
-            entity.components = ComponentFlags::TRANSFORM | ComponentFlags::MODEL;
+            entity.components |= ComponentFlags::TRANSFORM | ComponentFlags::MODEL;
         }
     }
 
-    void Scene::saveScene(const std::string &uri, bool editorBuild) {
+    void Scene::saveScene(const std::string &uri, bool editorBuild, std::unordered_map<uint32_t, std::string>* animationsName) {
         json scene;
         engine::Camera* camera;
 
@@ -255,6 +266,22 @@ namespace engine {
                             {"name", model.getName()}
                     };
                 }
+
+                if (entity.components & engine::ANIMATION) {
+                    auto& animation = m_registry.get<AnimationInterface>(entity.enttID);
+
+                    std::string idle = (animationsName ? animationsName->at(animation.animationsList[0]) : std::to_string(animation.animationsList[0]));
+                    std::string attack = (animationsName ? animationsName->at(animation.animationsList[1]) : std::to_string(animation.animationsList[1]));
+                    std::string death (animationsName ? animationsName->at(animation.animationsList[2]) : std::to_string(animation.animationsList[2]));
+                    std::string walk (animationsName ? animationsName->at(animation.animationsList[3]) : std::to_string(animation.animationsList[3]));
+
+                    scene["entities"][entitiesCount]["animations"] = {
+                            {"idle", idle},
+                            {"attack", attack},
+                            {"death", death},
+                            {"walk", walk}
+                    };
+                }
             }
         }
 
@@ -277,7 +304,8 @@ namespace engine {
 
         components.new_enum("type",
                        "transform", ComponentFlags::TRANSFORM,
-                       "model", ComponentFlags::MODEL);
+                       "model", ComponentFlags::MODEL,
+                       "animation", ComponentFlags::ANIMATION);
 
         scene.new_enum("EntityType",
                        "player", EntityType::PLAYER,
@@ -296,6 +324,7 @@ namespace engine {
         entityComponents.set_function("getTransform", &Scene::getTransform, this);
         entityComponents.set_function("getCamera", &Scene::getCameraComponent, this);
         entityComponents.set_function("getModel", &Scene::getModel, this);
+        entityComponents.set_function("getAnimation", &Scene::getAnimation, this);
     }
 
     Transform &Scene::getTransform(uint32_t id) {
@@ -308,6 +337,10 @@ namespace engine {
 
     ModelInterface &Scene::getModel(uint32_t id) {
         return getComponent<ModelInterface>(id);
+    }
+
+    AnimationInterface &Scene::getAnimation(uint32_t id) {
+        return getComponent<AnimationInterface>(id);
     }
 
 } // namespace core

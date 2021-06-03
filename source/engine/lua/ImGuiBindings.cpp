@@ -21,6 +21,7 @@ namespace engine::lua {
 
         imgui.set_function("text", &ImGui::Text);
         imgui.set_function("separator", &ImGui::Separator);
+        imgui.set_function("sameLine", [](){ ImGui::SameLine(); });
         imgui.set_function("button", [](const std::string& label) {return ImGui::Button(label.c_str()); });
         imgui.set_function("collapsingHeader", [](const std::string& title){ return ImGui::CollapsingHeader(title.c_str()); });
         imgui.set_function("selectable", [](const std::string& text, bool comapration){ return ImGui::Selectable(text.c_str(), comapration); });

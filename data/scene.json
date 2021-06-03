@@ -15,6 +15,12 @@
     },
     "entities": [
         {
+            "animations": {
+                "attack": "hero/attack",
+                "death": "hero/dead",
+                "idle": "hero/idle",
+                "walk": "hero/walk"
+            },
             "model": {
                 "name": "hero"
             },
@@ -37,13 +43,38 @@
                 ],
                 "speed": 0.0
             },
-            "animations": {
-                "idle": "hero/idle",
-                "attack": "hero/attack",
-                "death": "hero/dead",
-                "walk": "hero/walk"
-            },
             "type": 1
+        },
+        {
+            "animations": {
+                "attack": "Skeleton/attack",
+                "death": "Skeleton/death",
+                "idle": "Skeleton/idle",
+                "walk": "Skeleton/walk"
+            },
+            "model": {
+                "name": "skeleton"
+            },
+            "name": "Enemy 1",
+            "transform": {
+                "position": [
+                    -1.0,
+                    0.0,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "size": [
+                    9.0,
+                    9.0,
+                    9.0
+                ],
+                "speed": 0.0
+            },
+            "type": 2
         }
     ]
 }

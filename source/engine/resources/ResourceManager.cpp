@@ -237,7 +237,7 @@ namespace engine {
 
             for (auto& nodeID : inputModel.scenes[0].nodes) m_models[modelName]->loadNode(inputModel.nodes[nodeID], inputModel, nodeID);
 
-            m_models[modelName]->loadSkins(inputModel, m_device, m_graphicsQueue);
+            if (!Application::m_editor) m_models[modelName]->loadSkins(inputModel, m_device, m_graphicsQueue);
 
             return modelName;
         } else {
@@ -421,8 +421,8 @@ namespace engine {
         return m_shaders.back();
     }
 
-    uint64_t ResourceManager::loadAnimation(const std::string& uri, const std::string& name) {
-        uint64_t animationName = std::hash<std::string>{}(name);
+    uint32_t ResourceManager::loadAnimation(const std::string& uri, const std::string& name) {
+        uint32_t animationName = std::hash<std::string>{}(name);
 
         if (m_animations.find(animationName) != m_animations.end()) return animationName;
 

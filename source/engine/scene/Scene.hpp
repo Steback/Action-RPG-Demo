@@ -15,6 +15,7 @@
 #include "../components/Transform.hpp"
 #include "../components/ModelInterface.hpp"
 #include "../renderer/GraphicsPipeline.hpp"
+#include "../components/AnimationInterface.hpp"
 
 using json = nlohmann::json;
 
@@ -35,13 +36,14 @@ namespace engine {
     enum ComponentFlags {
         TRANSFORM = 1 << 0,
         MODEL = 1 << 1,
+        ANIMATION = 1 << 2,
     };
 
     struct Entity {
         entt::entity enttID;
         uint32_t id;
         std::string name;
-        uint32_t components;
+        uint32_t components{};
         uint32_t type;
 
         static void setLuaBindings(sol::table& table);
@@ -69,9 +71,10 @@ namespace engine {
 
         engine::Camera& getCamera();
 
-        void loadScene(const std::string& uri, bool editorBuild = false, std::vector<std::string>* modelNames = nullptr);
+        void loadScene(const std::string& uri, bool editorBuild = false, std::vector<std::string>* modelNames = nullptr,
+                       std::unordered_map<uint32_t, std::string>* animationsName = nullptr);
 
-        void saveScene(const std::string& uri, bool editorBuild = false);
+        void saveScene(const std::string& uri, bool editorBuild = false, std::unordered_map<uint32_t, std::string>* animationsName = nullptr);
 
         entt::registry& registry();
 
@@ -88,6 +91,8 @@ namespace engine {
         Camera& getCameraComponent(uint32_t id);
 
         ModelInterface& getModel(uint32_t id);
+
+        AnimationInterface& getAnimation(uint32_t id);
 
     private:
         std::vector<engine::Entity> m_entities;

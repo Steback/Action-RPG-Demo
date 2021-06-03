@@ -5,6 +5,7 @@ openSaveScene = false
 openLoadScene = false
 openAddModel = false
 openDemoWindow = false
+openAddAnimation = false
 
 -- Windows
 local cameraControls
@@ -54,6 +55,12 @@ menuBar = {
                 name = "Add Models",
                 func = function()
                     openAddModel = not openAddModel
+                end
+            },
+            [1] = {
+                name = "Add Animation",
+                func = function()
+                    openAddAnimation = not openAddAnimation
                 end
             }
         }
@@ -130,6 +137,7 @@ function drawUI()
     if openLoadScene then editor.loadScene("Select a file", ".json", "../data/", "openLoadScene", "selectFile") end
     if openAddModel then editor.addModel("Choose File", ".gltf", "../Assets/models", "openAddModel") end
     if openDemoWindow then imgui.showDemo("openDemoWindow") end
+    if openAddAnimation then editor.addAnimation("Select a file", ".gltf", "../Assets/animations/", "openAddAnimation") end
 
     -- Draw data functions
     drawData.draw()
