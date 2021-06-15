@@ -237,7 +237,7 @@ namespace engine {
 
             for (auto& nodeID : inputModel.scenes[0].nodes) m_models[modelName]->loadNode(inputModel.nodes[nodeID], inputModel, nodeID);
 
-            if (!Application::m_editor) m_models[modelName]->loadSkins(inputModel, m_device, m_graphicsQueue);
+            m_models[modelName]->loadSkins(inputModel, m_device, m_graphicsQueue);
 
             return modelName;
         } else {
@@ -583,6 +583,34 @@ namespace engine {
 
     vk::DescriptorSetLayout ResourceManager::getMeshDescriptorSetLayout() {
         return m_meshDescriptorSetLayout;
+    }
+
+    void ResourceManager::initialPose() {
+        for (auto& [key, model] : m_models) {
+            for (auto& node : model->getNodes()) {
+                if (node.mesh > 0) {
+                    glm::mat4 matrix = node.getMatrix(model);
+                    Mesh& mesh = Application::m_resourceManager->getMesh(node.mesh);
+
+                    if (node.skin > -1) {
+                        mesh.m_uniformBlock.matrix = matrix;
+                        glm::mat4 inverseTransform = glm::inverse(matrix);
+                        Model::Skin &skin = model->getSkin(node.skin);
+                        size_t numJoints = static_cast<uint32_t>(skin.joints.size());
+
+                        for (size_t i = 0; i < numJoints; ++i) {
+                            glm::mat4 jointMatrix = model->getNode(skin.joints[i]).getMatrix(model) * skin.inverseBindMatrices[i];
+                            mesh.m_uniformBlock.jointMatrix[i] = inverseTransform * jointMatrix;
+                        }
+
+                        mesh.m_uniformBlock.jointCount = (float)numJoints;
+                        mesh.m_uniformBuffer.copyTo(&mesh.m_uniformBlock, sizeof(mesh.m_uniformBlock));
+                    } else {
+                        mesh.m_uniformBuffer.copyTo(&matrix, sizeof(glm::mat4));
+                    }
+                }
+            }
+        }
     }
 
 } // namespace core

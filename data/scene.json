@@ -75,6 +75,31 @@
                 "speed": 0.0
             },
             "type": 2
+        },
+        {
+            "model": {
+                "name": "DG_GroundTile_A"
+            },
+            "name": "Ground",
+            "transform": {
+                "position": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "size": [
+                    1.0,
+                    1.0,
+                    1.0
+                ],
+                "speed": 0.0
+            },
+            "type": 3
         }
     ]
 }

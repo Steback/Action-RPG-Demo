@@ -55,7 +55,7 @@ function drawData.animationsControl()
     for i = 1, scene.entities:size() do
         local entity = scene.entities:get(i)
 
-        if entity.components & components.type.animation then
+        if (entity.components & components.type.animation) ~= 0 then
             local animations = scene.components.getAnimation(entity.id)
             animations.currentType = currentAnimationType
         end

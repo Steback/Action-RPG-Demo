@@ -39,8 +39,8 @@ namespace engine {
                 .size = sizeof(MVP)
         };
 
-        std::string vertShader = std::string(m_editor ? "editor" : "animation") + ".vert.spv";
-        std::string fragShader = std::string(m_editor ? "editor" : "animation") + ".frag.spv";
+        std::string vertShader = "model.vert.spv";
+        std::string fragShader = "model.frag.spv";
         m_pipelineAnimation = m_renderer->addPipeline(Application::m_resourceManager->createShader(vertShader, fragShader, {constantRange}),
                                                       m_device->m_logicalDevice);
         m_renderer->init();
@@ -70,8 +70,9 @@ namespace engine {
     void Application::run() {
         init();
 
-        if (!m_editor) updatePipeline();
+        updatePipeline();
 
+        m_resourceManager->initialPose();
         loop();
         shutdown();
     }

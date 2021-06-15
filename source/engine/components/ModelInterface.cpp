@@ -39,9 +39,8 @@ namespace engine {
 
                 std::vector<vk::DescriptorSet> descriptorGroup =  {
                     Application::m_resourceManager->getTexture(mesh.getTextureId()).getDescriptorSet(),
+                    mesh.m_uniformBuffer.m_descriptorSet
                 };
-
-                if (!Application::m_editor) descriptorGroup.push_back(mesh.m_uniformBuffer.m_descriptorSet);
 
                 cmdBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeAnimation->getLayout(), 1,
                                              static_cast<uint32_t>(descriptorGroup.size()), descriptorGroup.data(),

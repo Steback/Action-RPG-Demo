@@ -62,6 +62,8 @@ namespace engine {
 
         uint32_t loadAnimation(const std::string& uri, const std::string& name);
 
+        void initialPose();
+
     private:
         void createDescriptorPool();
 
