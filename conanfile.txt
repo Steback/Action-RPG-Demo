@@ -2,7 +2,7 @@
  spdlog/1.8.2
  glfw/3.3.2
  glm/0.9.9.8
- imgui/1.82
+ imgui/1.83
  vulkan-headers/1.2.172
  vulkan-loader/1.2.172
  stb/20200203
