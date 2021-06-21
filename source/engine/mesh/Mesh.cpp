@@ -9,7 +9,7 @@ namespace engine {
 
     Mesh::Mesh(const std::vector<engine::Vertex>& vertices, const std::vector<uint32_t>& indices,
                vk::Queue transferQueue, uint64_t textureID, const std::shared_ptr<engine::Device>& device)
-            : m_vertexCount(vertices.size()), m_indexCount(indices.size()), m_textureID(textureID) {
+            : vertices(vertices), indices(indices), m_textureID(textureID) {
         createVertexBuffer(vertices, transferQueue, device);
         createIndexBuffer(indices, transferQueue, device);
 
@@ -24,7 +24,7 @@ namespace engine {
     Mesh::~Mesh() = default;
 
     int Mesh::getVertexCount() const {
-        return m_vertexCount;
+        return static_cast<int>(vertices.size());
     }
 
     vk::Buffer Mesh::getVertexBuffer() const {
@@ -32,7 +32,7 @@ namespace engine {
     }
 
     int Mesh::getIndexCount() const {
-        return m_indexCount;
+        return static_cast<int>(indices.size());
     }
 
     vk::Buffer Mesh::getIndexBuffer() const {
@@ -79,6 +79,14 @@ namespace engine {
         device->copyBuffer(&stagingBuffer, &m_indexBuffer, transferQueue);
 
         stagingBuffer.destroy();
+    }
+
+    const std::vector<Vertex> &Mesh::getVertices() const {
+        return vertices;
+    }
+
+    const std::vector<uint32_t> &Mesh::getIndices() const {
+        return indices;
     }
 
 } // namespace core

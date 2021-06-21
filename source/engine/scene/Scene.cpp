@@ -7,6 +7,7 @@
 #include "imgui.h"
 
 #include "../Application.hpp"
+#include "../physcis/PhysicsEngine.hpp"
 #include "../renderer/CommandList.hpp"
 
 
@@ -190,7 +191,10 @@ namespace engine {
                 }
             }
 
-            entity.components |= ComponentFlags::TRANSFORM | ComponentFlags::MODEL;
+            m_registry.emplace<Collision>(entity.enttID, entity.id);
+            Application::physicsEngine->addShape(entity.id);
+
+            entity.components |= ComponentFlags::TRANSFORM | ComponentFlags::MODEL | ComponentFlags::COLLISION;
         }
     }
 

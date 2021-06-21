@@ -5,6 +5,7 @@
 #include "renderer/CommandList.hpp"
 #include "renderer/GraphicsPipeline.hpp"
 #include "lua/MathBindings.hpp"
+#include "physcis/PhysicsEngine.hpp"
 
 
 namespace engine {
@@ -13,6 +14,7 @@ namespace engine {
     std::unique_ptr<engine::ResourceManager> Application::m_resourceManager;
     std::unique_ptr<engine::Scene> Application::m_scene;
     std::unique_ptr<ThreadPool> Application::m_threadPool;
+    std::unique_ptr<PhysicsEngine> Application::physicsEngine;
     bool Application::m_editor;
 
     Application::Application(const std::string& appName, const glm::vec4& clearColor, bool editor)
@@ -60,6 +62,7 @@ namespace engine {
         tools.set_function("hashString", &tools::hashString);
         tools.set_function("getDeltaTime", &Application::getDeltaTime, this);
 
+        physicsEngine = std::make_unique<PhysicsEngine>();
         m_threadPool = std::make_unique<ThreadPool>();
 
         spdlog::info("[App] Start");
@@ -83,6 +86,7 @@ namespace engine {
         cleanup();
         m_threadPool->stop();
         m_scene->cleanup();
+        physicsEngine->cleanup();
         m_ui.cleanupResources();
         m_ui.cleanup();
         m_renderer->cleanup(m_instance);

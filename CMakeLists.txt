@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.17)
-project(Prototype_Action_RPG)
+project(Action_RPG_Demo)
 
 set(CMAKE_CXX_STANDARD 20)
 

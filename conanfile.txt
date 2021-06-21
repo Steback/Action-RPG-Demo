@@ -10,7 +10,7 @@
  tinygltf/2.5.0
  nlohmann_json/3.9.1
  spirv-cross/20210115
- physx/4.1.1
+ bullet3/3.17
  sol2/3.2.3
 
  [generators]

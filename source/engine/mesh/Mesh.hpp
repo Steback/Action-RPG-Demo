@@ -44,6 +44,10 @@ namespace engine {
 
         [[nodiscard]] uint64_t getTextureId() const;
 
+        const std::vector<Vertex> &getVertices() const;
+
+        const std::vector<uint32_t> &getIndices() const;
+
     private:
         void createVertexBuffer(const std::vector<engine::Vertex>& vertices, vk::Queue transferQueue, const std::shared_ptr<engine::Device>& device);
 
@@ -54,11 +58,11 @@ namespace engine {
         UniformBlock m_uniformBlock;
 
     private:
-        int m_vertexCount{};
-        int m_indexCount{};
         engine::Buffer m_vertexBuffer;
         engine::Buffer m_indexBuffer;
         uint64_t m_textureID{};
+        std::vector<Vertex> vertices;
+        std::vector<uint32_t> indices;
     };
 
 } // namespace core

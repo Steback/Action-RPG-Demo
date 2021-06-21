@@ -23,6 +23,7 @@ namespace engine {
 
     class CommandList;
     class GraphicsPipeline;
+    class PhysicsEngine;
 
     class Application {
     public:
@@ -57,6 +58,7 @@ namespace engine {
         static std::unique_ptr<engine::ResourceManager> m_resourceManager;
         static std::unique_ptr<engine::Scene> m_scene;
         static std::unique_ptr<ThreadPool> m_threadPool;
+        static std::unique_ptr<PhysicsEngine> physicsEngine;
         static bool m_editor;
 
     protected:
