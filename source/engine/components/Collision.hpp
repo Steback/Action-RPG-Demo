@@ -6,6 +6,8 @@
 
 #include "btBulletCollisionCommon.h"
 
+#include "Transform.hpp"
+
 
 namespace engine {
 
@@ -15,10 +17,12 @@ namespace engine {
 
         ~Collision();
 
+        void update(Transform* transform);
+
     public:
         std::vector<btRigidBody*> rigiBodies{};
         uint32_t owner{};
-        btScalar mass{10.0f};
+        btScalar mass{};
     };
 
 } // namespace engine

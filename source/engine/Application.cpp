@@ -110,6 +110,8 @@ namespace engine {
             m_scene->update(m_deltaTime);
             update();
 
+            physicsEngine->stepSimulation(m_deltaTime);
+
             engine::UIRender::newFrame();
             drawUI();
             m_luaManager.executeFunction("drawUI");

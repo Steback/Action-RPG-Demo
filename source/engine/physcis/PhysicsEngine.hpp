@@ -25,6 +25,8 @@ namespace engine {
 
         void addShape(uint32_t entityID);
 
+        void stepSimulation(float deltaTime);
+
     private:
         btDiscreteDynamicsWorld* dynamicsWorld{};
         btBroadphaseInterface* broadPhase{};

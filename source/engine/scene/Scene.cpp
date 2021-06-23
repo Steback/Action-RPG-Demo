@@ -50,6 +50,14 @@ namespace engine {
                     animation->update(deltaTime);
                 });
             }
+
+            const auto& viewCollision = m_registry.view<Collision>();
+            for (auto& entity : viewCollision) {
+                Application::m_threadPool->submit([collision = &viewCollision.get<Collision>(entity),
+                                                   transform = &m_registry.get<Transform>(entity)] {
+                    collision->update(transform);
+                });
+            }
         }
     }
 

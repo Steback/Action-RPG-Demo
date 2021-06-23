@@ -16,12 +16,27 @@ namespace engine {
         dispatcher = new btCollisionDispatcher(collisionConfig);
         solver = new btSequentialImpulseConstraintSolver();
         dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher, broadPhase, solver, collisionConfig);
-        dynamicsWorld->setGravity({0, -9.0f, 0});
+        dynamicsWorld->setGravity(btVector3(0, -10.0f, 0));
     }
 
     PhysicsEngine::~PhysicsEngine() = default;
 
     void PhysicsEngine::cleanup() {
+        for (int i = dynamicsWorld->getNumCollisionObjects() - 1; i >= 0; --i) {
+            btCollisionObject* obj = dynamicsWorld->getCollisionObjectArray()[i];
+            btRigidBody* body = btRigidBody::upcast(obj);
+
+            if (body && body->getMotionState())
+                delete body->getMotionState();
+
+            if (body && body->getCollisionShape())
+                delete body->getCollisionShape();
+
+            dynamicsWorld->removeCollisionObject(obj);
+
+            delete obj;
+        }
+
         delete dynamicsWorld;
         delete solver;
         delete dispatcher;
@@ -38,53 +53,50 @@ namespace engine {
         for (auto& node : modelInterface.getNodes()) {
            if (node.mesh > 0) {
                btCollisionShape* shape;
-               Mesh& mesh = Application::m_resourceManager->getMesh(node.mesh);
-               std::vector<Vertex> vertices = mesh.getVertices();
-               std::vector<uint32_t> indices = mesh.getIndices();
-               std::vector<btVector3> positions(vertices.size());
-               std::vector<int> btIndices(indices.size());
 
-               for (int i = 0; i < vertices.size(); ++i)
-                   positions[i] = btVector3(vertices[i].position.x, vertices[i].position.y, vertices[i].position.z);
+                if (entity.type != EntityType::BUILDING) {
+                    shape = new btBoxShape(btVector3(.1, .1, .1));
+                } else {
+                    shape = new btBoxShape(btVector3(btScalar(50.), btScalar(0.5), btScalar(50.)));
+                }
 
-               for (int i = 0; i < indices.size(); ++i)
-                   btIndices[i] = static_cast<int>(indices[i]);
+               btVector3 localInertia(0, 0, 0);
+               collision.mass = ( entity.type == EntityType::BUILDING ? 0.0f : 1.0f );
 
-               auto* indexVertexArray = new btTriangleIndexVertexArray(
-                       (int)btIndices.size() / 3,
-                       btIndices.data(),
-                       3 * sizeof(int),
-                       (int)positions.size(),
-                       (btScalar*)&positions[0].x(),
-                       sizeof(btVector3)
-               );
-
-               bool useQuantizedAabbCompression = true;
-               shape = new btBvhTriangleMeshShape(indexVertexArray, useQuantizedAabbCompression);
-               shape->setLocalScaling(btVector3(transform.getSize().x, transform.getSize().y, transform.getSize().z));
-
-               btVector3 localInertia = {0, 0, 0};
-               shape->calculateLocalInertia(collision.mass, localInertia);
-
-               btTransform shapeTransform;
-               shapeTransform.setIdentity();
-               shapeTransform.setOrigin(btVector3(transform.getPosition().x, transform.getPosition().y, transform.getPosition().z));
+               if (collision.mass != 0.0f);
+                   shape->calculateLocalInertia(collision.mass, localInertia);
 
                glm::quat q(transform.getRotation());
-               shapeTransform.setRotation(btQuaternion(q.x, q.y, q.z, q.w));
+               btTransform shapeTransform;
+               shapeTransform.setIdentity();
+               shapeTransform.setOrigin({transform.getPosition().x, transform.getPosition().y, transform.getPosition().z});
+               shapeTransform.setRotation({q.x, q.y, q.z, q.w});
 
-               auto* motionState = new btDefaultMotionState(shapeTransform);
+               btRigidBody::btRigidBodyConstructionInfo rbInfo(
+                       collision.mass,
+                       new btDefaultMotionState(shapeTransform),
+                       shape,
+                       localInertia
+               );
 
-               btRigidBody::btRigidBodyConstructionInfo rbInfo(collision.mass, motionState, shape, localInertia);
+               auto* body = new btRigidBody(rbInfo);
+               body->setLinearVelocity(btVector3(0, 0, 0));
+               body->setAngularVelocity(btVector3(0, 0, 0));
 
-               auto* rigiBody = new btRigidBody(rbInfo);
-               rigiBody->setUserIndex((int)entity.id);
-               rigiBody->setCollisionFlags(rigiBody->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
+               if (entity.type == EntityType::BUILDING) {
+                   body->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
+                   auto* hinge = new btHingeConstraint(*body, btVector3(0, 0, 0), btVector3(0, 1, 0), true);
+                   dynamicsWorld->addConstraint(hinge);
+               }
 
-               dynamicsWorld->addRigidBody(rigiBody);
-               collision.rigiBodies.push_back(rigiBody);
+               dynamicsWorld->addRigidBody(body);
+               collision.rigiBodies.push_back(body);
            }
         }
+    }
+
+    void PhysicsEngine::stepSimulation(float deltaTime) {
+        dynamicsWorld->stepSimulation(deltaTime);
     }
 
 } // namespace engine
