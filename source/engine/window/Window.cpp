@@ -77,7 +77,7 @@ namespace engine {
         m_keys[key] = pressed;
     }
 
-    bool Window::mouseButtonPressed(int mouse) {
+    bool Window::mouseButtonPressed(int mouse) const {
         if (mouse == GLFW_MOUSE_BUTTON_LEFT) {
             return m_lMouseButton;
         } else if (mouse == GLFW_MOUSE_BUTTON_RIGHT) {

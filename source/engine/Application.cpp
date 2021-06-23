@@ -16,6 +16,7 @@ namespace engine {
     std::unique_ptr<ThreadPool> Application::m_threadPool;
     std::unique_ptr<PhysicsEngine> Application::physicsEngine;
     bool Application::m_editor;
+    const char* Application::keys;
 
     Application::Application(const std::string& appName, const glm::vec4& clearColor, bool editor)
             : m_clearColor(clearColor) {
@@ -23,6 +24,7 @@ namespace engine {
         m_editor = editor;
 
         m_window = std::make_shared<engine::Window>(appName, 1776, 1000);
+        keys = m_window->getKeys().data();
 
         m_instance = std::make_shared<engine::Instance>(vk::ApplicationInfo{
             .pApplicationName = appName.c_str(),

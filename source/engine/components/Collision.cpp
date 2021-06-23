@@ -12,5 +12,7 @@ engine::Collision::~Collision() = default;
 
 void engine::Collision::update(engine::Transform *transform) {
     btTransform t = rigiBodies[0]->getWorldTransform();
-    transform->getPosition() = {t.getOrigin().x(), t.getOrigin().y(), t.getOrigin().z()};
+    glm::vec3& position = transform->getPosition();
+    position.y = t.getOrigin().y();
+    t.setOrigin({position.x, position.y, position.z});
 }

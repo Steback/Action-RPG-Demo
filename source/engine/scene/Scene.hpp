@@ -38,7 +38,8 @@ namespace engine {
         TRANSFORM = 1 << 0,
         MODEL = 1 << 1,
         ANIMATION = 1 << 2,
-        COLLISION = 1 << 3
+        COLLISION = 1 << 3,
+        MOVEMENT = 1 << 4
     };
 
     struct Entity {

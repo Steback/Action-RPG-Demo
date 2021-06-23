@@ -9,6 +9,7 @@
 #include "../Application.hpp"
 #include "../physcis/PhysicsEngine.hpp"
 #include "../renderer/CommandList.hpp"
+#include "../components/Movement.hpp"
 
 
 namespace engine {
@@ -56,6 +57,16 @@ namespace engine {
                 Application::m_threadPool->submit([collision = &viewCollision.get<Collision>(entity),
                                                    transform = &m_registry.get<Transform>(entity)] {
                     collision->update(transform);
+                });
+            }
+
+            const auto& viewMovement = m_registry.view<Movement, Transform, AnimationInterface>();
+            for (auto& entity : viewMovement) {
+                Application::m_threadPool->submit([deltaTime = deltaTime,
+                        movement = &viewMovement.get<Movement>(entity),
+                        transform = &viewMovement.get<Transform>(entity),
+                        animation = &viewMovement.get<AnimationInterface>(entity)]{
+                    movement->update(deltaTime, transform, animation);
                 });
             }
         }
@@ -197,6 +208,11 @@ namespace engine {
                     animationsName->emplace(deathID, death);
                     animationsName->emplace(walkID, walk);
                 }
+            }
+
+            if (!e["movement"].empty()) {
+                m_registry.emplace<Movement>(entity.enttID);
+                entity.components |= ComponentFlags::MOVEMENT;
             }
 
             m_registry.emplace<Collision>(entity.enttID, entity.id);

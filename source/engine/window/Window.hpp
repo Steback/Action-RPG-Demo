@@ -42,7 +42,7 @@ namespace engine {
 
         void setKeyValue(int key, bool pressed);
 
-        bool mouseButtonPressed(int button);
+        bool mouseButtonPressed(int button) const;
 
         glm::vec2 getCursorPos();
 

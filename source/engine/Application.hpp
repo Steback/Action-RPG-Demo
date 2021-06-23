@@ -60,6 +60,7 @@ namespace engine {
         static std::unique_ptr<ThreadPool> m_threadPool;
         static std::unique_ptr<PhysicsEngine> physicsEngine;
         static bool m_editor;
+        static const char* keys;
 
     protected:
         std::shared_ptr<engine::Window> m_window;

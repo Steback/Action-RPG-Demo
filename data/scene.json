@@ -1,15 +1,15 @@
 {
     "camera": {
         "angles": {
-            "pitch": 0.0,
+            "pitch": 45.0,
             "yaw": 90.0
         },
-        "distance": 10.0,
+        "distance": 20.0,
         "rotateSpeed": 10.0,
         "speed": 0.5,
         "target": {
             "x": 0.0,
-            "y": 1.0,
+            "y": 0.0,
             "z": 0.0
         }
     },
@@ -41,8 +41,9 @@
                     1.0,
                     1.0
                 ],
-                "speed": 0.0
+                "speed": 5.0
             },
+            "movement": true,
             "type": 1
         },
         {

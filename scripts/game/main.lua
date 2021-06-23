@@ -14,7 +14,7 @@ end
 function drawUI()
     -- Windows
     debugWindow:draw(drawData.debugWindow, 0);
-    animationsControl:draw(drawData.animationsControl, 0)
+    --animationsControl:draw(drawData.animationsControl, 0)
 
     -- Functions
 end
