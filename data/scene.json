@@ -44,6 +44,14 @@
                 "speed": 5.0
             },
             "movement": true,
+            "collision": {
+                "mass": 1.0,
+                "halfSize": {
+                    "x": 0.5,
+                    "y": 1,
+                    "z": 0.5
+                }
+            },
             "type": 1
         },
         {
@@ -75,6 +83,14 @@
                 ],
                 "speed": 0.0
             },
+            "collision": {
+                "mass": 1.0,
+                "halfSize": {
+                    "x": 1,
+                    "y": 1.5,
+                    "z": 1
+                }
+            },
             "type": 2
         },
         {
@@ -99,6 +115,14 @@
                     1.0
                 ],
                 "speed": 0.0
+            },
+            "collision": {
+                "mass": 0.0,
+                "halfSize": {
+                    "x": 6,
+                    "y": 0.5,
+                    "z": 6
+                }
             },
             "type": 3
         }

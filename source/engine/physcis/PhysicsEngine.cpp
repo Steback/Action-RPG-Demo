@@ -53,17 +53,10 @@ namespace engine {
         for (auto& node : modelInterface.getNodes()) {
            if (node.mesh > 0) {
                btCollisionShape* shape;
-
-                if (entity.type != EntityType::BUILDING) {
-                    shape = new btBoxShape(btVector3(.1, .1, .1));
-                } else {
-                    shape = new btBoxShape(btVector3(btScalar(50.), btScalar(0.5), btScalar(50.)));
-                }
-
+               shape = new btBoxShape(collision.halfSize);
                btVector3 localInertia(0, 0, 0);
-               collision.mass = ( entity.type == EntityType::BUILDING ? 0.0f : 1.0f );
 
-               if (collision.mass != 0.0f);
+               if (collision.mass != 0.0f)
                    shape->calculateLocalInertia(collision.mass, localInertia);
 
                glm::quat q(transform.getRotation());

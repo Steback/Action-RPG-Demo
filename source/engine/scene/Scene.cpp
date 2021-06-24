@@ -215,7 +215,17 @@ namespace engine {
                 entity.components |= ComponentFlags::MOVEMENT;
             }
 
-            m_registry.emplace<Collision>(entity.enttID, entity.id);
+            if (!e["collision"].empty()) {
+                auto& halfSize = e["collision"]["halfSize"];
+
+                m_registry.emplace<Collision>(
+                        entity.enttID,
+                        entity.id,
+                        e["collision"]["mass"].get<float>(),
+                        glm::vec3(halfSize["x"].get<float>(), halfSize["y"].get<float>(), halfSize["z"].get<float>())
+                );
+            }
+
             Application::physicsEngine->addShape(entity.id);
 
             entity.components |= ComponentFlags::TRANSFORM | ComponentFlags::MODEL | ComponentFlags::COLLISION;
