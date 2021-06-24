@@ -110,9 +110,8 @@ namespace engine {
 
             m_renderer->updateVP(m_scene->getCamera().getView(), m_scene->getCamera().getProjection(m_window->aspect()));
             m_scene->update(m_deltaTime);
-            update();
-
             physicsEngine->stepSimulation(m_deltaTime);
+            update();
 
             engine::UIRender::newFrame();
             drawUI();

@@ -37,15 +37,17 @@ namespace engine {
             });
         }
 
-        for (auto& entity : m_entities) {
-            if (entity.type != EntityType::CAMERA) {
-                Application::m_threadPool->submit([transform = &m_registry.get<engine::Transform>(entity.enttID), deltaTime] {
-                    transform->update(deltaTime);
+        if (!Application::m_editor) {
+            const auto& viewMovement = m_registry.view<Movement, Transform, AnimationInterface>();
+            for (auto& entity : viewMovement) {
+                Application::m_threadPool->submit([deltaTime = deltaTime,
+                                                          movement = &viewMovement.get<Movement>(entity),
+                                                          transform = &viewMovement.get<Transform>(entity),
+                                                          animation = &viewMovement.get<AnimationInterface>(entity)]{
+                    movement->update(deltaTime, transform, animation);
                 });
             }
-        }
 
-        if (!Application::m_editor) {
             for (auto& entity : m_registry.view<AnimationInterface>()) {
                 Application::m_threadPool->submit([animation = &m_registry.get<AnimationInterface>(entity), deltaTime] {
                     animation->update(deltaTime);
@@ -55,18 +57,16 @@ namespace engine {
             const auto& viewCollision = m_registry.view<Collision>();
             for (auto& entity : viewCollision) {
                 Application::m_threadPool->submit([collision = &viewCollision.get<Collision>(entity),
-                                                   transform = &m_registry.get<Transform>(entity)] {
+                        transform = &m_registry.get<Transform>(entity)] {
                     collision->update(transform);
                 });
             }
+        }
 
-            const auto& viewMovement = m_registry.view<Movement, Transform, AnimationInterface>();
-            for (auto& entity : viewMovement) {
-                Application::m_threadPool->submit([deltaTime = deltaTime,
-                        movement = &viewMovement.get<Movement>(entity),
-                        transform = &viewMovement.get<Transform>(entity),
-                        animation = &viewMovement.get<AnimationInterface>(entity)]{
-                    movement->update(deltaTime, transform, animation);
+        for (auto& entity : m_entities) {
+            if (entity.type != EntityType::CAMERA) {
+                Application::m_threadPool->submit([transform = &m_registry.get<engine::Transform>(entity.enttID), deltaTime] {
+                    transform->update(deltaTime);
                 });
             }
         }
@@ -319,6 +319,23 @@ namespace engine {
                             {"death", death},
                             {"walk", walk}
                     };
+                }
+
+                if (entity.components & engine::COLLISION) {
+                    auto& collision = m_registry.get<Collision>(entity.enttID);
+
+                    scene["entities"][entitiesCount]["collision"] = {
+                            {"mass", collision.mass},
+                            {"halfSize", {
+                                    {"x", collision.halfSize.x()},
+                                    {"y", collision.halfSize.y()},
+                                    {"z", collision.halfSize.z()}
+                            }}
+                    };
+                }
+
+                if (entity.components & engine::MOVEMENT) {
+                    scene["entities"][entitiesCount]["movement"] = true;
                 }
             }
         }
