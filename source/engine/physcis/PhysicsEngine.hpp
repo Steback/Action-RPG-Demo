@@ -27,6 +27,8 @@ namespace engine {
 
         void stepSimulation(float deltaTime);
 
+        btDynamicsWorld* getDynamicsWorld();
+
     private:
         btDiscreteDynamicsWorld* dynamicsWorld{};
         btBroadphaseInterface* broadPhase{};

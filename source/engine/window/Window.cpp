@@ -4,6 +4,8 @@
 #define SOL_ALL_SAFETIES_ON 1
 #include "sol/sol.hpp"
 
+#include "../Application.hpp"
+
 namespace engine {
 
     Window::Window(const std::string& name, int width, int height) {
@@ -128,6 +130,7 @@ namespace engine {
             w->m_mouseFirstMove = false;
         }
 
+        w->currentMousePos = {static_cast<float>(xPos), static_cast<float>(yPos)};
         w->m_cursorChangePos = {static_cast<float>(xPos) - w->m_lastCursorPos.x, static_cast<float>(yPos) - w->m_lastCursorPos.y};
         w->m_lastCursorPos = {static_cast<float>(xPos), static_cast<float>(yPos)};
     }
@@ -163,6 +166,11 @@ namespace engine {
                                         "height", &WindowSize::height);
 
         window.set_function("size", &Window::getSize, this);
+        window.set_function("getCurrentMousePos", &Window::getCurrentMousePos, this);
+    }
+
+    const glm::vec2 &Window::getCurrentMousePos() const {
+        return currentMousePos;
     }
 
 } // End namespace core

@@ -65,6 +65,10 @@ namespace engine {
         tools.set_function("getDeltaTime", &Application::getDeltaTime, this);
 
         physicsEngine = std::make_unique<PhysicsEngine>();
+
+        mousePicking = MousePicking(m_window);
+        mousePicking.setLuaBindings(m_luaManager.getState());
+
         m_threadPool = std::make_unique<ThreadPool>();
 
         spdlog::info("[App] Start");
@@ -111,6 +115,7 @@ namespace engine {
             m_renderer->updateVP(m_scene->getCamera().getView(), m_scene->getCamera().getProjection(m_window->aspect()));
             m_scene->update(m_deltaTime);
             physicsEngine->stepSimulation(m_deltaTime);
+            mousePicking.pick();
             update();
 
             engine::UIRender::newFrame();

@@ -24,10 +24,10 @@
             "collision": {
                 "halfSize": {
                     "x": 0.5,
-                    "y": 1.0,
+                    "y": 2.0,
                     "z": 0.5
                 },
-                "mass": 1.0
+                "mass": 0.0
             },
             "model": {
                 "name": "hero"
@@ -64,10 +64,10 @@
             "collision": {
                 "halfSize": {
                     "x": 0.5,
-                    "y": 1.0,
+                    "y": 2.0,
                     "z": 0.5
                 },
-                "mass": 1.0
+                "mass": 0.0
             },
             "model": {
                 "name": "skeleton"
@@ -109,7 +109,7 @@
             "transform": {
                 "position": [
                     6.25,
-                    -1.0,
+                    0.0,
                     0.0
                 ],
                 "rotation": [
@@ -142,7 +142,7 @@
             "transform": {
                 "position": [
                     6.25,
-                    -1.0,
+                    0.0,
                     -12.5
                 ],
                 "rotation": [
@@ -175,7 +175,7 @@
             "transform": {
                 "position": [
                     6.25,
-                    -1.0,
+                    0.0,
                     12.5
                 ],
                 "rotation": [
@@ -208,7 +208,7 @@
             "transform": {
                 "position": [
                     -6.25,
-                    -1.0,
+                    0.0,
                     0.0
                 ],
                 "rotation": [
@@ -241,7 +241,7 @@
             "transform": {
                 "position": [
                     -6.25,
-                    -1.0,
+                    0.0,
                     12.5
                 ],
                 "rotation": [
@@ -274,7 +274,7 @@
             "transform": {
                 "position": [
                     -6.25,
-                    -1.0,
+                    0.0,
                     -12.5
                 ],
                 "rotation": [
@@ -295,10 +295,10 @@
             "collision": {
                 "halfSize": {
                     "x": 0.5,
-                    "y": 1.0,
+                    "y": 2.0,
                     "z": 0.5
                 },
-                "mass": 1.0
+                "mass": 0.0
             },
             "model": {
                 "name": "skeleton"
@@ -328,10 +328,10 @@
             "collision": {
                 "halfSize": {
                     "x": 0.5,
-                    "y": 1.0,
+                    "y": 2.0,
                     "z": 0.5
                 },
-                "mass": 1.0
+                "mass": 0.0
             },
             "model": {
                 "name": "skeleton"

@@ -42,7 +42,7 @@ namespace engine {
 
         void setKeyValue(int key, bool pressed);
 
-        bool mouseButtonPressed(int button) const;
+        [[nodiscard]] bool mouseButtonPressed(int button) const;
 
         glm::vec2 getCursorPos();
 
@@ -51,6 +51,8 @@ namespace engine {
         bool& isScrolling();
 
         void setLuaBindings(sol::state& state);
+
+        [[nodiscard]] const glm::vec2 &getCurrentMousePos() const;
 
     private:
         static void framebufferResizeCallback(GLFWwindow* tWindow, int width, int height);
@@ -70,6 +72,7 @@ namespace engine {
         std::array<char, 1024> m_keys{false};
         glm::vec2 m_cursorChangePos{};
         glm::vec2 m_lastCursorPos{};
+        glm::vec2 currentMousePos{};
         bool m_rMouseButton{};
         bool m_lMouseButton{};
         glm::vec2 m_scrollOffset{};

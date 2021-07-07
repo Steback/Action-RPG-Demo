@@ -73,15 +73,7 @@ namespace engine {
                );
 
                auto* body = new btRigidBody(rbInfo);
-               body->setLinearVelocity(btVector3(0, 0, 0));
-               body->setAngularVelocity(btVector3(0, 0, 0));
-
-               if (entity.type == EntityType::BUILDING) {
-                   body->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
-                   auto* hinge = new btHingeConstraint(*body, btVector3(0, 0, 0), btVector3(0, 1, 0), true);
-                   dynamicsWorld->addConstraint(hinge);
-               }
-
+               body->setUserIndex(static_cast<int>(entity.id));
                dynamicsWorld->addRigidBody(body);
                collision.rigiBodies.push_back(body);
            }
@@ -90,6 +82,10 @@ namespace engine {
 
     void PhysicsEngine::stepSimulation(float deltaTime) {
         dynamicsWorld->stepSimulation(deltaTime);
+    }
+
+    btDynamicsWorld *PhysicsEngine::getDynamicsWorld() {
+        return dynamicsWorld;
     }
 
 } // namespace engine

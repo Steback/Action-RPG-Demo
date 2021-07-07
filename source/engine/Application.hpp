@@ -17,6 +17,7 @@
 #include "lua/LuaManager.hpp"
 #include "ui/UIRender.hpp"
 #include "threads/ThreadPool.hpp"
+#include "MousePicking/MousePicking.hpp"
 
 
 namespace engine {
@@ -72,6 +73,7 @@ namespace engine {
         std::shared_ptr<CommandList> m_commands;
         UIRender m_ui;
         LuaManager m_luaManager;
+        MousePicking mousePicking;
     };
 
 } // namespace core
