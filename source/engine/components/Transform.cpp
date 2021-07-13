@@ -23,7 +23,7 @@ namespace engine {
         glm::mat4 model(1.0f);
 
         model = glm::translate(model, m_position);
-        model = glm::scale(model, m_size) ;
+        model = glm::scale(model, m_size);
         model *= glm::mat4(glm::quat(m_rotation));
 
         return model;

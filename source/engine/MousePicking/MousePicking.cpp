@@ -16,7 +16,7 @@ namespace engine {
 
     }
 
-    void MousePicking::mouseRayCast(glm::vec3& origin, glm::vec3& direction) {
+    void MousePicking::mouseRayCast() {
         Camera& camera = Application::m_scene->getCamera();
         glm::vec2 mousePos = window->getCurrentMousePos();
 
@@ -44,10 +44,7 @@ namespace engine {
     }
 
     void MousePicking::pick() {
-        glm::vec3 origin;
-        glm::vec3 direction;
-
-        mouseRayCast(origin, direction);
+        mouseRayCast();
 
         glm::vec3 end = origin + direction * 100.0f;
 
@@ -71,8 +68,27 @@ namespace engine {
         return entityPicked;
     }
 
+    const glm::vec3 &MousePicking::getOrigin() const {
+        return origin;
+    }
+
+    const glm::vec3 &MousePicking::getDirection() const {
+        return direction;
+    }
+
+    glm::vec3 MousePicking::getDirectionAugmented() const {
+        return origin + direction * Application::m_scene->getCamera().getDistance();
+    }
+
     void MousePicking::setLuaBindings(sol::state &state) {
         sol::table mouse = state["mouse"].get_or_create<sol::table>();
         mouse.set_function("getEntityPicked", &MousePicking::getEntityPicked, this);
+        mouse.set_function("getOrigin", &MousePicking::getOrigin, this);
+        mouse.set_function("getDirection", &MousePicking::getDirection, this);
+        mouse.set_function("getDirectionAugmented", &MousePicking::getDirectionAugmented, this);
+    }
+
+    bool MousePicking::leftClickPressed() const {
+        return window->mouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT);
     }
 }

@@ -60,6 +60,7 @@ namespace engine {
         static std::unique_ptr<engine::Scene> m_scene;
         static std::unique_ptr<ThreadPool> m_threadPool;
         static std::unique_ptr<PhysicsEngine> physicsEngine;
+        static std::unique_ptr<MousePicking> mousePicking;
         static bool m_editor;
         static const char* keys;
 
@@ -73,7 +74,6 @@ namespace engine {
         std::shared_ptr<CommandList> m_commands;
         UIRender m_ui;
         LuaManager m_luaManager;
-        MousePicking mousePicking;
     };
 
 } // namespace core

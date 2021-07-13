@@ -15,6 +15,7 @@ namespace engine {
     std::unique_ptr<engine::Scene> Application::m_scene;
     std::unique_ptr<ThreadPool> Application::m_threadPool;
     std::unique_ptr<PhysicsEngine> Application::physicsEngine;
+    std::unique_ptr<MousePicking> Application::mousePicking;
     bool Application::m_editor;
     const char* Application::keys;
 
@@ -66,8 +67,8 @@ namespace engine {
 
         physicsEngine = std::make_unique<PhysicsEngine>();
 
-        mousePicking = MousePicking(m_window);
-        mousePicking.setLuaBindings(m_luaManager.getState());
+        mousePicking = std::make_unique<MousePicking>(m_window);
+        mousePicking->setLuaBindings(m_luaManager.getState());
 
         m_threadPool = std::make_unique<ThreadPool>();
 
@@ -115,7 +116,7 @@ namespace engine {
             m_renderer->updateVP(m_scene->getCamera().getView(), m_scene->getCamera().getProjection(m_window->aspect()));
             m_scene->update(m_deltaTime);
             physicsEngine->stepSimulation(m_deltaTime);
-            mousePicking.pick();
+            mousePicking->pick();
             update();
 
             engine::UIRender::newFrame();

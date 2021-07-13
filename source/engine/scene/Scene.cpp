@@ -211,7 +211,7 @@ namespace engine {
             }
 
             if (!e["movement"].empty()) {
-                m_registry.emplace<Movement>(entity.enttID);
+                m_registry.emplace<Movement>(entity.enttID, m_registry.get<Transform>(entity.enttID));
                 entity.components |= ComponentFlags::MOVEMENT;
             }
 

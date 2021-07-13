@@ -3,6 +3,9 @@
 
 
 #include "GLFW/glfw3.h"
+#include "glm/glm.hpp"
+#define SOL_ALL_SAFETIES_ON 1
+#include "sol/sol.hpp"
 
 
 namespace engine {
@@ -12,20 +15,14 @@ namespace engine {
 
     class Movement {
     public:
-        enum Key {
-            UP = GLFW_KEY_W,
-            DOWN = GLFW_KEY_S,
-            LEFT = GLFW_KEY_A,
-            RIGHT = GLFW_KEY_D
-        };
-
-    public:
-        Movement();
+        explicit Movement(Transform& transform);
 
         void update(float deltaTime, Transform* transform, AnimationInterface* animation);
 
     public:
         bool isMoving{};
+        glm::vec3 moveTo{};
+        glm::vec3 direction{};
     };
 
 }
