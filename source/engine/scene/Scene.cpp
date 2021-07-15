@@ -142,6 +142,7 @@ namespace engine {
 
         if (editorBuild) {
             auto& entity = addEntity("Camera", EntityType::OBJECT | EntityType::CAMERA);
+            m_registry.emplace<Status>(entity.enttID, entity.id);
 
             m_registry.emplace<engine::ModelInterface>(entity.enttID, engine::tools::hashString("cube"), entity.id);
 
