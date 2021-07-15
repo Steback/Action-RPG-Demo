@@ -1,24 +1,19 @@
+local HERO_MAX_HEALTH = 100
+local ENEMY_MAX_HEALTH = 50
+
 -- Draw data
 drawData = {}
 
-function drawData.debugWindow()
-    local mousePos = window.getCurrentMousePos()
-    imgui.text("Mouse Position: x: "..tostring(mousePos.x).." y: "..tostring(mousePos.y))
+function drawData.healthHero()
+    local combat = game.getCombatComponent(game.combatSystem.getHero().id)
+    imgui.progressBarBuf(combat.health / HERO_MAX_HEALTH, -1.0, -1.0, HERO_MAX_HEALTH);
+end
 
-    local entityPicked = mouse.getEntityPicked()
-    imgui.text("Entity picked name: "..entityPicked.name)
+function drawData.healthEnemy()
+    local enemy = game.combatSystem.getEnemy()
 
-    local origin = mouse.getOrigin()
-    local direction = mouse.getDirection()
-    local directionAugmented = mouse.getDirectionAugmented()
-    imgui.text("Mouse origin: x: "..tostring(origin.x).." y: "..tostring(origin.y).." z: "..tostring(origin.z))
-    imgui.text("Mouse direction: x: "..tostring(direction.x).." y: "..tostring(direction.y).." z: "..tostring(direction.z))
-    imgui.text("Mouse direction augmented: x: "..tostring(directionAugmented.x).." y: "..tostring(directionAugmented.y).." z: "..tostring(directionAugmented.z))
-
-    local transform = scene.components.getTransform(scene.entities:get(1).id)
-    imgui.inputFloat3("Position", transform:getPosition())
-
-    local angles = glm.degrees(transform:getRotation())
-    imgui.inputFloat3("Rotation", angles)
-    transform:setRotation(glm.radians(angles))
+    if enemy.name ~= "" then
+        local combat = game.getCombatComponent(enemy.id)
+        imgui.progressBarBuf(combat.health / ENEMY_MAX_HEALTH, -1.0, -1.0, ENEMY_MAX_HEALTH);
+    end
 end

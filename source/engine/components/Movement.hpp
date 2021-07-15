@@ -23,6 +23,7 @@ namespace engine {
         bool isMoving{};
         glm::vec3 moveTo{};
         glm::vec3 direction{};
+        bool isActive{true};
     };
 
 }

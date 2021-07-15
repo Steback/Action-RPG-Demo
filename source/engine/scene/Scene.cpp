@@ -10,6 +10,7 @@
 #include "../physcis/PhysicsEngine.hpp"
 #include "../renderer/CommandList.hpp"
 #include "../components/Movement.hpp"
+#include "../components/Status.hpp"
 
 
 namespace engine {
@@ -29,37 +30,45 @@ namespace engine {
     void Scene::update(float deltaTime) {
         auto viewCamera = m_registry.view<Camera>();
         for (auto& entity : viewCamera) {
-            Application::m_threadPool->submit([camera = &m_registry.get<Camera>(entity), transform = &m_registry.get<Transform>(entity)]{
-                glm::vec2 angles = camera->getEulerAngles();
-                camera->setDirection(angles.x, angles.y);
-                transform->getPosition() = camera->getCenter() + (camera->getDirection() * camera->getDistance());
-                camera->getEye() = transform->getPosition();
-            });
+            if (m_registry.get<Status>(entity).getType() == Status::ACTIVE) {
+                Application::m_threadPool->submit([camera = &m_registry.get<Camera>(entity), transform = &m_registry.get<Transform>(entity)]{
+                    glm::vec2 angles = camera->getEulerAngles();
+                    camera->setDirection(angles.x, angles.y);
+                    transform->getPosition() = camera->getCenter() + (camera->getDirection() * camera->getDistance());
+                    camera->getEye() = transform->getPosition();
+                });
+            }
         }
 
         if (!Application::m_editor) {
             const auto& viewMovement = m_registry.view<Movement, Transform, AnimationInterface>();
             for (auto& entity : viewMovement) {
-                Application::m_threadPool->submit([deltaTime = deltaTime,
-                                                          movement = &viewMovement.get<Movement>(entity),
-                                                          transform = &viewMovement.get<Transform>(entity),
-                                                          animation = &viewMovement.get<AnimationInterface>(entity)]{
-                    movement->update(deltaTime, transform, animation);
-                });
+                if (m_registry.get<Status>(entity).getType() == Status::ACTIVE) {
+                    Application::m_threadPool->submit([deltaTime = deltaTime,
+                                                              movement = &viewMovement.get<Movement>(entity),
+                                                              transform = &viewMovement.get<Transform>(entity),
+                                                              animation = &viewMovement.get<AnimationInterface>(entity)]{
+                        movement->update(deltaTime, transform, animation);
+                    });
+                }
             }
 
             for (auto& entity : m_registry.view<AnimationInterface>()) {
-                Application::m_threadPool->submit([animation = &m_registry.get<AnimationInterface>(entity), deltaTime] {
-                    animation->update(deltaTime);
-                });
+                if (m_registry.get<Status>(entity).getType() == Status::ACTIVE) {
+                    Application::m_threadPool->submit([animation = &m_registry.get<AnimationInterface>(entity), deltaTime] {
+                        animation->update(deltaTime);
+                    });
+                }
             }
 
             const auto& viewCollision = m_registry.view<Collision>();
             for (auto& entity : viewCollision) {
-                Application::m_threadPool->submit([collision = &viewCollision.get<Collision>(entity),
-                        transform = &m_registry.get<Transform>(entity)] {
-                    collision->update(transform);
-                });
+                if (m_registry.get<Status>(entity).getType() == Status::ACTIVE) {
+                    Application::m_threadPool->submit([collision = &viewCollision.get<Collision>(entity),
+                                                       transform = &m_registry.get<Transform>(entity)] {
+                        collision->update(transform);
+                    });
+                }
             }
         }
 
@@ -76,7 +85,9 @@ namespace engine {
         auto view = m_registry.view<engine::ModelInterface>();
 
         for (auto& entity : view) {
-            view.get<ModelInterface>(entity).render(cmdBuffer, pipeAnimation);
+            if (m_registry.get<Status>(entity).getType() == Status::ACTIVE) {
+                view.get<ModelInterface>(entity).render(cmdBuffer, pipeAnimation);
+            }
         }
     }
 
@@ -158,6 +169,8 @@ namespace engine {
 
         for (auto& e : scene["entities"]) {
             auto& entity = addEntity(e["name"], e["type"]);
+
+            m_registry.emplace<Status>(entity.enttID, entity.id);
 
             if (!e["transform"].empty()) {
                 auto& transform = e["transform"];

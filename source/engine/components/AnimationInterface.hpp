@@ -31,6 +31,8 @@ namespace engine {
         Animation::Type currentAnimation{Animation::Type::idle};
         std::shared_ptr<Animation> animation;
         std::shared_ptr<Model> model;
+        bool reset{};
+        bool loop{true};
     };
 
 } // namespace engine

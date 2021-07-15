@@ -1,0 +1,16 @@
+{
+  "entities": [
+    {
+      "name": "Hero",
+      "health": 100,
+      "damage": 15,
+      "armor": 8
+    },
+    {
+      "name": "Enemy1",
+      "health": 50,
+      "damage": 10,
+      "armor": 5
+    }
+  ]
+}

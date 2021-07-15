@@ -23,7 +23,12 @@ namespace engine {
         animation = Application::m_resourceManager->getAnimation(animationsList[currentAnimation - 1]);
         animation->m_currentTime += delaTime;
 
-        if (animation->m_currentTime > animation->m_end) animation->m_currentTime -= animation->m_end;
+        if (animation->m_currentTime > animation->m_end && loop) {
+            animation->m_currentTime -= animation->m_end;
+            reset = true;
+        } else {
+            reset = false;
+        }
 
         for (auto& channel : animation->m_channels) {
             Animation::Sampler& sampler = animation->m_samplers[channel.samplerIndex];

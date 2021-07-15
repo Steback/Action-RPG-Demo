@@ -1,7 +1,11 @@
 #ifndef PROTOTYPE_ACTION_RPG_GAME_HPP
 #define PROTOTYPE_ACTION_RPG_GAME_HPP
 
+
 #include "Application.hpp"
+#include "CombatSystem.hpp"
+#include "components/Combat.hpp"
+
 
 namespace game {
 
@@ -18,6 +22,12 @@ namespace game {
         void cleanup() override;
 
         void renderCommands(vk::CommandBuffer &cmdBuffer) override;
+
+    private:
+        Combat& getCombatComponent(uint32_t id);
+
+    private:
+        std::unique_ptr<CombatSystem> combatSystem;
     };
 
 } // namespace core

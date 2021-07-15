@@ -1,15 +1,24 @@
 require 'drawData'
 
-local debugWindow
+local healthHero
+local healthEnemy
+
 
 function init()
-    debugWindow = ui.createWindow("Debug Window", -1.0, -1.0, ui.WindowFlags.close)
-    debugWindow:setState(true)
+    local barWidth = 350
+    local barHeight = 60
+
+    healthHero = ui.createWindow("Hero", barWidth, barHeight, 0)
+    healthHero:setState(true)
+
+    healthEnemy = ui.createWindow("Enemy", barWidth, barHeight, 0)
+    healthEnemy:setState(true)
 end
 
 function drawUI()
     -- Windows
-    debugWindow:draw(drawData.debugWindow, 0);
+    healthHero:draw(drawData.healthHero, imgui.flags.noCollapse | imgui.flags.noResize);
+    healthEnemy:draw(drawData.healthEnemy, imgui.flags.noCollapse | imgui.flags.noResize);
 
     -- Functions
 end

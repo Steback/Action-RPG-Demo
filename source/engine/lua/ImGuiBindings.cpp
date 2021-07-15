@@ -9,6 +9,8 @@
 
 #include "LuaManager.hpp"
 
+#define IM_CLAMP(V, MN, MX) ((V) < (MN) ? (MN) : (V) > (MX) ? (MX) : (V))
+
 
 namespace engine::lua {
 
@@ -53,6 +55,12 @@ namespace engine::lua {
                 LuaManager::executeFunction(f);
                 ImGui::TreePop();
             }
+        });
+        imgui.set_function("progressBarBuf", [](float fraction, float width, float height, int max){
+            float progressSaturated = IM_CLAMP(fraction, 0.0f, 1.0f);
+            char buf[32];
+            sprintf(buf, "%d/%d", (int)(progressSaturated * max), max);
+            ImGui::ProgressBar(fraction, {width, height}, buf);
         });
     }
 }
