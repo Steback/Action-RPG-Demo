@@ -33,7 +33,11 @@ namespace editor {
         m_resourceManager->createModel("cube", "cube");
         m_modelsNames.emplace_back("cube");
 
+#ifdef _WIN32
         m_scene->loadScene("..\\..\\data\\scene.json", true, &m_modelsNames, &animationsName);
+#else
+        m_scene->loadScene("../data/scene.json", true, &m_modelsNames, &animationsName);
+#endif
 
         for (auto& entity : m_scene->getEntities()) {
             auto& model = m_scene->getComponent<engine::ModelInterface>(entity.id);

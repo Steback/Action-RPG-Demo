@@ -18,7 +18,11 @@ namespace game {
 
     CombatSystem::CombatSystem() {
         json scene;
+#ifdef _WIN32
         std::ifstream file("..\\..\\data\\combat.json");
+#else
+        std::ifstream file("../data/combat.json");
+#endif
         file >> scene;
         file.close();
 
