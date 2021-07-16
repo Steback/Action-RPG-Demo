@@ -8,6 +8,11 @@ If you read my horrible code and want to tell me how I could be a better program
 * [Fantasy Monster - Skeleton](https://assetstore.unity.com/packages/3d/characters/humanoids/fantasy-monster-skeleton-35635)
 * [Medieval Fantasy Dungeon Kit](https://assetstore.unity.com/packages/3d/environments/dungeons/medieval-fantasy-dungeon-kit-137477)
 
+
+## Binaries
+I add os specific binaries in release seccion, I hope it work well.
+
+
 ## Third Party
 All the dependencies are installed by [Conan](https://conan.io) package manager with the [conanfile.txt](conanfile.txt).
 * [Vulkan Headers](https://github.com/KhronosGroup/Vulkan-Headers) v1.2.172
