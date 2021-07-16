@@ -105,7 +105,7 @@ namespace engine {
     }
 
     void ResourceManager::cleanupResources() {
-        vkDestroyDescriptorPool(m_device->m_logicalDevice, m_imagesDescriptorPool, nullptr);
+        m_device->m_logicalDevice.destroy(m_imagesDescriptorPool);
     }
 
     void ResourceManager::generateMipmaps(const engine::Texture& texture, vk::Format format, vk::Extent2D size, uint32_t mipLevels) {

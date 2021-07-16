@@ -282,7 +282,7 @@ namespace engine {
             glfwWaitEvents();
         }
 
-        vkDeviceWaitIdle(m_logicalDevice);
+        m_logicalDevice.waitIdle();
 
         cleanSwapChain();
 

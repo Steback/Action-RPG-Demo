@@ -41,9 +41,9 @@ namespace engine {
     }
 
     void Image::cleanup(vk::Device logicalDevice) {
-        vkDestroyImageView(logicalDevice, m_view, nullptr);
-        vkDestroyImage(logicalDevice, m_image, nullptr);
-        vkFreeMemory(logicalDevice, m_memory, nullptr);
+        logicalDevice.destroy(m_view);
+        logicalDevice.destroy(m_image);
+        logicalDevice.free(m_memory);
     }
 
     vk::Format Image::getFormat() const {

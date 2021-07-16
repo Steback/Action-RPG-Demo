@@ -7,10 +7,9 @@ engine::SwapChainSupportDetails querySwapChainSupport(const vk::PhysicalDevice& 
     engine::SwapChainSupportDetails details;
     details.capabilities = device.getSurfaceCapabilitiesKHR(surface);
 
-    uint32_t formatsCount;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatsCount, nullptr);
+    std::vector<vk::SurfaceFormatKHR> formats = device.getSurfaceFormatsKHR(surface);
 
-    if (formatsCount != 0) {
+    if (!formats.empty()) {
         details.formats = device.getSurfaceFormatsKHR(surface);
     }
 
@@ -180,7 +179,7 @@ namespace engine {
     void SwapChain::cleanup() {
         if (m_swapChain) {
             for (uint32_t i = 0; i < m_imageCount; ++i) {
-                vkDestroyImageView(m_device, m_buffers[i].view, nullptr);
+                m_device.destroy(m_buffers[i].view);
             }
         }
 

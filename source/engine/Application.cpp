@@ -88,7 +88,7 @@ namespace engine {
     }
 
     void Application::shutdown() {
-        vkDeviceWaitIdle(m_device->m_logicalDevice);
+        m_device->m_logicalDevice.waitIdle();
 
         cleanup();
         m_threadPool->stop();

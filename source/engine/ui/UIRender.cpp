@@ -32,20 +32,19 @@ namespace engine {
         // Provide bind points from Vulkan API
         ImGui_ImplGlfw_InitForVulkan(window, true);
         ImGui_ImplVulkan_InitInfo init_info = {};
-        init_info.Instance = instance;
-        init_info.PhysicalDevice = device->m_physicalDevice;
-        init_info.Device = device->m_logicalDevice;
+        init_info.Instance = static_cast<VkInstance>(instance);
+        init_info.PhysicalDevice = static_cast<VkPhysicalDevice>(device->m_physicalDevice);
+        init_info.Device = static_cast<VkDevice>(device->m_logicalDevice);
         init_info.QueueFamily = device->m_queueFamilyIndices.graphics;
-        init_info.Queue = graphicsQueue;
-        init_info.PipelineCache = nullptr;
-        init_info.DescriptorPool = m_descriptorPool;
+        init_info.Queue = static_cast<VkQueue>(graphicsQueue);
+        init_info.DescriptorPool = static_cast<VkDescriptorPool>(m_descriptorPool);
         init_info.MinImageCount = swapChain.getImageCount();
         init_info.ImageCount = swapChain.getImageCount();
-        ImGui_ImplVulkan_Init(&init_info, m_renderPass);
+        ImGui_ImplVulkan_Init(&init_info, static_cast<VkRenderPass>(m_renderPass));
 
         // Upload the fonts for Dear ImGui
         vk::CommandBuffer commandBuffer = device->createCommandBuffer(vk::CommandBufferLevel::ePrimary, m_commands->getPool(), true);
-        ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
+        ImGui_ImplVulkan_CreateFontsTexture(static_cast<VkCommandBuffer>(commandBuffer));
         device->flushCommandBuffer(commandBuffer, graphicsQueue, m_commands->getPool());
         ImGui_ImplVulkan_DestroyFontUploadObjects();
     }
@@ -104,7 +103,7 @@ namespace engine {
             .pClearValues = &clearColor
         }, vk::SubpassContents::eInline);
         {
-            ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_commands->getBuffer());
+            ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), static_cast<VkCommandBuffer>(m_commands->getBuffer()));
         }
         cmdBuffer.endRenderPass();
 

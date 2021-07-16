@@ -14,6 +14,3 @@ conan_basic_setup(NO_OUTPUT_DIRS)
 add_subdirectory(source/engine)
 add_subdirectory(source/editor)
 add_subdirectory(source/game)
-
-target_link_libraries(Editor core ${CONAN_LIBS} ${VALIDATION_LAYERS})
-target_link_libraries(Game core ${CONAN_LIBS} ${VALIDATION_LAYERS})

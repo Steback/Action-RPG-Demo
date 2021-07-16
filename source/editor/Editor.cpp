@@ -33,7 +33,7 @@ namespace editor {
         m_resourceManager->createModel("cube", "cube");
         m_modelsNames.emplace_back("cube");
 
-        m_scene->loadScene("../data/scene.json", true, &m_modelsNames, &animationsName);
+        m_scene->loadScene("..\\..\\data\\scene.json", true, &m_modelsNames, &animationsName);
 
         for (auto& entity : m_scene->getEntities()) {
             auto& model = m_scene->getComponent<engine::ModelInterface>(entity.id);
@@ -50,7 +50,7 @@ namespace editor {
 
         // LUA
         m_luaManager.setScriptsDir("editor");
-        auto imgui = m_luaManager.get<sol::table>("imgui");
+        auto imgui = m_luaManager.getState().get<sol::table>("imgui");
         imgui.set_function("showDemo", &Editor::showImGuiDemo, this);
 
         sol::table editor = m_luaManager.getState().create_table("editor");
@@ -267,7 +267,7 @@ namespace editor {
     void Editor::loadMenuBar(sol::state& state) {
         sol::table menuBarTable = state["menuBar"];
 
-        uint menuIndex = 0;
+        unsigned int menuIndex = 0;
         while (true) {
             sol::optional<sol::table> existsMenu = menuBarTable[menuIndex];
 
@@ -279,7 +279,7 @@ namespace editor {
                     .name = menu.get<std::string>("name")
                 };
 
-                uint itemIndex = 0;
+                unsigned int itemIndex = 0;
                 while (true) {
                     sol::optional<sol::table> existsItem = menu["items"][itemIndex];
 

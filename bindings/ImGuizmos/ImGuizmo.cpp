@@ -1198,7 +1198,7 @@ namespace ImGuizmo
          {
             continue;
          }
-         ImVec2 circlePos[circleMul * halfCircleSegmentCount + 1];
+         auto* circlePos = new ImVec2[circleMul * halfCircleSegmentCount + 1];
 
          float angleStart = atan2f(cameraToModelNormalized[(4 - axis) % 3], cameraToModelNormalized[(3 - axis) % 3]) + ZPI * 0.5f;
 
@@ -1217,6 +1217,8 @@ namespace ImGuizmo
          }
 
          drawList->AddPolyline(circlePos, circleMul * halfCircleSegmentCount + 1, colors[3 - axis], false, 2);
+
+         delete circlePos;
       }
       if(hasRSC)
       {
@@ -1247,6 +1249,8 @@ namespace ImGuizmo
          drawList->AddText(ImVec2(destinationPosOnScreen.x + 15, destinationPosOnScreen.y + 15), 0xFF000000, tmps);
          drawList->AddText(ImVec2(destinationPosOnScreen.x + 14, destinationPosOnScreen.y + 14), 0xFFFFFFFF, tmps);
       }
+
+
    }
 
    static void DrawHatchedAxis(const vec_t& axis)

@@ -40,8 +40,8 @@ namespace engine {
        }
 
        uint64_t hashString(const std::string& s) {
-           const uint p = 31;
-           const uint m = 1e9 + 9;
+           const unsigned int p = 31;
+           const unsigned int m = 1e9 + 9;
            uint32_t hashValue = 0;
            uint32_t pPow = 1;
 

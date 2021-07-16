@@ -182,7 +182,7 @@ namespace engine {
 
     vk::SurfaceKHR Instance::createSurface(GLFWwindow* window) {
         VkSurfaceKHR surface;
-        glfwCreateWindowSurface(m_instance, window, nullptr, &surface);
+        glfwCreateWindowSurface(static_cast<VkInstance>(m_instance), window, nullptr, &surface);
 
         return vk::SurfaceKHR(surface);
     }

@@ -10,7 +10,7 @@ namespace game {
     }
 
     void Game::init() {
-        m_scene->loadScene("../data/scene.json");
+        m_scene->loadScene("..\\..\\data\\scene.json");
 
         m_luaManager.setScriptsDir("game");
         m_luaManager.scriptFile("main.lua");

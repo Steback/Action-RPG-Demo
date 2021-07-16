@@ -12,7 +12,6 @@ cmake-build-release/
 ### Python venv
 venv/
 
-
 ### Binaries ###
 bin/Editor
 bin/shaders/
@@ -22,3 +21,10 @@ bin/Game
 ### Assets ###
 assets/textures
 assets/models
+
+### Window ###
+bin/Release/
+bin/Debug/
+
+### Zip ###
+*.zip

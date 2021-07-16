@@ -61,7 +61,7 @@ namespace engine {
     }
 
     void Texture::cleanup(vk::Device logicalDevice) {
-        vkDestroySampler(logicalDevice, m_sampler, nullptr);
+        logicalDevice.destroy(m_sampler);
         m_image.cleanup(logicalDevice);
     }
 

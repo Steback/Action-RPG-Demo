@@ -8,3 +8,4 @@ file(GLOB_RECURSE IMGUI_BINDINGS ../../bindings/*.cpp)
 include_directories(../../bindings)
 
 add_executable(Editor main.cpp ${IMGUI_BINDINGS} ${EDITOR_SOURCE_FILES} ${EDITOR_HEADER_FILES})
+target_link_libraries(Editor core ${CONAN_LIBS})

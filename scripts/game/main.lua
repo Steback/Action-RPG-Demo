@@ -8,10 +8,12 @@ function init()
     local barWidth = 350
     local barHeight = 60
 
-    healthHero = ui.createWindow("Hero", barWidth, barHeight, 0)
+    healthHero = ui.createWindow("Hero", barWidth, barHeight, ui.WindowFlags.fixPosition)
+    healthHero:setPosition(60, 60);
     healthHero:setState(true)
 
-    healthEnemy = ui.createWindow("Enemy", barWidth, barHeight, 0)
+    healthEnemy = ui.createWindow("Enemy", barWidth, barHeight, ui.WindowFlags.fixPosition)
+    healthEnemy:setPosition(450, 60);
     healthEnemy:setState(true)
 end
 
